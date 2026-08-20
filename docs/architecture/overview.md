@@ -1,6 +1,6 @@
 # Architectural Overview — KANGAYATH WEB
 
-**Phase**: Phase 02 Transition $\to$ Phase 03  
+**Phase**: Phase 03 Transition $\to$ Phase 04  
 **Status**: Authoritative Reference  
 
 ---
@@ -29,23 +29,23 @@
 
 ---
 
-## 2. Bounded Contexts Summary
+## 2. Master Architecture Specification
 
-1. **Store Operations Context**: Profile, Operating Hours, Real-time Open/Closed status in `Asia/Kolkata` with emergency override.
-2. **Catalog & Taxonomy Context**: 2-level hierarchical navigation (`Category` $\to$ `Subcategory`).
-3. **Product & Inventory Context**: Garment details, image gallery ($\le 6$), Size/Color variant matrix, boolean availability, manual sold-out override, and lifecycle states (`Draft`, `Published`, `Hidden`, `Archived`).
-4. **Merchandising Context**: Promotional custom sections (e.g. Onam Special), manual item ordering.
-5. **Customer Discovery Context**: Anonymous Saved Items (`localStorage` + session sync), faceted search, and WhatsApp inquiry generation.
+- **Master Technical Architecture**: [docs/architecture/technical_architecture.md](technical_architecture.md)
 
 ---
 
-## 3. Authoritative Documentation Index
+## 3. Architecture Decision Records (ADRs)
 
-- **Product Requirements Document (PRD)**: [docs/requirements/PRD.md](../requirements/PRD.md)
-- **Domain Specification**: [docs/domain/domain_specification.md](../domain/domain_specification.md)
-- **User Stories & Acceptance Criteria**: [docs/requirements/user_stories.md](../requirements/user_stories.md)
-- **Critical Workflows (A through R)**: [docs/requirements/workflows.md](../requirements/workflows.md)
-- **Requirements Traceability Matrix**: [docs/requirements/traceability_matrix.md](../requirements/traceability_matrix.md)
-- **Product Decision Register**: [docs/decisions/product_decision_register.md](../decisions/product_decision_register.md)
-- **MVP Scope Matrix**: [docs/requirements/mvp_scope_matrix.md](../requirements/mvp_scope_matrix.md)
-- **Phase 03 Handover Specification**: [docs/requirements/phase03_input_spec.md](../requirements/phase03_input_spec.md)
+- [ADR-0001: Monorepo Organization](../decisions/ADR-0001-monorepo-structure.md)
+- [ADR-0002: Backend FastAPI Stack](../decisions/ADR-0002-backend-fastapi-stack.md)
+- [ADR-0003: Frontend Next.js Stack](../decisions/ADR-0003-frontend-nextjs-stack.md)
+- [ADR-0004: Configuration Governance & Secrets](../decisions/ADR-0004-configuration-and-secrets.md)
+- [ADR-0005: Multi-Tiered Testing Strategy](../decisions/ADR-0005-testing-strategy.md)
+- [ADR-0006: Modular Monolith Backend](../decisions/ADR-0006-modular-monolith-backend.md)
+- [ADR-0007: Public vs Admin API Separation](../decisions/ADR-0007-public-vs-admin-api-separation.md)
+- [ADR-0008: Variation-Based Inventory Model](../decisions/ADR-0008-variation-based-inventory-model.md)
+- [ADR-0009: Generic Dynamic Custom Section Model](../decisions/ADR-0009-generic-custom-collection-model.md)
+- [ADR-0010: Deferred Authentication Boundary](../decisions/ADR-0010-deferred-authentication-boundary.md)
+- [ADR-0011: Customer SSR/ISR Rendering Strategy](../decisions/ADR-0011-customer-ssr-isr-rendering-strategy.md)
+- [ADR-0012: Media Storage and Optimization Pipeline](../decisions/ADR-0012-media-storage-and-optimization-pipeline.md)
