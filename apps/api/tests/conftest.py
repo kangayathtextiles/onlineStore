@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from app.core.dependencies import get_async_session
 from app.main import app
 from app.models import Base
 
@@ -37,6 +38,20 @@ test_session_maker = async_sessionmaker(
     autocommit=False,
     autoflush=False,
 )
+
+
+async def override_get_async_session() -> AsyncGenerator[AsyncSession, None]:
+    async with test_session_maker() as session:
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
+
+
+app.dependency_overrides[get_async_session] = override_get_async_session
 
 
 @pytest.fixture(autouse=True)
