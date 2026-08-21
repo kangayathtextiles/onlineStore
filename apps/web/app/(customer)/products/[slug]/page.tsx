@@ -158,8 +158,75 @@ export default function ProductDetailPage() {
     }
   };
 
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description || `${product.name} at Kangayath digital showroom`,
+    image: product.images.map((img) => img.url),
+    sku: product.style_code || undefined,
+    material: product.material || undefined,
+    brand: {
+      "@type": "Brand",
+      name: "Kangayath",
+    },
+    category: product.category_name,
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: process.env.NEXT_PUBLIC_SITE_URL || "https://kangayath.in",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Catalog",
+        item: `${process.env.NEXT_PUBLIC_SITE_URL || "https://kangayath.in"}/products`,
+      },
+      ...(product.category_name
+        ? [
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: product.category_name,
+              item: `${process.env.NEXT_PUBLIC_SITE_URL || "https://kangayath.in"}/products?category=${encodeURIComponent(
+                product.category_slug || ""
+              )}`,
+            },
+            {
+              "@type": "ListItem",
+              position: 4,
+              name: product.name,
+              item: `${process.env.NEXT_PUBLIC_SITE_URL || "https://kangayath.in"}/products/${product.slug}`,
+            },
+          ]
+        : [
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: product.name,
+              item: `${process.env.NEXT_PUBLIC_SITE_URL || "https://kangayath.in"}/products/${product.slug}`,
+            },
+          ]),
+    ],
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       {/* Breadcrumb Navigation */}
       <div className="flex items-center gap-2 text-xs text-zinc-400">
         <Link href="/" className="hover:text-zinc-100 transition-colors">
