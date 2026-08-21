@@ -1,0 +1,29 @@
+# Dependencies
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Tests
+tests/
+.pytest_cache/
+
+# Development
+.env
+.env.*
+!.env.example
+.ruff_cache/
+.mypy_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/
+*.md

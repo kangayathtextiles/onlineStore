@@ -31,10 +31,14 @@ class Settings(BaseSettings):
 
     # Environment
     ENVIRONMENT: Literal["development", "test", "staging", "production"] = "development"
+    DEBUG: bool = False
     PROJECT_NAME: str = "Kangayath Web API"
-    VERSION: str = "0.1.0"
+    VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
     LOG_LEVEL: str = "INFO"
+
+    # Security
+    SECRET_KEY: str = "CHANGEME-dev-only-insecure-key"
 
     # Server binding
     API_HOST: str = "0.0.0.0"
@@ -54,6 +58,19 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "kangayath_db"
     DATABASE_URL: str | None = None
 
+    # Database pool configuration
+    DB_POOL_SIZE: int = 5
+    DB_MAX_OVERFLOW: int = 10
+    DB_POOL_TIMEOUT: int = 30
+
+    # Media / uploads
+    MEDIA_ROOT: str = "./media"
+    MAX_UPLOAD_SIZE_MB: int = 10
+    ALLOWED_IMAGE_EXTENSIONS: str = ".jpg,.jpeg,.png,.webp,.gif"
+
+    # Site URL (used for canonical URLs, sitemap, etc.)
+    SITE_URL: str = "http://localhost:3000"
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
@@ -69,6 +86,11 @@ class Settings(BaseSettings):
                 path=self.POSTGRES_DB,
             )
         )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_production(self) -> bool:
+        return self.ENVIRONMENT == "production"
 
 
 settings = Settings()
