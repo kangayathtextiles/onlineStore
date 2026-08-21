@@ -356,3 +356,75 @@ export interface SuccessResponse {
   success: boolean;
   message: string;
 }
+
+// --- Customer Public DTOs (Zero Price Exposure) ---
+export interface PublicProductSummary {
+  id: string;
+  name: string;
+  slug: string;
+  material: string | null;
+  style_code: string | null;
+  featured: boolean;
+  is_available: boolean;
+  primary_image_url: string | null;
+  category_name: string | null;
+  category_slug: string | null;
+  subcategory_name: string | null;
+  subcategory_slug: string | null;
+  available_sizes: string[];
+  available_colors: string[];
+}
+
+export interface PublicProductDetail {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  material: string | null;
+  style_code: string | null;
+  featured: boolean;
+  is_available: boolean;
+  meta_title: string | null;
+  meta_description: string | null;
+  category_name: string | null;
+  category_slug: string | null;
+  subcategory_name: string | null;
+  subcategory_slug: string | null;
+  images: ProductImage[];
+  variants: ProductVariant[];
+}
+
+export interface PublicCategoryTree {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  thumbnail_url: string | null;
+  display_order: number;
+  subcategories: SubcategorySummary[];
+}
+
+export interface PublicSection {
+  id: string;
+  title: string;
+  slug: string;
+  subtitle: string | null;
+  banner_image_url: string | null;
+  display_order: number;
+  products: PublicProductSummary[];
+}
+
+export interface SavedItemAvailability {
+  product_id: string;
+  product_name: string;
+  product_slug: string;
+  is_available: boolean;
+  primary_image_url: string | null;
+  saved_at: string | null;
+}
+
+export interface SavedItemSyncResponse {
+  session_token: string;
+  items: PublicProductSummary[];
+  total_saved: number;
+}
