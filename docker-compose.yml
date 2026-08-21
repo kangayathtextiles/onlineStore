@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kangayath_dev_password}
       POSTGRES_DB: ${POSTGRES_DB:-kangayath_db}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_EXTERNAL_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
