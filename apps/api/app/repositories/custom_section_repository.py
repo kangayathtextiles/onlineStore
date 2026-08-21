@@ -3,8 +3,10 @@ from collections.abc import Sequence
 
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.custom_section import CustomSection, CustomSectionItem
+from app.models.product import Product
 from app.repositories.base import BaseRepository
 
 
@@ -12,13 +14,60 @@ class CustomSectionRepository(BaseRepository[CustomSection]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(CustomSection, session)
 
+    async def get_by_id(self, id_: uuid.UUID) -> CustomSection | None:
+        stmt = (
+            select(CustomSection)
+            .where(CustomSection.id == id_)
+            .options(
+                selectinload(CustomSection.items)
+                .selectinload(CustomSectionItem.product)
+                .selectinload(Product.images),
+                selectinload(CustomSection.items)
+                .selectinload(CustomSectionItem.product)
+                .selectinload(Product.variants),
+                selectinload(CustomSection.items)
+                .selectinload(CustomSectionItem.product)
+                .selectinload(Product.category),
+            )
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def get_by_slug(self, slug: str) -> CustomSection | None:
-        stmt = select(CustomSection).where(CustomSection.slug == slug)
+        stmt = (
+            select(CustomSection)
+            .where(CustomSection.slug == slug)
+            .options(
+                selectinload(CustomSection.items)
+                .selectinload(CustomSectionItem.product)
+                .selectinload(Product.images),
+                selectinload(CustomSection.items)
+                .selectinload(CustomSectionItem.product)
+                .selectinload(Product.variants),
+                selectinload(CustomSection.items)
+                .selectinload(CustomSectionItem.product)
+                .selectinload(Product.category),
+            )
+        )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
     async def list_sections(self, active_only: bool = False) -> Sequence[CustomSection]:
-        stmt = select(CustomSection).order_by(CustomSection.display_order)
+        stmt = (
+            select(CustomSection)
+            .order_by(CustomSection.display_order)
+            .options(
+                selectinload(CustomSection.items)
+                .selectinload(CustomSectionItem.product)
+                .selectinload(Product.images),
+                selectinload(CustomSection.items)
+                .selectinload(CustomSectionItem.product)
+                .selectinload(Product.variants),
+                selectinload(CustomSection.items)
+                .selectinload(CustomSectionItem.product)
+                .selectinload(Product.category),
+            )
+        )
         if active_only:
             stmt = stmt.where(CustomSection.is_active.is_(True))
         result = await self.session.execute(stmt)

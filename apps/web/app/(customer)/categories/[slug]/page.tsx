@@ -3,9 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Layers, Shirt, ChevronRight } from "lucide-react";
+import { ArrowLeft, Shirt, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/customer/product-card";
 import { publicApi } from "@/lib/api";
 import type { PublicCategoryTree, PublicProductSummary } from "@/types/api";

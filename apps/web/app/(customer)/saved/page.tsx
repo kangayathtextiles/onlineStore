@@ -73,6 +73,11 @@ export default function SavedProductsPage() {
           </span>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-zinc-100 mt-1">
             Saved Garments ({savedItems.length})
+            {loadingAvailability && (
+              <span className="text-[10px] text-amber-500/80 animate-pulse font-mono ml-2 font-normal">
+                (Checking live stock...)
+              </span>
+            )}
           </h1>
           <p className="text-xs sm:text-sm text-zinc-400 mt-1">
             Garments you have bookmarked for your upcoming physical store visit.

@@ -116,8 +116,9 @@ class CustomSectionService:
             await self.repo.add_section_items(items)
 
         await self.session.commit()
-        await self.session.refresh(section)
-        return self.map_to_admin_response(section)
+        refreshed_sec = await self.repo.get_by_id(section.id)
+        assert refreshed_sec is not None
+        return self.map_to_admin_response(refreshed_sec)
 
     async def update_section(
         self, section_id: uuid.UUID, req: SectionUpdateRequest
@@ -144,8 +145,9 @@ class CustomSectionService:
             sec.display_order = req.display_order
 
         await self.session.commit()
-        await self.session.refresh(sec)
-        return self.map_to_admin_response(sec)
+        refreshed_sec = await self.repo.get_by_id(section_id)
+        assert refreshed_sec is not None
+        return self.map_to_admin_response(refreshed_sec)
 
     async def reorder_section_items(
         self, section_id: uuid.UUID, req: SectionItemReorderRequest
@@ -154,21 +156,23 @@ class CustomSectionService:
         if not sec:
             raise EntityNotFoundException("CustomSection", section_id)
 
-        # Clear and re-populate
-        await self.repo.clear_section_items(section_id)
-        items = [
-            CustomSectionItem(
-                section_id=section_id,
-                product_id=item.product_id,
-                sort_order=item.sort_order,
+        # Clear and re-populate directly on collection
+        sec.items.clear()
+        await self.session.flush()
+
+        for item in req.items:
+            sec.items.append(
+                CustomSectionItem(
+                    section_id=section_id,
+                    product_id=item.product_id,
+                    sort_order=item.sort_order,
+                )
             )
-            for item in req.items
-        ]
-        await self.repo.add_section_items(items)
 
         await self.session.commit()
-        await self.session.refresh(sec)
-        return self.map_to_admin_response(sec)
+        refreshed_sec = await self.repo.get_by_id(section_id)
+        assert refreshed_sec is not None
+        return self.map_to_admin_response(refreshed_sec)
 
     async def delete_section(self, section_id: uuid.UUID) -> None:
         sec = await self.repo.get_by_id(section_id)

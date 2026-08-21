@@ -6,19 +6,13 @@ import {
   ArrowRight,
   Sparkles,
   ShoppingBag,
-  Clock,
-  MapPin,
-  CheckCircle,
-  MessageCircle,
   Shirt,
   Layers,
   Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/customer/product-card";
 import { publicApi } from "@/lib/api";
-import { formatISTTime } from "@/lib/utils";
 import type {
   PublicCategoryTree,
   PublicProductSummary,

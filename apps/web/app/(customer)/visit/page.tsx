@@ -62,6 +62,15 @@ export default function VisitStorePage() {
       )
     : [];
 
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-24 text-center">
+        <div className="w-10 h-10 rounded-full border-2 border-wine border-t-transparent animate-spin mx-auto mb-4" />
+        <p className="text-sm text-zinc-400 font-mono text-xs">Loading store hours & directions...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-12 pb-20">
       {/* Header */}
