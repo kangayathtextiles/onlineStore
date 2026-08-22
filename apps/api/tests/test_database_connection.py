@@ -30,6 +30,13 @@ async def live_pg_engine():
         echo=False,
         poolclass=pool.NullPool,
     )
+    try:
+        async with eng.connect() as conn:
+            await conn.execute(text("SELECT 1;"))
+    except Exception as exc:
+        await eng.dispose()
+        pytest.skip(f"Live PostgreSQL server is not reachable in this test environment: {exc}")
+
     yield eng
     await eng.dispose()
 

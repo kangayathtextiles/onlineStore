@@ -90,7 +90,6 @@ class StoreProfileResponse(StoreProfileBase):
     status: StoreStatusResponse | None = None
 
 
-
 class StoreOverrideRequest(BaseSchema):
     override_mode: OverrideMode
     override_banner: str | None = Field(default=None, max_length=255)
