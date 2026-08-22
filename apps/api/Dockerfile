@@ -38,8 +38,11 @@ COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini .
 
-# Create media directory
-RUN mkdir -p /app/media && chown -R appuser:appgroup /app/media
+# Copy committed media assets (product images) into image
+# Note: on Render free tier, new uploads won't persist across deploys
+# (Render paid plan persistent disk or cloud storage required for that)
+RUN mkdir -p /app/media/products /app/media/uploads
+COPY --chown=appuser:appgroup media ./media
 
 USER appuser
 
