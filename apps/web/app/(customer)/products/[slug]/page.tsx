@@ -497,8 +497,10 @@ export default function ProductDetailPage() {
             </div>
             <p className="text-xs text-zinc-600 leading-relaxed">
               We welcome you to visit our store in{" "}
-              <strong className="text-zinc-900">{store?.city || "Thrissur"}</strong> to try this piece
-              in our fitting rooms. All sales and billing are done at our retail counter.
+              <strong className="text-zinc-900">
+                {store?.city || store?.locality || store?.district || "Kangeyam"}
+              </strong>{" "}
+              to try this piece in our fitting rooms. All sales and billing are done at our retail counter.
             </p>
             <Link
               href="/visit"

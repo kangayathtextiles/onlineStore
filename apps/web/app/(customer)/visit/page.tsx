@@ -87,7 +87,7 @@ export default function VisitStorePage() {
           Physical Retail Location
         </span>
         <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-zinc-900">
-          Visit Our Store in {profile?.city || "Thrissur"}
+          Visit Our Store in {profile?.city || profile?.locality || profile?.district || "Kangeyam"}
         </h1>
         <p className="text-sm text-zinc-600">
           Explore our complete collection in person. Try garments in our fitting rooms and get styling
@@ -150,7 +150,8 @@ export default function VisitStorePage() {
                 <p>{profile?.address_line1}</p>
                 {profile?.address_line2 && <p>{profile.address_line2}</p>}
                 <p>
-                  {profile?.city}, {profile?.state} - {profile?.pincode}
+                  {profile?.city || profile?.locality || profile?.district || "Kangeyam"},{" "}
+                  {profile?.state || "Kerala"} - {profile?.pincode || "638701"}
                 </p>
               </address>
 
@@ -161,10 +162,10 @@ export default function VisitStorePage() {
                     <span>Primary Phone:</span>
                   </div>
                   <a
-                    href={`tel:${profile?.phone_primary}`}
+                    href={`tel:${profile?.phone_primary || profile?.primary_phone}`}
                     className="font-bold text-zinc-900 hover:text-burgundy transition-colors"
                   >
-                    {profile?.phone_primary || "+91 98765 43210"}
+                    {profile?.phone_primary || profile?.primary_phone || "+91 94470 00000"}
                   </a>
                 </div>
 

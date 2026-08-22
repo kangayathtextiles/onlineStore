@@ -77,7 +77,8 @@ export function CustomerFooter() {
               <p>{store?.address_line1 || "Main Commercial Street"}</p>
               {store?.address_line2 && <p>{store.address_line2}</p>}
               <p>
-                {store?.city || "Thrissur"}, {store?.state || "Kerala"} - {store?.pincode || "680001"}
+                {store?.city || store?.locality || store?.district || "Kangeyam"},{" "}
+                {store?.state || "Kerala"} - {store?.pincode || "638701"}
               </p>
             </address>
 

@@ -46,15 +46,22 @@ class StoreService:
         status = await self.get_store_status()
         schedules = await self.repo.get_operating_schedules()
 
+        city = store.locality or store.district or store.panchayat or "Kangeyam"
+        primary_phone = store.primary_phone or "+91 94470 00000"
+
         return StoreProfileResponse(
             id=store.id,
             name=store.name,
             tagline=store.tagline,
             description=store.description,
-            primary_phone=store.primary_phone,
+            primary_phone=primary_phone,
+            phone_primary=primary_phone,
+            phone_secondary=None,
             whatsapp_number=store.whatsapp_number,
+            email=None,
             address_line1=store.address_line1,
             address_line2=store.address_line2,
+            city=city,
             locality=store.locality,
             panchayat=store.panchayat,
             district=store.district,
@@ -134,8 +141,25 @@ class StoreService:
             raise EntityNotFoundException("StoreProfile", "singleton")
 
         update_dict = data.model_dump(exclude_unset=True)
+
+        # Handle city field mapping to locality, district, panchayat
+        if "city" in update_dict and update_dict["city"]:
+            city_val = str(update_dict.pop("city")).strip()
+            store.locality = city_val
+            store.district = city_val
+            store.panchayat = city_val
+
+        # Handle phone_primary mapping to primary_phone
+        if "phone_primary" in update_dict and update_dict["phone_primary"]:
+            store.primary_phone = str(update_dict.pop("phone_primary")).strip()
+
+        # Clean non-database fields
+        update_dict.pop("phone_secondary", None)
+        update_dict.pop("email", None)
+
         for key, value in update_dict.items():
-            setattr(store, key, value)
+            if hasattr(store, key) and value is not None:
+                setattr(store, key, value)
 
         await self.session.commit()
         await self.session.refresh(store)

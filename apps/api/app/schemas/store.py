@@ -26,15 +26,19 @@ class StoreProfileBase(BaseSchema):
     name: str = Field(min_length=1, max_length=100)
     tagline: str | None = Field(default=None, max_length=255)
     description: str | None = None
-    primary_phone: str = Field(min_length=5, max_length=20)
-    whatsapp_number: str = Field(min_length=5, max_length=20)
-    address_line1: str = Field(min_length=1, max_length=200)
+    primary_phone: str = Field(default="", max_length=20)
+    phone_primary: str | None = Field(default=None, max_length=20)
+    phone_secondary: str | None = Field(default=None, max_length=20)
+    whatsapp_number: str = Field(default="", max_length=20)
+    email: str | None = Field(default=None, max_length=100)
+    address_line1: str = Field(default="", max_length=200)
     address_line2: str | None = Field(default=None, max_length=200)
-    locality: str = Field(min_length=1, max_length=100)
-    panchayat: str = Field(min_length=1, max_length=100)
-    district: str = Field(min_length=1, max_length=100)
+    city: str | None = Field(default=None, max_length=100)
+    locality: str = Field(default="", max_length=100)
+    panchayat: str = Field(default="", max_length=100)
+    district: str = Field(default="", max_length=100)
     state: str = Field(default="Kerala", max_length=100)
-    pincode: str = Field(min_length=3, max_length=10)
+    pincode: str = Field(default="", max_length=10)
     latitude: Decimal | None = None
     longitude: Decimal | None = None
     google_maps_url: str | None = None
@@ -45,9 +49,13 @@ class StoreProfileUpdate(BaseSchema):
     tagline: str | None = Field(default=None, max_length=255)
     description: str | None = None
     primary_phone: str | None = Field(default=None, max_length=20)
+    phone_primary: str | None = Field(default=None, max_length=20)
+    phone_secondary: str | None = Field(default=None, max_length=20)
     whatsapp_number: str | None = Field(default=None, max_length=20)
+    email: str | None = Field(default=None, max_length=100)
     address_line1: str | None = Field(default=None, max_length=200)
     address_line2: str | None = Field(default=None, max_length=200)
+    city: str | None = Field(default=None, max_length=100)
     locality: str | None = Field(default=None, max_length=100)
     panchayat: str | None = Field(default=None, max_length=100)
     district: str | None = Field(default=None, max_length=100)
@@ -80,6 +88,7 @@ class StoreProfileResponse(StoreProfileBase):
     updated_at: datetime
     schedules: list[OperatingScheduleDTO] = Field(default_factory=list)
     status: StoreStatusResponse | None = None
+
 
 
 class StoreOverrideRequest(BaseSchema):

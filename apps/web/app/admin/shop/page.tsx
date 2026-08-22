@@ -67,17 +67,17 @@ export default function AdminShopPage() {
       ]);
 
       setProfile(profData);
-      setName(profData.name);
+      setName(profData.name || "");
       setTagline(profData.tagline || "");
-      setPhonePrimary(profData.phone_primary);
+      setPhonePrimary(profData.phone_primary || profData.primary_phone || "");
       setPhoneSecondary(profData.phone_secondary || "");
       setWhatsappNumber(profData.whatsapp_number || "");
       setEmail(profData.email || "");
-      setAddressLine1(profData.address_line1);
+      setAddressLine1(profData.address_line1 || "");
       setAddressLine2(profData.address_line2 || "");
-      setCity(profData.city);
-      setState(profData.state);
-      setPincode(profData.pincode);
+      setCity(profData.city || profData.locality || profData.district || profData.panchayat || "");
+      setState(profData.state || "Kerala");
+      setPincode(profData.pincode || "");
       setGoogleMapsUrl(profData.google_maps_url || "");
 
       setStatus(statusData);
@@ -85,7 +85,7 @@ export default function AdminShopPage() {
       setOverrideBanner(statusData.banner_message || "");
 
       // Sort schedules
-      const sorted = [...profData.schedules].sort(
+      const sorted = [...(profData.schedules || [])].sort(
         (a, b) => DAYS_ORDER.indexOf(a.day_of_week) - DAYS_ORDER.indexOf(b.day_of_week)
       );
       setSchedules(sorted);
@@ -129,17 +129,28 @@ export default function AdminShopPage() {
         name: name.trim(),
         tagline: tagline.trim() || undefined,
         phone_primary: phonePrimary.trim(),
+        primary_phone: phonePrimary.trim(),
         phone_secondary: phoneSecondary.trim() || undefined,
         whatsapp_number: whatsappNumber.trim() || undefined,
         email: email.trim() || undefined,
         address_line1: addressLine1.trim(),
         address_line2: addressLine2.trim() || undefined,
         city: city.trim(),
+        locality: city.trim(),
+        district: city.trim(),
+        panchayat: city.trim(),
         state: state.trim(),
         pincode: pincode.trim(),
         google_maps_url: googleMapsUrl.trim() || undefined,
       });
       setProfile(updated);
+      setName(updated.name || "");
+      setTagline(updated.tagline || "");
+      setPhonePrimary(updated.phone_primary || updated.primary_phone || "");
+      setCity(updated.city || updated.locality || updated.district || "");
+      setState(updated.state || "");
+      setPincode(updated.pincode || "");
+      setGoogleMapsUrl(updated.google_maps_url || "");
       toast.success("Store Profile Updated", "Contact and address information saved.");
     } catch (err: unknown) {
       toast.error("Profile save failed", (err as Error).message);

@@ -18,11 +18,13 @@ import type {
   PublicCategoryTree,
   PublicProductSummary,
   PublicSection,
+  StoreProfile,
   StoreStatusResponse,
 } from "@/types/api";
 
 export default function CustomerHomePage() {
   const [status, setStatus] = React.useState<StoreStatusResponse | null>(null);
+  const [store, setStore] = React.useState<StoreProfile | null>(null);
   const [categories, setCategories] = React.useState<PublicCategoryTree[]>([]);
   const [sections, setSections] = React.useState<PublicSection[]>([]);
   const [featuredProducts, setFeaturedProducts] = React.useState<PublicProductSummary[]>([]);
@@ -33,8 +35,9 @@ export default function CustomerHomePage() {
     async function loadHomeData() {
       try {
         setLoading(true);
-        const [statusData, catsData, sectionsData, prodsData] = await Promise.all([
+        const [statusData, storeData, catsData, sectionsData, prodsData] = await Promise.all([
           publicApi.store.getStatus().catch(() => null),
+          publicApi.store.getProfile().catch(() => null),
           publicApi.categories.list().catch(() => []),
           publicApi.sections.list().catch(() => []),
           publicApi.products.list({ page: 1, page_size: 8 }).catch(() => ({ items: [] })),
@@ -42,6 +45,7 @@ export default function CustomerHomePage() {
 
         if (isMounted) {
           setStatus(statusData);
+          setStore(storeData);
           setCategories(Array.isArray(catsData) ? catsData : []);
           setSections(Array.isArray(sectionsData) ? sectionsData : []);
           setFeaturedProducts(prodsData?.items || []);
@@ -60,6 +64,8 @@ export default function CustomerHomePage() {
     };
   }, []);
 
+  const storeCity = store?.city || store?.locality || store?.district || "";
+
   return (
     <div className="space-y-12 sm:space-y-24 pb-16">
       {/* 1. Hero Section */}
@@ -76,7 +82,7 @@ export default function CustomerHomePage() {
             />
             <span className="truncate max-w-[200px] sm:max-w-none">
               {status?.is_open
-                ? "Physical Store is OPEN NOW in Thrissur"
+                ? `Physical Store is OPEN NOW${storeCity ? ` in ${storeCity}` : ""}`
                 : "Physical Store is Currently CLOSED"}
             </span>
             <span className="text-zinc-300 hidden sm:inline">•</span>
