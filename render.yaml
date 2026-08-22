@@ -45,9 +45,6 @@ services:
     dockerfilePath: ./apps/web/Dockerfile
     dockerContext: ./apps/web
     healthCheckPath: /
-    dockerBuildArgs:
-      - NEXT_PUBLIC_API_URL=https://kangayath-api.onrender.com
-      - NEXT_PUBLIC_SITE_URL=https://kangayath-web.onrender.com
     envVars:
       - key: NODE_ENV
         value: production
