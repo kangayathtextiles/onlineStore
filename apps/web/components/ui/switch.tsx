@@ -29,8 +29,8 @@ export function Switch({
         disabled={disabled}
         onClick={() => !disabled && onCheckedChange(!checked)}
         className={cn(
-          "relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-burgundy focus:ring-offset-2 focus:ring-offset-zinc-900",
-          checked ? "bg-burgundy" : "bg-zinc-700"
+          "relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-burgundy focus:ring-offset-2 focus:ring-offset-white",
+          checked ? "bg-burgundy" : "bg-zinc-300"
         )}
       >
         <span
@@ -42,7 +42,7 @@ export function Switch({
       </button>
       {(label || description) && (
         <div className="flex flex-col">
-          {label && <span className="text-sm font-medium text-zinc-200">{label}</span>}
+          {label && <span className="text-sm font-medium text-zinc-800">{label}</span>}
           {description && <span className="text-xs text-zinc-500">{description}</span>}
         </div>
       )}

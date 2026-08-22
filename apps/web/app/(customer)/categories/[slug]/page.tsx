@@ -55,29 +55,29 @@ export default function CategoryDetailPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10">
       {/* Breadcrumb & Header */}
-      <div className="space-y-4 border-b border-zinc-800 pb-8">
-        <div className="flex items-center gap-2 text-xs text-zinc-400">
-          <Link href="/" className="hover:text-zinc-100 transition-colors">
+      <div className="space-y-4 border-b border-zinc-200 pb-8">
+        <div className="flex items-center gap-2 text-xs text-zinc-500">
+          <Link href="/" className="hover:text-zinc-900 transition-colors">
             Home
           </Link>
-          <ChevronRight className="w-3 h-3 text-zinc-600" />
-          <Link href="/products" className="hover:text-zinc-100 transition-colors">
+          <ChevronRight className="w-3 h-3 text-zinc-400" />
+          <Link href="/products" className="hover:text-zinc-900 transition-colors">
             Catalog
           </Link>
-          <ChevronRight className="w-3 h-3 text-zinc-600" />
-          <span className="text-zinc-200 font-semibold">{category?.name || slug}</span>
+          <ChevronRight className="w-3 h-3 text-zinc-400" />
+          <span className="text-zinc-900 font-semibold">{category?.name || slug}</span>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-rose-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-burgundy">
               Department Showcase
             </span>
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-zinc-100">
+            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-zinc-900">
               {category?.name || "Garment Department"}
             </h1>
             {category?.description && (
-              <p className="text-sm text-zinc-400 max-w-2xl mt-1">{category.description}</p>
+              <p className="text-sm text-zinc-600 max-w-2xl mt-1">{category.description}</p>
             )}
           </div>
 
@@ -96,8 +96,8 @@ export default function CategoryDetailPage() {
               onClick={() => setSelectedSubcategory("")}
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                 selectedSubcategory === ""
-                  ? "bg-burgundy text-white shadow-sm"
-                  : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+                  ? "bg-burgundy text-white shadow-xs"
+                  : "bg-white border border-zinc-200 text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50"
               }`}
             >
               All {category.name} ({products.length})
@@ -108,8 +108,8 @@ export default function CategoryDetailPage() {
                 onClick={() => setSelectedSubcategory(sub.slug)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                   selectedSubcategory === sub.slug
-                    ? "bg-burgundy text-white shadow-sm"
-                    : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+                    ? "bg-burgundy text-white shadow-xs"
+                    : "bg-white border border-zinc-200 text-zinc-700 hover:text-zinc-900 hover:bg-zinc-50"
                 }`}
               >
                 {sub.name}
@@ -121,11 +121,11 @@ export default function CategoryDetailPage() {
 
       {/* Products Grid */}
       {products.length === 0 ? (
-        <div className="py-20 text-center bg-zinc-900/40 rounded-3xl border border-zinc-800 p-8 space-y-4">
-          <Shirt className="w-12 h-12 text-zinc-600 mx-auto" />
+        <div className="py-20 text-center bg-zinc-50 rounded-3xl border border-zinc-200 p-8 space-y-4">
+          <Shirt className="w-12 h-12 text-zinc-400 mx-auto" />
           <div className="space-y-1">
-            <h3 className="text-lg font-bold text-zinc-200">No garments in this section yet</h3>
-            <p className="text-xs text-zinc-400 max-w-sm mx-auto">
+            <h3 className="text-lg font-bold text-zinc-800">No garments in this section yet</h3>
+            <p className="text-xs text-zinc-500 max-w-sm mx-auto">
               Our inventory is currently being updated. Visit our store or explore other departments.
             </p>
           </div>
@@ -136,7 +136,7 @@ export default function CategoryDetailPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid gap-4 sm:gap-6 [grid-template-columns:repeat(auto-fit,minmax(250px,1fr))]">
           {products.map((prod) => (
             <ProductCard key={prod.id} product={prod} />
           ))}

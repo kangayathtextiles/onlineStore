@@ -23,17 +23,23 @@ export function CustomerNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   React.useEffect(() => {
+    let isMounted = true;
     async function fetchStatus() {
       try {
         const data = await publicApi.store.getStatus();
-        setStatus(data);
+        if (isMounted) {
+          setStatus(data);
+        }
       } catch {
         // Ignored
       }
     }
     fetchStatus();
     const interval = setInterval(fetchStatus, 60000);
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const navLinks = [
@@ -43,10 +49,10 @@ export function CustomerNavbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-zinc-200/90 bg-white/95 backdrop-blur-md shadow-xs">
       {/* Top Notification Bar (If override banner or open notice) */}
       {status?.banner_message && (
-        <div className="bg-burgundy px-4 py-1.5 text-center text-xs font-medium text-rose-100 flex items-center justify-center gap-2">
+        <div className="bg-burgundy px-4 py-1.5 text-center text-xs font-medium text-white flex items-center justify-center gap-2">
           <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
           <span>{status.banner_message}</span>
         </div>
@@ -55,18 +61,12 @@ export function CustomerNavbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-burgundy to-wine border border-zinc-700 flex items-center justify-center shadow-glow group-hover:scale-105 transition-transform">
-              <span className="font-extrabold text-lg text-white tracking-wider">K</span>
-            </div>
-            <div>
-              <span className="text-lg sm:text-xl font-extrabold tracking-tight text-zinc-100 group-hover:text-rose-200 transition-colors">
-                KANGAYATH
-              </span>
-              <span className="block text-[10px] uppercase font-semibold text-rose-400/90 tracking-widest -mt-1">
-                Digital Showroom
-              </span>
-            </div>
+          <Link href="/" className="flex items-center group py-2" title="KANGAYATH — Style For Everyone">
+            <img
+              src="/brand/logo.png"
+              alt="KANGAYATH"
+              className="h-10 sm:h-12 w-auto object-contain transition-transform group-hover:scale-105"
+            />
           </Link>
 
           {/* Desktop Navigation Links */}
@@ -79,8 +79,8 @@ export function CustomerNavbar() {
                   href={link.href}
                   className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors ${
                     isActive
-                      ? "bg-zinc-800/80 text-zinc-100"
-                      : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
+                      ? "bg-zinc-100 text-zinc-900 font-bold"
+                      : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50"
                   }`}
                 >
                   {link.label}
@@ -95,11 +95,11 @@ export function CustomerNavbar() {
             <Link href="/visit" className="hidden sm:flex items-center" title="Click to view shop location & hours">
               <Badge
                 variant={status?.is_open ? "success" : "danger"}
-                className="py-1 px-3 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-sm hover:opacity-90"
+                className="py-1 px-3 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs hover:opacity-90"
               >
                 <span
                   className={`w-2 h-2 rounded-full ${
-                    status?.is_open ? "bg-emerald-400 animate-pulse" : "bg-rose-400"
+                    status?.is_open ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
                   }`}
                 />
                 <span>{status?.is_open ? "STORE OPEN" : "STORE CLOSED"}</span>
@@ -109,7 +109,7 @@ export function CustomerNavbar() {
             {/* Search Icon */}
             <Link
               href="/products"
-              className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 rounded-lg transition-colors"
+              className="p-2 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
               title="Search Catalog"
             >
               <Search className="w-5 h-5" />
@@ -118,12 +118,12 @@ export function CustomerNavbar() {
             {/* Saved Products Heart Icon with Badge */}
             <Link
               href="/saved"
-              className="relative p-2 text-zinc-400 hover:text-rose-400 hover:bg-zinc-900 rounded-lg transition-colors"
+              className="relative p-2 text-zinc-600 hover:text-rose-600 hover:bg-zinc-100 rounded-lg transition-colors"
               title="Saved Garments"
             >
-              <Heart className={`w-5 h-5 ${savedCount > 0 ? "fill-rose-500 text-rose-500" : ""}`} />
+              <Heart className={`w-5 h-5 ${savedCount > 0 ? "fill-rose-600 text-rose-600" : ""}`} />
               {savedCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-scale-in">
+                <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-scale-in shadow-xs">
                   {savedCount}
                 </span>
               )}
@@ -132,7 +132,7 @@ export function CustomerNavbar() {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="p-2 text-zinc-400 hover:text-zinc-100 md:hidden rounded-lg hover:bg-zinc-900 transition-colors"
+              className="p-2 text-zinc-600 hover:text-zinc-900 md:hidden rounded-lg hover:bg-zinc-100 transition-colors"
               aria-label="Toggle Navigation Menu"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -143,12 +143,12 @@ export function CustomerNavbar() {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-zinc-800 bg-zinc-950 px-4 pt-3 pb-6 space-y-3">
+        <div className="md:hidden border-t border-zinc-200 bg-white px-4 pt-3 pb-6 space-y-3 shadow-lg">
           {/* Mobile Store Status Card */}
-          <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-between">
+          <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-zinc-400" />
-              <span className="text-xs text-zinc-300">Physical Store:</span>
+              <Clock className="w-4 h-4 text-zinc-500" />
+              <span className="text-xs text-zinc-700 font-medium">Physical Store:</span>
             </div>
             <Badge variant={status?.is_open ? "success" : "danger"} className="text-xs">
               {status?.is_open ? "OPEN NOW" : "CLOSED NOW"}
@@ -163,8 +163,8 @@ export function CustomerNavbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
                   pathname === link.href
-                    ? "bg-zinc-800 text-zinc-100"
-                    : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
+                    ? "bg-zinc-100 text-zinc-900"
+                    : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50"
                 }`}
               >
                 {link.label}
@@ -173,7 +173,7 @@ export function CustomerNavbar() {
             <Link
               href="/saved"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
+              className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-semibold text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50"
             >
               <span>Saved Garments</span>
               {savedCount > 0 && <Badge variant="brand">{savedCount}</Badge>}

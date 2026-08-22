@@ -6,14 +6,14 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 export function Badge({ className, variant = "neutral", children, ...props }: BadgeProps) {
-  const variants = {
-    success: "bg-emerald-950/80 text-emerald-300 border-emerald-800/60",
-    warning: "bg-amber-950/80 text-amber-300 border-amber-800/60",
-    danger: "bg-rose-950/80 text-rose-300 border-rose-800/60",
-    neutral: "bg-zinc-800/80 text-zinc-300 border-zinc-700/60",
-    brand: "bg-burgundy/80 text-rose-100 border-burgundy-600/60",
-    outline: "bg-transparent text-zinc-300 border-zinc-700",
-  };
+    const variants = {
+      success: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      warning: "bg-amber-50 text-amber-700 border-amber-200",
+      danger: "bg-rose-50 text-rose-700 border-rose-200",
+      neutral: "bg-zinc-100 text-zinc-700 border-zinc-200",
+      brand: "bg-burgundy/10 text-burgundy border-burgundy/20",
+      outline: "bg-white text-zinc-700 border-zinc-200",
+    };
 
   return (
     <span

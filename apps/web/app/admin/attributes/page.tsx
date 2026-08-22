@@ -183,10 +183,10 @@ export default function AdminAttributesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
             Size & Color Attributes
           </h1>
-          <p className="text-sm text-zinc-400 mt-1">
+          <p className="text-sm text-zinc-600 mt-1">
             Maintain standard garment sizing and color swatches used across product matrices.
           </p>
         </div>
@@ -205,13 +205,13 @@ export default function AdminAttributesPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-zinc-800 pb-2">
+      <div className="flex items-center gap-2 border-b border-zinc-200 pb-2">
         <button
           onClick={() => setActiveTab("sizes")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
             activeTab === "sizes"
-              ? "bg-burgundy text-white shadow-sm"
-              : "text-zinc-400 hover:bg-zinc-800/80 hover:text-zinc-200"
+              ? "bg-burgundy text-white shadow-xs"
+              : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
           }`}
         >
           <Ruler className="w-4 h-4" />
@@ -222,8 +222,8 @@ export default function AdminAttributesPage() {
           onClick={() => setActiveTab("colors")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
             activeTab === "colors"
-              ? "bg-burgundy text-white shadow-sm"
-              : "text-zinc-400 hover:bg-zinc-800/80 hover:text-zinc-200"
+              ? "bg-burgundy text-white shadow-xs"
+              : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
           }`}
         >
           <Palette className="w-4 h-4" />
@@ -234,7 +234,7 @@ export default function AdminAttributesPage() {
       {/* Tab 1: Sizes List */}
       {activeTab === "sizes" && (
         <Card>
-          <CardHeader>
+          <CardHeader className="border-b border-zinc-200">
             <CardTitle>Standard Size Labels</CardTitle>
             <CardDescription>
               Labels used to populate variation matrices (e.g. S, M, L, XL, 32, 34, Free Size).
@@ -242,14 +242,14 @@ export default function AdminAttributesPage() {
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-950/80 text-zinc-400 text-xs uppercase font-semibold border-b border-zinc-800">
+              <thead className="bg-zinc-50 text-zinc-600 text-xs uppercase font-semibold border-b border-zinc-200">
                 <tr>
                   <th className="py-3 px-6">Size Name</th>
                   <th className="py-3 px-6">Display Order</th>
                   <th className="py-3 px-6 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
+              <tbody className="divide-y divide-zinc-100 text-zinc-700">
                 {loading ? (
                   <tr>
                     <td colSpan={3} className="py-8 text-center text-zinc-500">
@@ -264,21 +264,21 @@ export default function AdminAttributesPage() {
                   </tr>
                 ) : (
                   sizes.map((s) => (
-                    <tr key={s.id} className="hover:bg-zinc-800/40 transition-colors">
-                      <td className="py-3.5 px-6 font-bold text-zinc-100">{s.name}</td>
-                      <td className="py-3.5 px-6 font-mono text-xs text-zinc-400">{s.display_order}</td>
+                    <tr key={s.id} className="hover:bg-zinc-50 transition-colors">
+                      <td className="py-3.5 px-6 font-bold text-zinc-900">{s.name}</td>
+                      <td className="py-3.5 px-6 font-mono text-xs text-zinc-500">{s.display_order}</td>
                       <td className="py-3.5 px-6 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => openEditSize(s)}
-                            className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded"
+                            className="p-1.5 text-zinc-400 hover:text-zinc-700 rounded"
                             title="Edit Size"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setSizeToDelete(s)}
-                            className="p-1.5 text-zinc-500 hover:text-rose-400 rounded"
+                            className="p-1.5 text-zinc-400 hover:text-rose-600 rounded"
                             title="Delete Size"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -297,7 +297,7 @@ export default function AdminAttributesPage() {
       {/* Tab 2: Colors List */}
       {activeTab === "colors" && (
         <Card>
-          <CardHeader>
+          <CardHeader className="border-b border-zinc-200">
             <CardTitle>Color Palettes & Swatches</CardTitle>
             <CardDescription>
               Color definitions with hex codes for live showroom customer swatch rendering.
@@ -305,7 +305,7 @@ export default function AdminAttributesPage() {
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-950/80 text-zinc-400 text-xs uppercase font-semibold border-b border-zinc-800">
+              <thead className="bg-zinc-50 text-zinc-600 text-xs uppercase font-semibold border-b border-zinc-200">
                 <tr>
                   <th className="py-3 px-6">Swatch Preview</th>
                   <th className="py-3 px-6">Color Name</th>
@@ -314,7 +314,7 @@ export default function AdminAttributesPage() {
                   <th className="py-3 px-6 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
+              <tbody className="divide-y divide-zinc-100 text-zinc-700">
                 {loading ? (
                   <tr>
                     <td colSpan={5} className="py-8 text-center text-zinc-500">
@@ -329,30 +329,30 @@ export default function AdminAttributesPage() {
                   </tr>
                 ) : (
                   colors.map((c) => (
-                    <tr key={c.id} className="hover:bg-zinc-800/40 transition-colors">
+                    <tr key={c.id} className="hover:bg-zinc-50 transition-colors">
                       <td className="py-3.5 px-6">
                         <div className="flex items-center gap-3">
                           <span
-                            className="w-6 h-6 rounded-full border border-zinc-600 shadow-sm"
+                            className="w-6 h-6 rounded-full border border-zinc-300 shadow-xs"
                             style={{ backgroundColor: c.hex_code }}
                           />
                         </div>
                       </td>
-                      <td className="py-3.5 px-6 font-semibold text-zinc-100">{c.name}</td>
-                      <td className="py-3.5 px-6 font-mono text-xs text-zinc-400">{c.hex_code}</td>
-                      <td className="py-3.5 px-6 font-mono text-xs text-zinc-400">{c.display_order}</td>
+                      <td className="py-3.5 px-6 font-semibold text-zinc-900">{c.name}</td>
+                      <td className="py-3.5 px-6 font-mono text-xs text-zinc-500">{c.hex_code}</td>
+                      <td className="py-3.5 px-6 font-mono text-xs text-zinc-500">{c.display_order}</td>
                       <td className="py-3.5 px-6 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => openEditColor(c)}
-                            className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded"
+                            className="p-1.5 text-zinc-400 hover:text-zinc-700 rounded"
                             title="Edit Color"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setColorToDelete(c)}
-                            className="p-1.5 text-zinc-500 hover:text-rose-400 rounded"
+                            className="p-1.5 text-zinc-400 hover:text-rose-600 rounded"
                             title="Delete Color"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -391,7 +391,7 @@ export default function AdminAttributesPage() {
             onChange={(e) => setSizeDisplayOrder(e.target.value)}
           />
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200">
             <Button variant="outline" type="button" onClick={() => setIsSizeModalOpen(false)}>
               Cancel
             </Button>
@@ -419,15 +419,15 @@ export default function AdminAttributesPage() {
           />
 
           <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-zinc-300">
-              Color Hex Code <span className="text-rose-400">*</span>
+            <label className="block text-xs font-medium text-zinc-700">
+              Color Hex Code <span className="text-rose-600">*</span>
             </label>
             <div className="flex items-center gap-3">
               <input
                 type="color"
                 value={colorHex}
                 onChange={(e) => setColorHex(e.target.value)}
-                className="w-10 h-10 rounded-lg border border-zinc-700 bg-zinc-900 cursor-pointer p-0.5"
+                className="w-10 h-10 rounded-lg border border-zinc-200 bg-white cursor-pointer p-0.5 shadow-xs"
               />
               <Input
                 value={colorHex}
@@ -446,7 +446,7 @@ export default function AdminAttributesPage() {
             onChange={(e) => setColorDisplayOrder(e.target.value)}
           />
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200">
             <Button variant="outline" type="button" onClick={() => setIsColorModalOpen(false)}>
               Cancel
             </Button>

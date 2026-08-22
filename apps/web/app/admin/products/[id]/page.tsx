@@ -14,6 +14,8 @@ import {
   Star,
   Image as ImageIcon,
   Palette,
+  UploadCloud,
+  Link2,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,8 +24,10 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Modal } from "@/components/ui/modal";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { ImageUploader } from "@/components/ui/image-uploader";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api";
+import { resolveImageUrl } from "@/lib/utils";
 import type {
   AdminProduct,
   Category,
@@ -61,6 +65,8 @@ export default function EditProductPage() {
 
   // Modals
   const [isImageModalOpen, setIsImageModalOpen] = React.useState(false);
+  const [uploadMode, setUploadMode] = React.useState<"file" | "url">("file");
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [imageUrl, setImageUrl] = React.useState("");
   const [imageAlt, setImageAlt] = React.useState("");
   const [isPrimaryImage, setIsPrimaryImage] = React.useState(false);
@@ -174,25 +180,56 @@ export default function EditProductPage() {
   // --- Image Handlers ---
   const handleAddImage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!imageUrl.trim()) return;
 
-    try {
-      setIsUploadingImage(true);
-      const updated = await adminApi.products.addImage(productId, {
-        url: imageUrl.trim(),
-        alt_text: imageAlt.trim() || undefined,
-        is_primary: isPrimaryImage,
-      });
-      setProduct(updated);
-      setIsImageModalOpen(false);
-      setImageUrl("");
-      setImageAlt("");
-      setIsPrimaryImage(false);
-      toast.success("Image Added", "Gallery updated.");
-    } catch (err: unknown) {
-      toast.error("Image upload failed", (err as Error).message);
-    } finally {
-      setIsUploadingImage(false);
+    if (uploadMode === "file") {
+      if (!selectedFile) {
+        toast.error("Photo Required", "Please select or drop an image file from your device gallery.");
+        return;
+      }
+
+      try {
+        setIsUploadingImage(true);
+        const updated = await adminApi.products.uploadImage(
+          productId,
+          selectedFile,
+          isPrimaryImage,
+          imageAlt.trim() || undefined
+        );
+        setProduct(updated);
+        setIsImageModalOpen(false);
+        setSelectedFile(null);
+        setImageAlt("");
+        setIsPrimaryImage(false);
+        toast.success("Photo Uploaded", "Image successfully added to gallery.");
+      } catch (err: unknown) {
+        toast.error("Upload failed", (err as Error).message);
+      } finally {
+        setIsUploadingImage(false);
+      }
+    } else {
+      if (!imageUrl.trim()) {
+        toast.error("URL Required", "Please enter a valid image URL.");
+        return;
+      }
+
+      try {
+        setIsUploadingImage(true);
+        const updated = await adminApi.products.addImage(productId, {
+          url: imageUrl.trim(),
+          alt_text: imageAlt.trim() || undefined,
+          is_primary: isPrimaryImage,
+        });
+        setProduct(updated);
+        setIsImageModalOpen(false);
+        setImageUrl("");
+        setImageAlt("");
+        setIsPrimaryImage(false);
+        toast.success("Image Added", "Gallery updated.");
+      } catch (err: unknown) {
+        toast.error("Image addition failed", (err as Error).message);
+      } finally {
+        setIsUploadingImage(false);
+      }
     }
   };
 
@@ -317,7 +354,7 @@ export default function EditProductPage() {
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-12">
       {/* Top Header & Breadcrumbs */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-zinc-800 pb-5">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-zinc-200 pb-5">
         <div className="flex items-center gap-3">
           <Link href="/admin/products">
             <Button variant="ghost" size="icon">
@@ -326,7 +363,7 @@ export default function EditProductPage() {
           </Link>
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold tracking-tight text-zinc-100">{product.name}</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-900">{product.name}</h1>
               <Badge
                 variant={
                   product.lifecycle_state === "PUBLISHED"
@@ -339,15 +376,15 @@ export default function EditProductPage() {
                 {product.lifecycle_state}
               </Badge>
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              Style Code: <span className="font-mono text-zinc-300">{product.style_code || "N/A"}</span> •{" "}
+            <p className="text-xs text-zinc-500 mt-0.5">
+              Style Code: <span className="font-mono text-zinc-700 font-semibold">{product.style_code || "N/A"}</span> •{" "}
               {product.subcategory?.name || "General"}
             </p>
           </div>
         </div>
 
         {/* Master Sold Out Toggle */}
-        <div className="flex items-center gap-4 bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl">
+        <div className="flex items-center gap-4 bg-white border border-zinc-200 px-4 py-2 rounded-xl shadow-xs">
           <Switch
             checked={product.manual_sold_out}
             onCheckedChange={handleToggleMasterSoldOut}
@@ -449,7 +486,7 @@ export default function EditProductPage() {
         <div className="lg:col-span-2 space-y-8">
           {/* Image Gallery Management */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between border-b border-zinc-800">
+            <CardHeader className="flex flex-row items-center justify-between border-b border-zinc-200">
               <div>
                 <div className="flex items-center gap-2">
                   <CardTitle>Image Gallery</CardTitle>
@@ -475,9 +512,9 @@ export default function EditProductPage() {
 
             <CardContent className="p-6">
               {product.images.length === 0 ? (
-                <div className="py-10 text-center border-2 border-dashed border-zinc-800 rounded-xl">
-                  <ImageIcon className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                  <p className="text-sm text-zinc-400 font-medium">No images uploaded yet</p>
+                <div className="py-10 text-center border-2 border-dashed border-zinc-200 rounded-xl bg-zinc-50/50">
+                  <ImageIcon className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
+                  <p className="text-sm text-zinc-700 font-medium">No images uploaded yet</p>
                   <p className="text-xs text-zinc-500 mt-1">Upload high quality garment photos (up to 6).</p>
                   <Button
                     variant="outline"
@@ -494,13 +531,13 @@ export default function EditProductPage() {
                   {product.images.map((img) => (
                     <div
                       key={img.id}
-                      className="group relative rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden aspect-square flex flex-col justify-between"
+                      className="group relative rounded-xl border border-zinc-200 bg-zinc-100 overflow-hidden aspect-[4/5] flex flex-col justify-between shadow-xs"
                     >
-                      <img src={img.url} alt={img.alt_text || product.name} className="w-full h-full object-cover" />
+                      <img src={resolveImageUrl(img.url)} alt={img.alt_text || product.name} className="w-full h-full object-cover object-center" />
 
                       {/* Primary badge */}
                       {img.is_primary && (
-                        <div className="absolute top-2 left-2 bg-burgundy/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-md">
+                        <div className="absolute top-2 left-2 bg-burgundy/95 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-md">
                           <Star className="w-3 h-3 fill-current" />
                           <span>PRIMARY</span>
                         </div>
@@ -536,7 +573,7 @@ export default function EditProductPage() {
 
           {/* Variant Matrix & Availability Grid */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between border-b border-zinc-800">
+            <CardHeader className="flex flex-row items-center justify-between border-b border-zinc-200">
               <div>
                 <div className="flex items-center gap-2">
                   <CardTitle>Size & Color Variations</CardTitle>
@@ -571,9 +608,9 @@ export default function EditProductPage() {
 
             <CardContent className="p-0 overflow-x-auto">
               {product.variants.length === 0 ? (
-                <div className="py-12 text-center text-zinc-500">
-                  <Palette className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                  <p className="text-sm font-medium text-zinc-300">No variations created yet</p>
+                <div className="py-12 text-center text-zinc-500 bg-zinc-50/50">
+                  <Palette className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-zinc-700">No variations created yet</p>
                   <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
                     Click &quot;Generate Matrix&quot; to pick your sizes and colors and automatically create all combinations.
                   </p>
@@ -589,7 +626,7 @@ export default function EditProductPage() {
                 </div>
               ) : (
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-zinc-950/80 text-zinc-400 text-xs uppercase font-semibold border-b border-zinc-800">
+                  <thead className="bg-zinc-50 text-zinc-600 text-xs uppercase font-semibold border-b border-zinc-200">
                     <tr>
                       <th className="py-3 px-6">Size</th>
                       <th className="py-3 px-6">Color</th>
@@ -598,11 +635,11 @@ export default function EditProductPage() {
                       <th className="py-3 px-6 text-right">Delete</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
+                  <tbody className="divide-y divide-zinc-100 text-zinc-700">
                     {product.variants.map((v) => (
-                      <tr key={v.id} className="hover:bg-zinc-800/30 transition-colors">
+                      <tr key={v.id} className="hover:bg-zinc-50 transition-colors">
                         {/* Size */}
-                        <td className="py-3.5 px-6 font-semibold text-zinc-200">
+                        <td className="py-3.5 px-6 font-semibold text-zinc-900">
                           {v.size?.name || "Free Size"}
                         </td>
 
@@ -610,17 +647,17 @@ export default function EditProductPage() {
                         <td className="py-3.5 px-6">
                           <div className="flex items-center gap-2">
                             <span
-                              className="w-4 h-4 rounded-full border border-zinc-700 shadow-sm flex-shrink-0"
+                              className="w-4 h-4 rounded-full border border-zinc-300 shadow-xs flex-shrink-0"
                               style={{ backgroundColor: v.color?.hex_code || "#666" }}
                             />
-                            <span className="text-xs text-zinc-300 font-medium">
+                            <span className="text-xs text-zinc-700 font-medium">
                               {v.color?.name || "Standard"}
                             </span>
                           </div>
                         </td>
 
                         {/* SKU */}
-                        <td className="py-3.5 px-6 font-mono text-xs text-zinc-400">
+                        <td className="py-3.5 px-6 font-mono text-xs text-zinc-500">
                           {v.sku || "—"}
                         </td>
 
@@ -633,9 +670,9 @@ export default function EditProductPage() {
                           >
                             <Badge variant={v.is_available ? "success" : "danger"}>
                               {v.is_available ? (
-                                <CheckCircle className="w-3 h-3 text-emerald-400" />
+                                <CheckCircle className="w-3 h-3 text-emerald-600" />
                               ) : (
-                                <XCircle className="w-3 h-3 text-rose-400" />
+                                <XCircle className="w-3 h-3 text-rose-600" />
                               )}
                               <span>{v.is_available ? "In Stock" : "Sold Out"}</span>
                             </Badge>
@@ -646,7 +683,7 @@ export default function EditProductPage() {
                         <td className="py-3.5 px-6 text-right">
                           <button
                             onClick={() => setVariantToDelete(v)}
-                            className="p-1.5 text-zinc-500 hover:text-rose-400 rounded-md transition-colors"
+                            className="p-1.5 text-zinc-400 hover:text-rose-600 rounded-md transition-colors"
                             title="Remove combination"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -665,44 +702,102 @@ export default function EditProductPage() {
       {/* Modal: Add Image */}
       <Modal
         isOpen={isImageModalOpen}
-        onClose={() => setIsImageModalOpen(false)}
+        onClose={() => {
+          setIsImageModalOpen(false);
+          setSelectedFile(null);
+        }}
         title="Add Garment Photo"
-        description="Enter the image URL to attach to this garment gallery."
+        description="Select a photo directly from your device gallery or provide a CDN image URL."
+        maxWidth="lg"
       >
-        <form onSubmit={handleAddImage} className="space-y-4">
-          <Input
-            label="Image URL (CDN / WebP)"
-            required
-            placeholder="https://images.kangayath.in/products/kasavu-front.webp"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-          />
+        <div className="space-y-4">
+          {/* Mode Switcher Tabs */}
+          <div className="flex items-center p-1 bg-zinc-100 border border-zinc-200 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setUploadMode("file")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
+                uploadMode === "file"
+                  ? "bg-burgundy text-white shadow-xs"
+                  : "text-zinc-600 hover:text-zinc-900"
+              }`}
+            >
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span>From Device Gallery</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setUploadMode("url")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
+                uploadMode === "url"
+                  ? "bg-burgundy text-white shadow-xs"
+                  : "text-zinc-600 hover:text-zinc-900"
+              }`}
+            >
+              <Link2 className="w-3.5 h-3.5" />
+              <span>Image URL</span>
+            </button>
+          </div>
 
-          <Input
-            label="Alt Text / Caption (Optional)"
-            placeholder="e.g., Kasavu Saree golden zari border detail"
-            value={imageAlt}
-            onChange={(e) => setImageAlt(e.target.value)}
-          />
+          <form onSubmit={handleAddImage} className="space-y-4">
+            {uploadMode === "file" ? (
+              <ImageUploader
+                file={selectedFile}
+                onFileSelect={setSelectedFile}
+                disabled={isUploadingImage}
+              />
+            ) : (
+              <Input
+                label="Image URL (CDN / WebP)"
+                required
+                placeholder="https://images.kangayath.in/products/kasavu-front.webp"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                disabled={isUploadingImage}
+              />
+            )}
 
-          <div className="pt-2">
-            <Switch
-              checked={isPrimaryImage}
-              onCheckedChange={setIsPrimaryImage}
-              label="Set as Primary Cover"
-              description="Used as main thumbnail in showroom cards"
+            <Input
+              label="Alt Text / Caption (Optional)"
+              placeholder="e.g., Kasavu Saree golden zari border detail"
+              value={imageAlt}
+              onChange={(e) => setImageAlt(e.target.value)}
+              disabled={isUploadingImage}
             />
-          </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
-            <Button variant="outline" type="button" onClick={() => setIsImageModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" type="submit" isLoading={isUploadingImage}>
-              Save Photo
-            </Button>
-          </div>
-        </form>
+            <div className="pt-2">
+              <Switch
+                checked={isPrimaryImage}
+                onCheckedChange={setIsPrimaryImage}
+                label="Set as Primary Cover"
+                description="Used as main thumbnail in showroom cards"
+                disabled={isUploadingImage}
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => {
+                  setIsImageModalOpen(false);
+                  setSelectedFile(null);
+                }}
+                disabled={isUploadingImage}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                type="submit"
+                isLoading={isUploadingImage}
+                disabled={uploadMode === "file" ? !selectedFile : !imageUrl.trim()}
+              >
+                {uploadMode === "file" ? "Upload Photo" : "Save Photo"}
+              </Button>
+            </div>
+          </form>
+        </div>
       </Modal>
 
       {/* Modal: Generate Variant Matrix */}
@@ -716,7 +811,7 @@ export default function EditProductPage() {
         <div className="space-y-6">
           {/* Size Selectors */}
           <div>
-            <label className="block text-xs font-semibold uppercase text-zinc-400 mb-2">
+            <label className="block text-xs font-semibold uppercase text-zinc-500 mb-2">
               1. Select Sizes ({selectedSizeIds.length} chosen)
             </label>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1">
@@ -733,8 +828,8 @@ export default function EditProductPage() {
                     }
                     className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
                       isSelected
-                        ? "bg-burgundy/20 border-burgundy text-rose-100"
-                        : "bg-zinc-800/40 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                        ? "bg-rose-50 border-burgundy text-burgundy font-semibold shadow-xs"
+                        : "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50"
                     }`}
                   >
                     {s.name}
@@ -746,7 +841,7 @@ export default function EditProductPage() {
 
           {/* Color Selectors */}
           <div>
-            <label className="block text-xs font-semibold uppercase text-zinc-400 mb-2">
+            <label className="block text-xs font-semibold uppercase text-zinc-500 mb-2">
               2. Select Colors ({selectedColorIds.length} chosen)
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 overflow-y-auto p-1">
@@ -763,12 +858,12 @@ export default function EditProductPage() {
                     }
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
                       isSelected
-                        ? "bg-burgundy/20 border-burgundy text-rose-100"
-                        : "bg-zinc-800/40 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                        ? "bg-rose-50 border-burgundy text-burgundy font-semibold shadow-xs"
+                        : "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50"
                     }`}
                   >
                     <span
-                      className="w-3.5 h-3.5 rounded-full border border-zinc-600 flex-shrink-0"
+                      className="w-3.5 h-3.5 rounded-full border border-zinc-300 flex-shrink-0"
                       style={{ backgroundColor: c.hex_code }}
                     />
                     <span className="truncate">{c.name}</span>
@@ -779,14 +874,14 @@ export default function EditProductPage() {
           </div>
 
           {/* Calculation summary */}
-          <div className="p-3 bg-zinc-950/80 rounded-lg border border-zinc-800 flex items-center justify-between text-xs">
-            <span className="text-zinc-400">Total New Combinations:</span>
-            <span className="font-bold text-rose-300 text-sm">
+          <div className="p-3 bg-zinc-50 rounded-lg border border-zinc-200 flex items-center justify-between text-xs">
+            <span className="text-zinc-600">Total New Combinations:</span>
+            <span className="font-bold text-burgundy text-sm">
               {selectedSizeIds.length * selectedColorIds.length} Variants
             </span>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-200">
             <Button variant="outline" onClick={() => setIsMatrixModalOpen(false)}>
               Cancel
             </Button>
@@ -845,7 +940,7 @@ export default function EditProductPage() {
             onChange={(e) => setSingleSku(e.target.value)}
           />
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200">
             <Button variant="outline" type="button" onClick={() => setIsSingleVariantModalOpen(false)}>
               Cancel
             </Button>

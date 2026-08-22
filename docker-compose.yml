@@ -1,3 +1,15 @@
+# ==============================================================================
+# KANGAYATH WEB — Local Development Docker Compose
+# ==============================================================================
+# Architecture:
+#   - postgres : PostgreSQL 16 Alpine (Host port 5433 -> Container port 5432)
+#   - api      : FastAPI Python 3.12 Backend with auto-migration (Port 8000)
+#   - web      : Next.js 15 Frontend (Customer Showroom & Admin Console on Port 3000)
+#
+# Usage:
+#   docker compose up -d --build
+# ==============================================================================
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -17,6 +29,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 5s
+    networks:
+      - kangayath-network
 
   api:
     build:
@@ -26,12 +41,20 @@ services:
     restart: unless-stopped
     environment:
       ENVIRONMENT: development
+      DEBUG: "false"
+      SECRET_KEY: ${SECRET_KEY:-kangayath-local-dev-secret-key-2026-phase12}
       POSTGRES_SERVER: postgres
       POSTGRES_PORT: 5432
       POSTGRES_USER: ${POSTGRES_USER:-kangayath_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kangayath_dev_password}
       POSTGRES_DB: ${POSTGRES_DB:-kangayath_db}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-kangayath_user}:${POSTGRES_PASSWORD:-kangayath_dev_password}@postgres:5432/${POSTGRES_DB:-kangayath_db}
+      BACKEND_CORS_ORIGINS: '["http://localhost:3000","http://127.0.0.1:3000"]'
+      LOG_LEVEL: INFO
+      DB_POOL_SIZE: 5
+      DB_MAX_OVERFLOW: 10
+      MEDIA_ROOT: /app/media
+      SITE_URL: http://localhost:3000
     ports:
       - "8000:8000"
     depends_on:
@@ -39,7 +62,16 @@ services:
         condition: service_healthy
     volumes:
       - ./apps/api:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      - media_data:/app/media
+    command: sh -c "alembic upgrade head && python -m app.db.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - kangayath-network
 
   web:
     build:
@@ -48,17 +80,26 @@ services:
     container_name: kangayath-web
     restart: unless-stopped
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      PORT: 3000
+      HOSTNAME: "0.0.0.0"
     ports:
       - "3000:3000"
     depends_on:
-      - api
-    volumes:
-      - ./apps/web:/app
-      - /app/node_modules
-      - /app/.next
-    command: npm run dev
+      api:
+        condition: service_healthy
+    command: node server.js
+    networks:
+      - kangayath-network
 
 volumes:
   postgres_data:
+    driver: local
+  media_data:
+    driver: local
+
+networks:
+  kangayath-network:
+    driver: bridge

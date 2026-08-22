@@ -14,12 +14,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       "inline-flex items-center justify-center font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]";
 
     const variants = {
-      primary: "bg-burgundy text-white hover:bg-burgundy-700 focus-visible:ring-burgundy",
+      primary: "bg-burgundy text-white hover:bg-burgundy-700 focus-visible:ring-burgundy shadow-sm",
       brand: "bg-burgundy text-white hover:bg-burgundy-600 focus-visible:ring-burgundy-500 shadow-sm",
-      secondary: "bg-zinc-800 text-zinc-100 hover:bg-zinc-700 focus-visible:ring-zinc-600",
-      outline: "border border-zinc-700 bg-transparent text-zinc-200 hover:bg-zinc-800/60 focus-visible:ring-zinc-500",
-      danger: "bg-rose-700 text-white hover:bg-rose-800 focus-visible:ring-rose-600",
-      ghost: "bg-transparent text-zinc-300 hover:bg-zinc-800/80 hover:text-white focus-visible:ring-zinc-600",
+      secondary: "bg-zinc-100 text-zinc-800 hover:bg-zinc-200 focus-visible:ring-zinc-400 border border-zinc-200",
+      outline: "border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 focus-visible:ring-zinc-400 shadow-xs",
+      danger: "bg-rose-600 text-white hover:bg-rose-700 focus-visible:ring-rose-500 shadow-sm",
+      ghost: "bg-transparent text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 focus-visible:ring-zinc-400",
     };
 
     const sizes = {

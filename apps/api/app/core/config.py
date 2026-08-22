@@ -1,3 +1,4 @@
+import json
 from typing import Annotated, Any, Literal
 
 from pydantic import (
@@ -8,11 +9,19 @@ from pydantic import (
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-def parse_cors(v: Any) -> list[str] | str:
-    if isinstance(v, str) and not v.startswith("["):
-        return [i.strip() for i in v.split(",")]
-    elif isinstance(v, list | str):
-        return v
+def parse_cors(v: Any) -> list[str]:
+    if isinstance(v, str):
+        v = v.strip()
+        if v.startswith("[") and v.endswith("]"):
+            try:
+                parsed = json.loads(v)
+                if isinstance(parsed, list):
+                    return [str(i).strip() for i in parsed if str(i).strip()]
+            except Exception:
+                pass
+        return [i.strip() for i in v.split(",") if i.strip()]
+    elif isinstance(v, list):
+        return [str(i).strip() for i in v if str(i).strip()]
     raise ValueError(v)
 
 
@@ -67,6 +76,22 @@ class Settings(BaseSettings):
     MEDIA_ROOT: str = "./media"
     MAX_UPLOAD_SIZE_MB: int = 10
     ALLOWED_IMAGE_EXTENSIONS: str = ".jpg,.jpeg,.png,.webp,.gif"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def RESOLVED_MEDIA_ROOT(self) -> str:
+        """
+        Returns an absolute deterministic path for MEDIA_ROOT.
+        If MEDIA_ROOT is an absolute path (e.g. /app/media in production), returns as-is.
+        If relative, resolves relative to the apps/api application root.
+        """
+        import os
+        from pathlib import Path
+
+        if os.path.isabs(self.MEDIA_ROOT):
+            return self.MEDIA_ROOT
+        api_root = Path(__file__).resolve().parent.parent.parent
+        return str((api_root / self.MEDIA_ROOT.lstrip(".\\/")).resolve())
 
     # Site URL (used for canonical URLs, sitemap, etc.)
     SITE_URL: str = "http://localhost:3000"

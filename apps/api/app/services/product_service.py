@@ -1,13 +1,18 @@
+import os
 import uuid
 
+from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.exceptions import (
     DuplicateResourceException,
     EntityNotFoundException,
     ImageLimitExceededException,
     InvariantViolationException,
+    ValidationException,
 )
+from app.core.security import validate_upload_file
 from app.models.enums import LifecycleState
 from app.models.product import Product, ProductImage
 from app.models.variant import ProductVariant
@@ -401,6 +406,50 @@ class ProductService:
         await self.session.commit()
         return await self.get_admin_product_by_id(product_id)
 
+    async def upload_image(
+        self,
+        product_id: uuid.UUID,
+        file: UploadFile,
+        is_primary: bool = False,
+        alt_text: str | None = None,
+    ) -> AdminProductResponse:
+        product = await self.repo.get_by_id(product_id)
+        if not product:
+            raise EntityNotFoundException("Product", product_id)
+
+        count = await self.repo.count_product_images(product_id)
+        if count >= 6:
+            raise ImageLimitExceededException(current_count=count, limit=6)
+
+        if not file.filename:
+            raise ValidationException("File must have a valid filename.")
+
+        content = await file.read()
+        file_size = len(content)
+
+        is_valid, err_msg = validate_upload_file(file.filename, file_size)
+        if not is_valid:
+            raise ValidationException(err_msg)
+
+        _, ext = os.path.splitext(file.filename)
+        unique_filename = f"{uuid.uuid4().hex}{ext.lower()}"
+
+        target_dir = os.path.join(settings.RESOLVED_MEDIA_ROOT, "products")
+        os.makedirs(target_dir, exist_ok=True)
+        target_path = os.path.join(target_dir, unique_filename)
+
+        with open(target_path, "wb") as f:
+            f.write(content)
+
+        image_url = f"/media/products/{unique_filename}"
+        image_data = ProductImageCreate(
+            url=image_url,
+            alt_text=alt_text or product.name,
+            is_primary=is_primary,
+            display_order=count,
+        )
+        return await self.add_image(product_id, image_data)
+
     async def delete_image(
         self, product_id: uuid.UUID, image_id: uuid.UUID
     ) -> AdminProductResponse:
@@ -413,6 +462,7 @@ class ProductService:
             raise EntityNotFoundException("ProductImage", image_id)
 
         was_primary = img.is_primary
+        deleted_url = img.url
         await self.repo.delete_image(img)
 
         # If deleted primary, promote first remaining image to primary
@@ -422,6 +472,17 @@ class ProductService:
                 remaining[0].is_primary = True
 
         await self.session.commit()
+
+        # Clean up local physical file if it was a local media file
+        if deleted_url.startswith("/media/products/"):
+            filename = deleted_url.replace("/media/products/", "")
+            file_path = os.path.join(settings.RESOLVED_MEDIA_ROOT, "products", filename)
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except OSError:
+                    pass
+
         return await self.get_admin_product_by_id(product_id)
 
     async def reorder_images(

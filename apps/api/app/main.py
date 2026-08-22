@@ -1,4 +1,5 @@
 import logging
+import os
 import uuid as uuid_lib
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -6,6 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app.api.v1.api import api_router
@@ -22,12 +24,23 @@ logging.basicConfig(
 logger = logging.getLogger("kangayath.api")
 
 
+# Ensure media directories exist before application startup
+os.makedirs(settings.RESOLVED_MEDIA_ROOT, exist_ok=True)
+os.makedirs(os.path.join(settings.RESOLVED_MEDIA_ROOT, "products"), exist_ok=True)
+os.makedirs(os.path.join(settings.RESOLVED_MEDIA_ROOT, "uploads"), exist_ok=True)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifecycle management."""
     logger.info("Initializing %s (v%s)...", settings.PROJECT_NAME, settings.VERSION)
     logger.info("Active environment: %s", settings.ENVIRONMENT)
     logger.info("Debug mode: %s", settings.DEBUG)
+
+    # Ensure media directories exist
+    os.makedirs(settings.RESOLVED_MEDIA_ROOT, exist_ok=True)
+    os.makedirs(os.path.join(settings.RESOLVED_MEDIA_ROOT, "products"), exist_ok=True)
+    os.makedirs(os.path.join(settings.RESOLVED_MEDIA_ROOT, "uploads"), exist_ok=True)
 
     # Verify database connectivity at startup
     try:
@@ -61,12 +74,18 @@ app = FastAPI(
 
 # CORS configuration
 if settings.BACKEND_CORS_ORIGINS:
+    origins = (
+        [origin.rstrip("/") for origin in settings.BACKEND_CORS_ORIGINS]
+        if isinstance(settings.BACKEND_CORS_ORIGINS, list)
+        else [settings.BACKEND_CORS_ORIGINS.rstrip("/")]
+    )
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=(
-            [origin.rstrip("/") for origin in settings.BACKEND_CORS_ORIGINS]
-            if isinstance(settings.BACKEND_CORS_ORIGINS, list)
-            else [settings.BACKEND_CORS_ORIGINS.rstrip("/")]
+        allow_origins=origins,
+        allow_origin_regex=(
+            r"^https?://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$"
+            if not settings.is_production
+            else None
         ),
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -135,6 +154,9 @@ async def root_health() -> dict[str, str]:
         "version": settings.VERSION,
     }
 
+
+# Static media files mount
+app.mount("/media", StaticFiles(directory=settings.RESOLVED_MEDIA_ROOT), name="media")
 
 # Include API routers
 app.include_router(api_router, prefix=settings.API_V1_STR)

@@ -191,32 +191,32 @@ export default function AdminShopPage() {
     <div className="space-y-8 max-w-5xl mx-auto pb-12">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
           Shop Status & Store Profile
         </h1>
-        <p className="text-sm text-zinc-400 mt-1">
+        <p className="text-sm text-zinc-600 mt-1">
           Manage live open/closed emergency overrides, address, WhatsApp contact, and weekly hours.
         </p>
       </div>
 
       {/* 1. Emergency Override & Status Control */}
-      <Card className="border-burgundy-900/50 bg-gradient-to-r from-zinc-900 via-zinc-900 to-wine/20">
-        <CardHeader className="border-b border-zinc-800">
+      <Card className="border-rose-100 bg-gradient-to-r from-rose-50/70 via-rose-50/40 to-amber-50/30">
+        <CardHeader className="border-b border-rose-200/60">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2.5">
-                <CardTitle className="text-lg">Real-Time Physical Store Status</CardTitle>
+                <CardTitle className="text-lg text-zinc-900">Real-Time Physical Store Status</CardTitle>
                 <Badge variant={status?.is_open ? "success" : "danger"}>
                   {status?.is_open ? "STORE OPEN" : "STORE CLOSED"}
                 </Badge>
               </div>
               <CardDescription className="text-xs mt-1">
-                Current Time in IST: <span className="text-zinc-200 font-medium">{formatISTTime(status?.current_time_ist)}</span>
+                Current Time in IST: <span className="text-zinc-900 font-medium">{formatISTTime(status?.current_time_ist)}</span>
               </CardDescription>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs text-zinc-400">Effective Mode:</span>
+              <span className="text-xs text-zinc-500">Effective Mode:</span>
               <Badge variant="brand">{status?.effective_mode}</Badge>
             </div>
           </div>
@@ -225,7 +225,7 @@ export default function AdminShopPage() {
         <CardContent className="p-6">
           <form onSubmit={handleSaveOverride} className="space-y-5">
             <div>
-              <label className="block text-xs font-semibold uppercase text-zinc-300 mb-2">
+              <label className="block text-xs font-semibold uppercase text-zinc-700 mb-2">
                 Select Operating Mode
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -234,12 +234,12 @@ export default function AdminShopPage() {
                   onClick={() => setOverrideMode("AUTO")}
                   className={`p-4 rounded-xl border text-left transition-all ${
                     overrideMode === "AUTO"
-                      ? "bg-burgundy/20 border-burgundy text-rose-100 shadow-glow"
-                      : "bg-zinc-800/40 border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+                      ? "bg-rose-50 border-burgundy text-burgundy shadow-xs"
+                      : "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50"
                   }`}
                 >
                   <span className="font-bold block text-sm">AUTO</span>
-                  <span className="text-xs text-zinc-400 mt-1 block">
+                  <span className="text-xs text-zinc-500 mt-1 block">
                     Follow regular weekly operating hours automatically.
                   </span>
                 </button>
@@ -249,12 +249,12 @@ export default function AdminShopPage() {
                   onClick={() => setOverrideMode("FORCE_OPEN")}
                   className={`p-4 rounded-xl border text-left transition-all ${
                     overrideMode === "FORCE_OPEN"
-                      ? "bg-emerald-950/40 border-emerald-500 text-emerald-200 shadow-glow"
-                      : "bg-zinc-800/40 border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+                      ? "bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs"
+                      : "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50"
                   }`}
                 >
                   <span className="font-bold block text-sm">FORCE OPEN</span>
-                  <span className="text-xs text-zinc-400 mt-1 block">
+                  <span className="text-xs text-zinc-500 mt-1 block">
                     Keep store open for festival rush, late sales, or special events.
                   </span>
                 </button>
@@ -264,12 +264,12 @@ export default function AdminShopPage() {
                   onClick={() => setOverrideMode("FORCE_CLOSED")}
                   className={`p-4 rounded-xl border text-left transition-all ${
                     overrideMode === "FORCE_CLOSED"
-                      ? "bg-rose-950/40 border-rose-500 text-rose-200 shadow-glow"
-                      : "bg-zinc-800/40 border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+                      ? "bg-rose-50 border-rose-500 text-rose-800 shadow-xs"
+                      : "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50"
                   }`}
                 >
                   <span className="font-bold block text-sm">FORCE CLOSED</span>
-                  <span className="text-xs text-zinc-400 mt-1 block">
+                  <span className="text-xs text-zinc-500 mt-1 block">
                     Emergency closure for temple festival, inventory day, or holiday.
                   </span>
                 </button>
@@ -296,7 +296,7 @@ export default function AdminShopPage() {
 
       {/* 2. Weekly Operating Hours Editor */}
       <Card>
-        <CardHeader className="border-b border-zinc-800">
+        <CardHeader className="border-b border-zinc-200">
           <CardTitle>Weekly Operating Hours (IST)</CardTitle>
           <CardDescription>
             Configure standard opening and closing times for each day of the week.
@@ -305,7 +305,7 @@ export default function AdminShopPage() {
 
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-zinc-950/80 text-zinc-400 text-xs uppercase font-semibold border-b border-zinc-800">
+            <thead className="bg-zinc-50 text-zinc-600 text-xs uppercase font-semibold border-b border-zinc-200">
               <tr>
                 <th className="py-3.5 px-6">Day</th>
                 <th className="py-3.5 px-6">Status</th>
@@ -313,10 +313,10 @@ export default function AdminShopPage() {
                 <th className="py-3.5 px-6">Close Time</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
+            <tbody className="divide-y divide-zinc-100 text-zinc-700">
               {schedules.map((item) => (
-                <tr key={item.day_of_week} className="hover:bg-zinc-800/30 transition-colors">
-                  <td className="py-3.5 px-6 font-semibold text-zinc-100 uppercase text-xs">
+                <tr key={item.day_of_week} className="hover:bg-zinc-50 transition-colors">
+                  <td className="py-3.5 px-6 font-semibold text-zinc-900 uppercase text-xs">
                     {item.day_of_week}
                   </td>
 
@@ -338,7 +338,7 @@ export default function AdminShopPage() {
                       onChange={(e) =>
                         handleScheduleChange(item.day_of_week, "open_time", e.target.value)
                       }
-                      className="rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-100 disabled:opacity-30"
+                      className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-900 disabled:opacity-30 shadow-xs"
                     />
                   </td>
 
@@ -350,7 +350,7 @@ export default function AdminShopPage() {
                       onChange={(e) =>
                         handleScheduleChange(item.day_of_week, "close_time", e.target.value)
                       }
-                      className="rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-100 disabled:opacity-30"
+                      className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-900 disabled:opacity-30 shadow-xs"
                     />
                   </td>
                 </tr>
@@ -358,7 +358,7 @@ export default function AdminShopPage() {
             </tbody>
           </table>
 
-          <div className="p-6 border-t border-zinc-800/80 flex justify-end">
+          <div className="p-6 border-t border-zinc-200 flex justify-end">
             <Button variant="primary" size="md" onClick={handleSaveSchedule} isLoading={isSavingSchedule}>
               <Save className="w-4 h-4" />
               <span>Save Weekly Operating Hours</span>
@@ -369,7 +369,7 @@ export default function AdminShopPage() {
 
       {/* 3. Physical Store Profile Information */}
       <Card>
-        <CardHeader className="border-b border-zinc-800">
+        <CardHeader className="border-b border-zinc-200">
           <CardTitle>Physical Store Details & Contact</CardTitle>
           <CardDescription>
             Contact numbers, WhatsApp communication line, and shop address displayed to nearby customers.
@@ -462,7 +462,7 @@ export default function AdminShopPage() {
               onChange={(e) => setGoogleMapsUrl(e.target.value)}
             />
 
-            <div className="flex justify-end pt-4 border-t border-zinc-800">
+            <div className="flex justify-end pt-4 border-t border-zinc-200">
               <Button variant="primary" size="md" type="submit" isLoading={isSavingProfile}>
                 <Save className="w-4 h-4" />
                 <span>Save Store Information</span>

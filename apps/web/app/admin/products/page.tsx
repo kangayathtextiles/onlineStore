@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api";
+import { resolveImageUrl } from "@/lib/utils";
 import type { AdminProduct, Category, LifecycleState } from "@/types/api";
 
 export default function AdminProductsPage() {
@@ -41,16 +42,18 @@ export default function AdminProductsPage() {
 
   const toast = useToast();
 
-  const loadCategories = React.useCallback(async () => {
+  const loadCategories = React.useCallback(async (isMountedRef?: { current: boolean }) => {
     try {
       const data = await adminApi.categories.list();
-      setCategories(data);
+      if (!isMountedRef || isMountedRef.current) {
+        setCategories(data);
+      }
     } catch {
       // Ignored
     }
   }, []);
 
-  const loadProducts = React.useCallback(async () => {
+  const loadProducts = React.useCallback(async (isMountedRef?: { current: boolean }) => {
     try {
       setLoading(true);
       const res = await adminApi.products.list({
@@ -61,22 +64,36 @@ export default function AdminProductsPage() {
         lifecycle_state: (selectedLifecycle as LifecycleState) || undefined,
       });
 
-      setProducts(res.items);
-      setTotalPages(res.total_pages);
-      setTotalCount(res.total);
+      if (!isMountedRef || isMountedRef.current) {
+        setProducts(res.items);
+        setTotalPages(res.total_pages);
+        setTotalCount(res.total);
+      }
     } catch (err: unknown) {
-      toast.error("Failed to load products", (err as Error).message);
+      if (!isMountedRef || isMountedRef.current) {
+        toast.error("Failed to load products", (err as Error).message);
+      }
     } finally {
-      setLoading(false);
+      if (!isMountedRef || isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [page, search, selectedCategory, selectedLifecycle, toast]);
 
   React.useEffect(() => {
-    loadCategories();
+    const isMounted = { current: true };
+    loadCategories(isMounted);
+    return () => {
+      isMounted.current = false;
+    };
   }, [loadCategories]);
 
   React.useEffect(() => {
-    loadProducts();
+    const isMounted = { current: true };
+    loadProducts(isMounted);
+    return () => {
+      isMounted.current = false;
+    };
   }, [loadProducts]);
 
   const handleToggleSoldOut = async (product: AdminProduct) => {
@@ -120,8 +137,8 @@ export default function AdminProductsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100">Product Catalog</h1>
-          <p className="text-sm text-zinc-400 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">Product Catalog</h1>
+          <p className="text-sm text-zinc-600 mt-1">
             Manage garment inventory, images, sizes, colors, and live availability ({totalCount} items).
           </p>
         </div>
@@ -197,7 +214,7 @@ export default function AdminProductsPage() {
       <Card>
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-zinc-950/80 text-zinc-400 text-xs uppercase font-semibold border-b border-zinc-800">
+            <thead className="bg-zinc-50 text-zinc-600 text-xs uppercase font-semibold border-b border-zinc-200">
               <tr>
                 <th className="py-4 px-6">Product</th>
                 <th className="py-4 px-6">Style Code</th>
@@ -208,7 +225,7 @@ export default function AdminProductsPage() {
                 <th className="py-4 px-6 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
+            <tbody className="divide-y divide-zinc-100 text-zinc-700">
               {loading ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-zinc-500">
@@ -225,44 +242,44 @@ export default function AdminProductsPage() {
                 products.map((product) => {
                   const primaryImg = product.images.find((i) => i.is_primary)?.url || product.images[0]?.url;
                   return (
-                    <tr key={product.id} className="hover:bg-zinc-800/40 transition-colors">
+                    <tr key={product.id} className="hover:bg-zinc-50 transition-colors">
                       {/* Product Thumbnail & Name */}
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3.5">
-                          <div className="w-12 h-12 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          <div className="w-12 h-12 rounded-lg bg-zinc-100 border border-zinc-200 flex items-center justify-center overflow-hidden flex-shrink-0">
                             {primaryImg ? (
-                              <img src={primaryImg} alt={product.name} className="w-full h-full object-cover" />
+                              <img src={resolveImageUrl(primaryImg)} alt={product.name} className="w-full h-full object-cover" />
                             ) : (
-                              <Shirt className="w-5 h-5 text-zinc-500" />
+                              <Shirt className="w-5 h-5 text-zinc-400" />
                             )}
                           </div>
                           <div>
                             <Link
                               href={`/admin/products/${product.id}`}
-                              className="font-semibold text-zinc-100 hover:text-rose-300 transition-colors block"
+                              className="font-semibold text-zinc-900 hover:text-burgundy transition-colors block"
                             >
                               {product.name}
                             </Link>
-                            <span className="text-xs text-zinc-400">{product.material || "Textile"}</span>
+                            <span className="text-xs text-zinc-500">{product.material || "Textile"}</span>
                           </div>
                         </div>
                       </td>
 
                       {/* Style Code */}
                       <td className="py-4 px-6">
-                        <span className="font-mono text-xs text-zinc-400">{product.style_code || "—"}</span>
+                        <span className="font-mono text-xs text-zinc-600">{product.style_code || "—"}</span>
                       </td>
 
                       {/* Taxonomy */}
                       <td className="py-4 px-6">
-                        <span className="text-xs text-zinc-300 font-medium">
+                        <span className="text-xs text-zinc-700 font-medium">
                           {product.subcategory?.name || "General"}
                         </span>
                       </td>
 
                       {/* Variants Count */}
                       <td className="py-4 px-6">
-                        <span className="text-xs text-zinc-400 font-medium">
+                        <span className="text-xs text-zinc-600 font-medium">
                           {product.variants.length} combinations
                         </span>
                       </td>
@@ -328,8 +345,8 @@ export default function AdminProductsPage() {
 
         {/* Pagination Bar */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-zinc-800">
-            <span className="text-xs text-zinc-400">
+          <div className="flex items-center justify-between px-6 py-4 border-t border-zinc-200">
+            <span className="text-xs text-zinc-500">
               Page {page} of {totalPages} ({totalCount} total garments)
             </span>
 

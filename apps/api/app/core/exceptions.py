@@ -103,3 +103,15 @@ class ImageLimitExceededException(AppException):
             status_code=400,
             details={"current_count": current_count, "max_limit": limit},
         )
+
+
+class ValidationException(AppException):
+    """Raised when client input or uploaded file fails validation rules."""
+
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
+        super().__init__(
+            message=message,
+            code="VALIDATION_ERROR",
+            status_code=400,
+            details=details,
+        )

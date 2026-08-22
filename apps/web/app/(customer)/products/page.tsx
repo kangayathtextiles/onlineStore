@@ -61,6 +61,7 @@ function ProductsContent() {
 
   // Load Taxonomies & Attribute Dictionaries
   React.useEffect(() => {
+    let isMounted = true;
     async function loadMetadata() {
       try {
         const [cats, sizeList, colorList] = await Promise.all([
@@ -68,18 +69,23 @@ function ProductsContent() {
           publicApi.attributes.listSizes().catch(() => []),
           publicApi.attributes.listColors().catch(() => []),
         ]);
-        setCategories(cats);
-        setSizes(sizeList);
-        setColors(colorList);
+        if (isMounted) {
+          setCategories(cats);
+          setSizes(sizeList);
+          setColors(colorList);
+        }
       } catch {
         // Ignored
       }
     }
     loadMetadata();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Fetch Products based on filters
-  const fetchProducts = React.useCallback(async () => {
+  const fetchProducts = React.useCallback(async (isMountedRef?: { current: boolean }) => {
     try {
       setLoading(true);
       const res = await publicApi.products.list({
@@ -93,20 +99,30 @@ function ProductsContent() {
         page_size: 16,
       });
 
-      setProducts(res.items);
-      setTotalPages(res.total_pages);
-      setTotalCount(res.total);
+      if (!isMountedRef || isMountedRef.current) {
+        setProducts(res.items);
+        setTotalPages(res.total_pages);
+        setTotalCount(res.total);
+      }
     } catch {
-      setProducts([]);
-      setTotalPages(1);
-      setTotalCount(0);
+      if (!isMountedRef || isMountedRef.current) {
+        setProducts([]);
+        setTotalPages(1);
+        setTotalCount(0);
+      }
     } finally {
-      setLoading(false);
+      if (!isMountedRef || isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [categorySlug, subcategorySlug, selectedSizeId, selectedColorId, availableOnly, search, page]);
 
   React.useEffect(() => {
-    fetchProducts();
+    const isMounted = { current: true };
+    fetchProducts(isMounted);
+    return () => {
+      isMounted.current = false;
+    };
   }, [fetchProducts]);
 
   // Derived subcategories for active category
@@ -142,25 +158,25 @@ function ProductsContent() {
   ].filter(Boolean).length;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-zinc-800 pb-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-zinc-200 pb-5 sm:pb-6">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-rose-400">
+          <span className="text-xs font-bold uppercase tracking-wider text-burgundy">
             Digital Showroom Catalog
           </span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-zinc-100 mt-1">
+          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-zinc-900 mt-1">
             All Garments
           </h1>
-          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+          <p className="hidden sm:block text-xs sm:text-sm text-zinc-600 mt-1">
             Browse our store collections. Check size and color availability before visiting our shop.
           </p>
         </div>
 
         {/* Search Input & Mobile Filter Toggle */}
-        <div className="flex items-center gap-3">
-          <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-72">
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search title, fabric, code..."
@@ -169,7 +185,7 @@ function ProductsContent() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              className="w-full h-10 pl-9 pr-4 rounded-xl border border-zinc-700 bg-zinc-900 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-burgundy"
+              className="w-full h-10 pl-9 pr-4 rounded-xl border border-zinc-200 bg-zinc-50 text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-burgundy focus:bg-white"
             />
           </div>
 
@@ -177,7 +193,7 @@ function ProductsContent() {
             variant="outline"
             size="md"
             onClick={() => setMobileFiltersOpen(true)}
-            className="lg:hidden flex-shrink-0"
+            className="lg:hidden flex-shrink-0 h-10 px-3.5"
           >
             <SlidersHorizontal className="w-4 h-4" />
             <span>Filters</span>
@@ -188,15 +204,15 @@ function ProductsContent() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
         {/* Left Column: Filter Sidebar (Desktop) */}
-        <aside className="hidden lg:block lg:col-span-1 space-y-6 sticky top-28 bg-zinc-900/60 border border-zinc-800 p-6 rounded-2xl">
-          <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+        <aside className="hidden lg:block lg:col-span-1 space-y-6 sticky top-28 bg-zinc-50/70 border border-zinc-200 p-6 rounded-2xl">
+          <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-900">
               Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}
             </span>
             {activeFiltersCount > 0 && (
               <button
                 onClick={handleResetFilters}
-                className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 font-medium"
+                className="text-xs text-burgundy hover:text-burgundy-700 flex items-center gap-1 font-semibold"
               >
                 <RotateCcw className="w-3 h-3" />
                 <span>Reset</span>
@@ -205,7 +221,7 @@ function ProductsContent() {
           </div>
 
           {/* In-Stock Only Switch */}
-          <div className="pt-1 pb-3 border-b border-zinc-800">
+          <div className="pt-1 pb-3 border-b border-zinc-200">
             <Switch
               checked={availableOnly}
               onCheckedChange={(val) => {
@@ -218,16 +234,16 @@ function ProductsContent() {
           </div>
 
           {/* Department / Category Filter */}
-          <div className="space-y-2 border-b border-zinc-800 pb-4">
-            <label className="block text-xs font-semibold uppercase text-zinc-400">Department</label>
+          <div className="space-y-2 border-b border-zinc-200 pb-4">
+            <label className="block text-xs font-semibold uppercase text-zinc-500">Department</label>
             <div className="space-y-1">
               <button
                 type="button"
                 onClick={() => handleCategorySelect("")}
                 className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   categorySlug === ""
-                    ? "bg-burgundy text-white font-bold"
-                    : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                    ? "bg-burgundy text-white font-bold shadow-xs"
+                    : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
                 }`}
               >
                 All Departments
@@ -239,8 +255,8 @@ function ProductsContent() {
                   onClick={() => handleCategorySelect(cat.slug)}
                   className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center justify-between ${
                     categorySlug === cat.slug
-                      ? "bg-burgundy text-white font-bold"
-                      : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                      ? "bg-burgundy text-white font-bold shadow-xs"
+                      : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
                   }`}
                 >
                   <span>{cat.name}</span>
@@ -252,8 +268,8 @@ function ProductsContent() {
 
           {/* Subcategories (If Category selected) */}
           {availableSubcategories.length > 0 && (
-            <div className="space-y-2 border-b border-zinc-800 pb-4">
-              <label className="block text-xs font-semibold uppercase text-zinc-400">
+            <div className="space-y-2 border-b border-zinc-200 pb-4">
+              <label className="block text-xs font-semibold uppercase text-zinc-500">
                 Subcategory
               </label>
               <div className="space-y-1">
@@ -265,8 +281,8 @@ function ProductsContent() {
                   }}
                   className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     subcategorySlug === ""
-                      ? "bg-zinc-800 text-rose-300 font-bold"
-                      : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                      ? "bg-zinc-200 text-zinc-900 font-bold"
+                      : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
                   }`}
                 >
                   All {activeCategory?.name} Subcategories
@@ -281,8 +297,8 @@ function ProductsContent() {
                     }}
                     className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       subcategorySlug === sub.slug
-                        ? "bg-zinc-800 text-rose-300 font-bold"
-                        : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                        ? "bg-zinc-200 text-zinc-900 font-bold"
+                        : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
                     }`}
                   >
                     {sub.name}
@@ -294,8 +310,8 @@ function ProductsContent() {
 
           {/* Size Filter Chips */}
           {sizes.length > 0 && (
-            <div className="space-y-2 border-b border-zinc-800 pb-4">
-              <label className="block text-xs font-semibold uppercase text-zinc-400">Size</label>
+            <div className="space-y-2 border-b border-zinc-200 pb-4">
+              <label className="block text-xs font-semibold uppercase text-zinc-500">Size</label>
               <div className="grid grid-cols-3 gap-1.5">
                 {sizes.map((s) => {
                   const isSelected = selectedSizeId === s.id;
@@ -309,8 +325,8 @@ function ProductsContent() {
                       }}
                       className={`px-2.5 py-1.5 rounded-lg border text-center text-xs font-semibold transition-all ${
                         isSelected
-                          ? "bg-burgundy border-burgundy text-white shadow-sm"
-                          : "bg-zinc-950/60 border-zinc-700/80 text-zinc-300 hover:bg-zinc-800"
+                          ? "bg-burgundy border-burgundy text-white shadow-xs"
+                          : "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-100"
                       }`}
                     >
                       {s.name}
@@ -324,7 +340,7 @@ function ProductsContent() {
           {/* Color Swatch Filters */}
           {colors.length > 0 && (
             <div className="space-y-2">
-              <label className="block text-xs font-semibold uppercase text-zinc-400">Color</label>
+              <label className="block text-xs font-semibold uppercase text-zinc-500">Color</label>
               <div className="grid grid-cols-2 gap-2">
                 {colors.map((c) => {
                   const isSelected = selectedColorId === c.id;
@@ -338,12 +354,12 @@ function ProductsContent() {
                       }}
                       className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all ${
                         isSelected
-                          ? "bg-zinc-800 border-rose-400 text-rose-200"
-                          : "bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                          ? "bg-rose-50 border-burgundy text-burgundy font-semibold"
+                          : "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
                       }`}
                     >
                       <span
-                        className="w-3.5 h-3.5 rounded-full border border-zinc-600 flex-shrink-0"
+                        className="w-3.5 h-3.5 rounded-full border border-zinc-300 flex-shrink-0"
                         style={{ backgroundColor: c.hex_code }}
                       />
                       <span className="truncate">{c.name}</span>
@@ -358,10 +374,10 @@ function ProductsContent() {
         {/* Right Column: Product Grid */}
         <main className="lg:col-span-3 space-y-6">
           {/* Active filters pill bar */}
-          <div className="flex items-center justify-between text-xs text-zinc-400">
+          <div className="flex items-center justify-between text-xs text-zinc-500">
             <span>
-              Showing <span className="text-zinc-200 font-bold">{products.length}</span> of{" "}
-              <span className="text-zinc-200 font-bold">{totalCount}</span> garments
+              Showing <span className="text-zinc-900 font-bold">{products.length}</span> of{" "}
+              <span className="text-zinc-900 font-bold">{totalCount}</span> garments
             </span>
           </div>
 
@@ -370,11 +386,11 @@ function ProductsContent() {
               <p>Loading garments matching your selection...</p>
             </div>
           ) : products.length === 0 ? (
-            <div className="py-20 text-center bg-zinc-900/40 rounded-3xl border border-zinc-800 p-8 space-y-4">
-              <Shirt className="w-12 h-12 text-zinc-600 mx-auto" />
+            <div className="py-20 text-center bg-zinc-50 rounded-3xl border border-zinc-200 p-8 space-y-4">
+              <Shirt className="w-12 h-12 text-zinc-400 mx-auto" />
               <div className="space-y-1">
-                <h3 className="text-lg font-bold text-zinc-200">No matching garments found</h3>
-                <p className="text-xs text-zinc-400 max-w-sm mx-auto">
+                <h3 className="text-lg font-bold text-zinc-800">No matching garments found</h3>
+                <p className="text-xs text-zinc-500 max-w-sm mx-auto">
                   Try clearing some filters or searching for another fabric or garment style.
                 </p>
               </div>
@@ -384,7 +400,7 @@ function ProductsContent() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid gap-4 sm:gap-6 [grid-template-columns:repeat(auto-fit,minmax(250px,1fr))]">
               {products.map((prod) => (
                 <ProductCard key={prod.id} product={prod} />
               ))}
@@ -404,8 +420,8 @@ function ProductsContent() {
                 <span>Previous</span>
               </Button>
 
-              <span className="text-xs text-zinc-400 font-medium px-2">
-                Page <span className="text-zinc-200 font-bold">{page}</span> of {totalPages}
+              <span className="text-xs text-zinc-500 font-medium px-2">
+                Page <span className="text-zinc-900 font-bold">{page}</span> of {totalPages}
               </span>
 
               <Button
@@ -424,13 +440,13 @@ function ProductsContent() {
 
       {/* Mobile Filter Drawer */}
       {mobileFiltersOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm lg:hidden flex justify-end">
-          <div className="w-full max-w-xs bg-zinc-950 h-full p-6 space-y-6 overflow-y-auto border-l border-zinc-800">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
-              <span className="text-sm font-bold uppercase text-zinc-100">Filter Garments</span>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs lg:hidden flex justify-end">
+          <div className="w-full max-w-xs bg-white h-full p-6 space-y-6 overflow-y-auto border-l border-zinc-200 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-zinc-200 pb-4">
+              <span className="text-sm font-bold uppercase text-zinc-900">Filter Garments</span>
               <button
                 onClick={() => setMobileFiltersOpen(false)}
-                className="p-1 text-zinc-400 hover:text-zinc-100 rounded"
+                className="p-1 text-zinc-400 hover:text-zinc-800 rounded"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -447,7 +463,7 @@ function ProductsContent() {
 
             {/* Category Select */}
             <div className="space-y-2">
-              <label className="block text-xs font-semibold uppercase text-zinc-400">Department</label>
+              <label className="block text-xs font-semibold uppercase text-zinc-500">Department</label>
               <Select
                 value={categorySlug}
                 onChange={(e) => handleCategorySelect(e.target.value)}
@@ -464,7 +480,7 @@ function ProductsContent() {
             {/* Subcategory Select */}
             {availableSubcategories.length > 0 && (
               <div className="space-y-2">
-                <label className="block text-xs font-semibold uppercase text-zinc-400">Subcategory</label>
+                <label className="block text-xs font-semibold uppercase text-zinc-500">Subcategory</label>
                 <Select
                   value={subcategorySlug}
                   onChange={(e) => {
@@ -484,7 +500,7 @@ function ProductsContent() {
 
             {/* Sizes */}
             <div className="space-y-2">
-              <label className="block text-xs font-semibold uppercase text-zinc-400">Sizes</label>
+              <label className="block text-xs font-semibold uppercase text-zinc-500">Sizes</label>
               <div className="grid grid-cols-3 gap-1.5">
                 {sizes.map((s) => (
                   <button
@@ -496,7 +512,7 @@ function ProductsContent() {
                     className={`py-1.5 rounded-lg border text-xs font-semibold ${
                       selectedSizeId === s.id
                         ? "bg-burgundy text-white border-burgundy"
-                        : "bg-zinc-900 border-zinc-700 text-zinc-300"
+                        : "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-100"
                     }`}
                   >
                     {s.name}
@@ -505,7 +521,7 @@ function ProductsContent() {
               </div>
             </div>
 
-            <div className="pt-6 border-t border-zinc-800 flex gap-2">
+            <div className="pt-6 border-t border-zinc-200 flex gap-2">
               <Button variant="outline" size="sm" onClick={handleResetFilters} className="w-1/2">
                 Reset
               </Button>

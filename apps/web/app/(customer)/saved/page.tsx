@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useSavedItems } from "@/lib/saved-items-context";
 import { publicApi } from "@/lib/api";
+import { resolveImageUrl } from "@/lib/utils";
 import type { StoreProfile } from "@/types/api";
 
 export default function SavedProductsPage() {
@@ -64,54 +65,54 @@ export default function SavedProductsPage() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 space-y-8 sm:space-y-10">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200 pb-5 sm:pb-6">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-rose-400">
+          <span className="text-xs font-bold uppercase tracking-wider text-burgundy">
             Personal Wishlist
           </span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-zinc-100 mt-1">
+          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-zinc-900 mt-1">
             Saved Garments ({savedItems.length})
             {loadingAvailability && (
-              <span className="text-[10px] text-amber-500/80 animate-pulse font-mono ml-2 font-normal">
+              <span className="text-[10px] text-amber-600 animate-pulse font-mono ml-2 font-normal">
                 (Checking live stock...)
               </span>
             )}
           </h1>
-          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+          <p className="hidden sm:block text-xs sm:text-sm text-zinc-600 mt-1">
             Garments you have bookmarked for your upcoming physical store visit.
           </p>
         </div>
 
         {savedItems.length > 0 && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto">
             <a
               href={`https://wa.me/${whatsappPhone}?text=${allSavedSummaryText}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md transition-all"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-all"
             >
               <MessageCircle className="w-4 h-4" />
               <span>Inquire All on WhatsApp</span>
             </a>
 
-            <Button variant="ghost" size="sm" onClick={clearSaved}>
+            <Button variant="ghost" size="sm" onClick={clearSaved} className="px-3 flex-shrink-0">
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Clear All</span>
+              <span>Clear</span>
             </Button>
           </div>
         )}
       </div>
 
       {savedItems.length === 0 ? (
-        <div className="py-24 text-center bg-zinc-900/40 rounded-3xl border border-zinc-800 p-8 space-y-6 max-w-lg mx-auto">
-          <div className="w-16 h-16 rounded-2xl bg-zinc-800 border border-zinc-700 flex items-center justify-center mx-auto text-zinc-500">
+        <div className="py-24 text-center bg-zinc-50 rounded-3xl border border-zinc-200 p-8 space-y-6 max-w-lg mx-auto">
+          <div className="w-16 h-16 rounded-2xl bg-white border border-zinc-200 flex items-center justify-center mx-auto text-zinc-400 shadow-xs">
             <Heart className="w-8 h-8 stroke-1" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-xl font-bold text-zinc-200">Your saved list is empty</h2>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <h2 className="text-xl font-bold text-zinc-800">Your saved list is empty</h2>
+            <p className="text-xs text-zinc-500 leading-relaxed">
               Explore our collections and click the heart icon on any garment to save styles for your
               store visit.
             </p>
@@ -140,22 +141,22 @@ export default function SavedProductsPage() {
             return (
               <div
                 key={item.id}
-                className="rounded-2xl border border-zinc-800 bg-zinc-900/70 overflow-hidden flex flex-col justify-between hover:border-zinc-700 transition-colors p-4 space-y-4"
+                className="rounded-2xl border border-zinc-200 bg-white shadow-xs overflow-hidden flex flex-col justify-between hover:border-burgundy/30 hover:shadow-md transition-all p-4 space-y-4"
               >
                 <div className="flex gap-4">
                   {/* Thumbnail */}
                   <Link
                     href={`/products/${item.slug}`}
-                    className="w-24 h-32 rounded-xl overflow-hidden bg-zinc-950 border border-zinc-800 flex-shrink-0 relative group"
+                    className="w-24 aspect-[4/5] rounded-xl overflow-hidden bg-zinc-100 border border-zinc-200 flex-shrink-0 relative group"
                   >
                     {item.primary_image_url ? (
                       <img
-                        src={item.primary_image_url}
+                        src={resolveImageUrl(item.primary_image_url)}
                         alt={item.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                      <div className="w-full h-full flex items-center justify-center text-zinc-400">
                         <Shirt className="w-6 h-6 stroke-1" />
                       </div>
                     )}
@@ -163,17 +164,17 @@ export default function SavedProductsPage() {
 
                   {/* Info */}
                   <div className="min-w-0 flex-1 space-y-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-burgundy">
                       {item.category_name || "Garment"}
                     </span>
                     <Link
                       href={`/products/${item.slug}`}
-                      className="block font-bold text-sm text-zinc-100 hover:text-rose-200 transition-colors line-clamp-2"
+                      className="block font-bold text-sm text-zinc-900 hover:text-burgundy transition-colors line-clamp-2"
                     >
                       {item.name}
                     </Link>
                     {item.material && (
-                      <p className="text-xs text-zinc-400 truncate">{item.material}</p>
+                      <p className="text-xs text-zinc-600 truncate">{item.material}</p>
                     )}
                     {item.style_code && (
                       <p className="text-[10px] font-mono text-zinc-500">{item.style_code}</p>
@@ -188,12 +189,12 @@ export default function SavedProductsPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="pt-3 border-t border-zinc-800/80 flex items-center justify-between gap-2">
+                <div className="pt-3 border-t border-zinc-100 flex items-center justify-between gap-2">
                   <a
                     href={`https://wa.me/${whatsappPhone}?text=${singleItemMsg}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 text-xs font-semibold hover:bg-emerald-900/80 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100 transition-colors"
                   >
                     <MessageCircle className="w-3.5 h-3.5" />
                     <span>Inquire</span>
@@ -201,7 +202,7 @@ export default function SavedProductsPage() {
 
                   <button
                     onClick={() => removeSaved(item.id)}
-                    className="p-1.5 text-zinc-500 hover:text-rose-400 rounded-lg transition-colors text-xs flex items-center gap-1"
+                    className="p-1.5 text-zinc-400 hover:text-rose-600 rounded-lg transition-colors text-xs flex items-center gap-1"
                     title="Remove from saved"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

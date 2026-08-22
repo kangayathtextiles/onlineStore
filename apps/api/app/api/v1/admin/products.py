@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import AdminUserContext, get_async_session, get_current_admin_user
@@ -138,7 +138,7 @@ async def update_product_sold_out(
     "/{product_id}/images",
     response_model=AdminProductResponse,
     status_code=201,
-    summary="Attach image (Max 6 limit)",
+    summary="Attach image URL (Max 6 limit)",
 )
 async def add_product_image(
     product_id: uuid.UUID,
@@ -148,6 +148,29 @@ async def add_product_image(
 ) -> AdminProductResponse:
     service = ProductService(session)
     return await service.add_image(product_id, req)
+
+
+@router.post(
+    "/{product_id}/images/upload",
+    response_model=AdminProductResponse,
+    status_code=201,
+    summary="Upload and attach image directly from device (Max 6 limit)",
+)
+async def upload_product_image(
+    product_id: uuid.UUID,
+    file: UploadFile = File(...),
+    is_primary: bool = Form(default=False),
+    alt_text: str | None = Form(default=None),
+    session: AsyncSession = Depends(get_async_session),
+    _admin: AdminUserContext = Depends(get_current_admin_user),
+) -> AdminProductResponse:
+    service = ProductService(session)
+    return await service.upload_image(
+        product_id=product_id,
+        file=file,
+        is_primary=is_primary,
+        alt_text=alt_text,
+    )
 
 
 @router.delete(

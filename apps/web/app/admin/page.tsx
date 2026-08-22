@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api";
-import { formatISTTime } from "@/lib/utils";
+import { formatISTTime, resolveImageUrl } from "@/lib/utils";
 import type { AdminProduct, StoreStatusResponse, Category, AdminSection } from "@/types/api";
 
 export default function AdminDashboardPage() {
@@ -33,30 +33,40 @@ export default function AdminDashboardPage() {
 
   const toast = useToast();
 
-  const loadDashboardData = React.useCallback(async () => {
+  const loadDashboardData = React.useCallback(async (isMountedRef?: { current: boolean }) => {
     try {
       setLoading(true);
       const [prodRes, catRes, secRes, statusRes] = await Promise.all([
-        adminApi.products.list({ page: 1, page_size: 6 }),
-        adminApi.categories.list(),
-        adminApi.sections.list(),
-        adminApi.store.getStatus(),
+        adminApi.products.list({ page: 1, page_size: 6 }).catch(() => ({ items: [], total: 0 })),
+        adminApi.categories.list().catch(() => []),
+        adminApi.sections.list().catch(() => []),
+        adminApi.store.getStatus().catch(() => null),
       ]);
 
-      setProducts(prodRes.items);
-      setTotalProducts(prodRes.total);
-      setCategories(catRes);
-      setSections(secRes);
-      setStoreStatus(statusRes);
+      if (!isMountedRef || isMountedRef.current) {
+        setProducts(prodRes.items || []);
+        setTotalProducts(prodRes.total || 0);
+        setCategories(Array.isArray(catRes) ? catRes : []);
+        setSections(Array.isArray(secRes) ? secRes : []);
+        setStoreStatus(statusRes);
+      }
     } catch (err: unknown) {
-      toast.error("Dashboard error", (err as Error).message);
+      if (!isMountedRef || isMountedRef.current) {
+        toast.error("Dashboard error", (err as Error).message);
+      }
     } finally {
-      setLoading(false);
+      if (!isMountedRef || isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [toast]);
 
   React.useEffect(() => {
-    loadDashboardData();
+    const isMounted = { current: true };
+    loadDashboardData(isMounted);
+    return () => {
+      isMounted.current = false;
+    };
   }, [loadDashboardData]);
 
   const handleToggleSoldOut = async (product: AdminProduct) => {
@@ -81,8 +91,8 @@ export default function AdminDashboardPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100">Store Dashboard</h1>
-          <p className="text-sm text-zinc-400 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">Store Dashboard</h1>
+          <p className="text-sm text-zinc-600 mt-1">
             Real-time physical showroom overview, operating status, and catalog controls.
           </p>
         </div>
@@ -104,15 +114,15 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Real-Time Shop Status Card */}
-      <Card className="border-burgundy-900/40 bg-gradient-to-r from-zinc-900 via-zinc-900 to-wine/20">
+      <Card className="border-rose-100 bg-gradient-to-r from-rose-50/70 via-rose-50/40 to-amber-50/30">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-start gap-4">
               <div
                 className={`p-3.5 rounded-xl border flex-shrink-0 ${
                   storeStatus?.is_open
-                    ? "bg-emerald-950/60 border-emerald-800/80 text-emerald-400"
-                    : "bg-rose-950/60 border-rose-800/80 text-rose-400"
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                    : "bg-rose-50 border-rose-200 text-rose-700"
                 }`}
               >
                 {storeStatus?.is_open ? <CheckCircle className="w-7 h-7" /> : <XCircle className="w-7 h-7" />}
@@ -120,7 +130,7 @@ export default function AdminDashboardPage() {
 
               <div>
                 <div className="flex items-center gap-2.5">
-                  <h2 className="text-xl font-bold text-zinc-100">
+                  <h2 className="text-xl font-bold text-zinc-900">
                     Physical Store is {storeStatus?.is_open ? "OPEN NOW" : "CLOSED"}
                   </h2>
                   {storeStatus && (
@@ -130,8 +140,8 @@ export default function AdminDashboardPage() {
                   )}
                 </div>
 
-                <p className="text-sm text-zinc-400 mt-1">
-                  Current IST Time: <span className="text-zinc-200 font-medium">{formatISTTime(storeStatus?.current_time_ist)}</span>
+                <p className="text-sm text-zinc-600 mt-1">
+                  Current IST Time: <span className="text-zinc-900 font-medium">{formatISTTime(storeStatus?.current_time_ist)}</span>
                   {storeStatus?.today_schedule && !storeStatus.today_schedule.is_closed && (
                     <>
                       {" • "}Today: {storeStatus.today_schedule.open_time} - {storeStatus.today_schedule.close_time}
@@ -140,7 +150,7 @@ export default function AdminDashboardPage() {
                 </p>
 
                 {storeStatus?.banner_message && (
-                  <div className="mt-3 flex items-center gap-2 text-xs text-amber-300 bg-amber-950/40 border border-amber-800/60 px-3 py-1.5 rounded-lg max-w-xl">
+                  <div className="mt-3 flex items-center gap-2 text-xs text-burgundy bg-rose-100/60 border border-rose-200 px-3 py-1.5 rounded-lg max-w-xl font-medium">
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                     <span>Customer Notice: {storeStatus.banner_message}</span>
                   </div>
@@ -149,7 +159,7 @@ export default function AdminDashboardPage() {
             </div>
 
             <Link href="/admin/shop">
-              <Button variant="secondary" size="sm" className="w-full md:w-auto">
+              <Button variant="outline" size="sm" className="w-full md:w-auto">
                 <span>Manage Override</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Button>
@@ -161,11 +171,11 @@ export default function AdminDashboardPage() {
       {/* Metrics Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Total Products */}
-        <Card className="hover:border-zinc-700 transition-colors">
+        <Card className="hover:border-zinc-300 transition-colors">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardDescription className="text-xs uppercase font-semibold">Total Catalog</CardDescription>
-              <Shirt className="w-4 h-4 text-burgundy-400" />
+              <Shirt className="w-4 h-4 text-burgundy" />
             </div>
             <CardTitle className="text-2xl sm:text-3xl font-bold mt-1">
               {loading ? "..." : totalProducts}
@@ -177,11 +187,11 @@ export default function AdminDashboardPage() {
         </Card>
 
         {/* Categories */}
-        <Card className="hover:border-zinc-700 transition-colors">
+        <Card className="hover:border-zinc-300 transition-colors">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardDescription className="text-xs uppercase font-semibold">Categories</CardDescription>
-              <FolderTree className="w-4 h-4 text-emerald-400" />
+              <FolderTree className="w-4 h-4 text-emerald-600" />
             </div>
             <CardTitle className="text-2xl sm:text-3xl font-bold mt-1">
               {loading ? "..." : categories.length}
@@ -195,11 +205,11 @@ export default function AdminDashboardPage() {
         </Card>
 
         {/* Custom Sections */}
-        <Card className="hover:border-zinc-700 transition-colors">
+        <Card className="hover:border-zinc-300 transition-colors">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardDescription className="text-xs uppercase font-semibold">Promotional Sections</CardDescription>
-              <Sparkles className="w-4 h-4 text-amber-400" />
+              <Sparkles className="w-4 h-4 text-amber-600" />
             </div>
             <CardTitle className="text-2xl sm:text-3xl font-bold mt-1">
               {loading ? "..." : sections.length}
@@ -213,13 +223,13 @@ export default function AdminDashboardPage() {
         </Card>
 
         {/* Sold-Out Items */}
-        <Card className="hover:border-zinc-700 transition-colors">
+        <Card className="hover:border-zinc-300 transition-colors">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardDescription className="text-xs uppercase font-semibold">Sold Out In Sample</CardDescription>
-              <TrendingUp className="w-4 h-4 text-rose-400" />
+              <TrendingUp className="w-4 h-4 text-rose-600" />
             </div>
-            <CardTitle className="text-2xl sm:text-3xl font-bold mt-1 text-rose-300">
+            <CardTitle className="text-2xl sm:text-3xl font-bold mt-1 text-rose-700">
               {loading ? "..." : soldOutCount}
             </CardTitle>
           </CardHeader>
@@ -231,7 +241,7 @@ export default function AdminDashboardPage() {
 
       {/* Recent Products & Quick Toggles */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between border-b border-zinc-800/80">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-zinc-200">
           <div>
             <CardTitle className="text-lg font-bold">Catalog Management Preview</CardTitle>
             <CardDescription className="text-xs">
@@ -239,7 +249,7 @@ export default function AdminDashboardPage() {
             </CardDescription>
           </div>
           <Link href="/admin/products">
-            <Button variant="ghost" size="sm" className="text-xs text-burgundy-400 hover:text-burgundy-300">
+            <Button variant="ghost" size="sm" className="text-xs text-burgundy hover:text-burgundy-700">
               <span>View Full Catalog</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Button>
@@ -248,7 +258,7 @@ export default function AdminDashboardPage() {
 
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-zinc-950/60 text-zinc-400 text-xs uppercase font-semibold border-b border-zinc-800">
+            <thead className="bg-zinc-50 text-zinc-600 text-xs uppercase font-semibold border-b border-zinc-200">
               <tr>
                 <th className="py-3.5 px-6">Product</th>
                 <th className="py-3.5 px-6">Category</th>
@@ -257,7 +267,7 @@ export default function AdminDashboardPage() {
                 <th className="py-3.5 px-6 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
+            <tbody className="divide-y divide-zinc-100 text-zinc-700">
               {loading ? (
                 <tr>
                   <td colSpan={5} className="py-8 text-center text-zinc-500">
@@ -274,25 +284,25 @@ export default function AdminDashboardPage() {
                 products.map((product) => {
                   const primaryImg = product.images.find((i) => i.is_primary)?.url || product.images[0]?.url;
                   return (
-                    <tr key={product.id} className="hover:bg-zinc-800/30 transition-colors">
+                    <tr key={product.id} className="hover:bg-zinc-50 transition-colors">
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          <div className="w-10 h-10 rounded-lg bg-zinc-100 border border-zinc-200 flex items-center justify-center overflow-hidden flex-shrink-0">
                             {primaryImg ? (
-                              <img src={primaryImg} alt={product.name} className="w-full h-full object-cover" />
+                              <img src={resolveImageUrl(primaryImg)} alt={product.name} className="w-full h-full object-cover" />
                             ) : (
-                              <Shirt className="w-4 h-4 text-zinc-500" />
+                              <Shirt className="w-4 h-4 text-zinc-400" />
                             )}
                           </div>
                           <div>
-                            <span className="font-semibold text-zinc-100 block">{product.name}</span>
+                            <span className="font-semibold text-zinc-900 block">{product.name}</span>
                             <span className="text-xs text-zinc-500">{product.material || "Garment"}</span>
                           </div>
                         </div>
                       </td>
 
                       <td className="py-4 px-6">
-                        <span className="text-xs text-zinc-400 font-medium">
+                        <span className="text-xs text-zinc-600 font-medium">
                           {product.subcategory?.name || "General"}
                         </span>
                       </td>

@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useSavedItems } from "@/lib/saved-items-context";
 import { publicApi } from "@/lib/api";
+import { resolveImageUrl } from "@/lib/utils";
 import type {
   ColorOption,
   PublicProductDetail,
@@ -39,6 +40,7 @@ export default function ProductDetailPage() {
   const [copiedLink, setCopiedLink] = React.useState(false);
 
   React.useEffect(() => {
+    let isMounted = true;
     async function loadData() {
       try {
         setLoading(true);
@@ -47,22 +49,31 @@ export default function ProductDetailPage() {
           publicApi.store.getProfile().catch(() => null),
         ]);
 
-        setProduct(prodData);
-        setStore(storeData);
+        if (isMounted) {
+          setProduct(prodData);
+          setStore(storeData);
 
-        // Pre-select first available variant or first size/color
-        if (prodData.variants.length > 0) {
-          const firstInStock = prodData.variants.find((v) => v.is_available) || prodData.variants[0];
-          if (firstInStock.size_id) setSelectedSizeId(firstInStock.size_id);
-          if (firstInStock.color_id) setSelectedColorId(firstInStock.color_id);
+          // Pre-select first available variant or first size/color
+          if (prodData.variants.length > 0) {
+            const firstInStock = prodData.variants.find((v) => v.is_available) || prodData.variants[0];
+            if (firstInStock.size_id) setSelectedSizeId(firstInStock.size_id);
+            if (firstInStock.color_id) setSelectedColorId(firstInStock.color_id);
+          }
         }
       } catch {
-        setProduct(null);
+        if (isMounted) {
+          setProduct(null);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
     loadData();
+    return () => {
+      isMounted = false;
+    };
   }, [slug]);
 
   if (loading) {
@@ -218,7 +229,7 @@ export default function ProductDetailPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 space-y-8 sm:space-y-12">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
@@ -228,42 +239,42 @@ export default function ProductDetailPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-xs text-zinc-400">
-        <Link href="/" className="hover:text-zinc-100 transition-colors">
+      <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-zinc-500 overflow-x-auto pb-1">
+        <Link href="/" className="hover:text-zinc-900 transition-colors flex-shrink-0">
           Home
         </Link>
-        <ChevronRight className="w-3 h-3 text-zinc-600" />
-        <Link href="/products" className="hover:text-zinc-100 transition-colors">
+        <ChevronRight className="w-3 h-3 text-zinc-400 flex-shrink-0" />
+        <Link href="/products" className="hover:text-zinc-900 transition-colors flex-shrink-0">
           Catalog
         </Link>
         {product.category_name && (
           <>
-            <ChevronRight className="w-3 h-3 text-zinc-600" />
+            <ChevronRight className="w-3 h-3 text-zinc-400 flex-shrink-0" />
             <Link
               href={`/products?category=${encodeURIComponent(product.category_slug || "")}`}
-              className="hover:text-zinc-100 transition-colors"
+              className="hover:text-zinc-900 transition-colors flex-shrink-0 hidden sm:inline"
             >
               {product.category_name}
             </Link>
           </>
         )}
-        <ChevronRight className="w-3 h-3 text-zinc-600" />
-        <span className="text-zinc-200 font-semibold truncate max-w-xs">{product.name}</span>
+        <ChevronRight className="w-3 h-3 text-zinc-400 flex-shrink-0" />
+        <span className="text-zinc-900 font-semibold truncate max-w-[150px] sm:max-w-xs">{product.name}</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
         {/* Left Column: Image Gallery (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
           {/* Main Photo Container */}
-          <div className="relative rounded-3xl overflow-hidden bg-zinc-950 border border-zinc-800 aspect-[3/4] flex items-center justify-center">
+          <div className="relative rounded-3xl overflow-hidden bg-zinc-100 border border-zinc-200 aspect-[4/5] flex items-center justify-center">
             {currentImage ? (
               <img
-                src={currentImage.url}
+                src={resolveImageUrl(currentImage.url)}
                 alt={currentImage.alt_text || product.name}
                 className="w-full h-full object-cover object-center"
               />
             ) : (
-              <div className="text-center text-zinc-600 p-8 space-y-2">
+              <div className="text-center text-zinc-400 p-8 space-y-2">
                 <Shirt className="w-16 h-16 stroke-1 mx-auto" />
                 <p className="text-xs text-zinc-500 font-medium">Garment photo coming soon</p>
               </div>
@@ -273,12 +284,12 @@ export default function ProductDetailPage() {
             <div className="absolute top-4 left-4">
               <Badge
                 variant={product.is_available ? "success" : "danger"}
-                className="text-xs shadow-lg backdrop-blur-md bg-zinc-950/80"
+                className="text-xs shadow-xs backdrop-blur-md bg-white/95"
               >
                 {product.is_available ? (
-                  <CheckCircle className="w-3 h-3 text-emerald-400" />
+                  <CheckCircle className="w-3 h-3 text-emerald-600" />
                 ) : (
-                  <XCircle className="w-3 h-3 text-rose-400" />
+                  <XCircle className="w-3 h-3 text-rose-600" />
                 )}
                 <span>{product.is_available ? "In Stock at Store" : "Currently Sold Out"}</span>
               </Badge>
@@ -293,13 +304,13 @@ export default function ProductDetailPage() {
                   key={img.id}
                   type="button"
                   onClick={() => setSelectedImageIndex(idx)}
-                  className={`relative w-20 h-24 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 bg-zinc-950 ${
+                  className={`relative w-20 aspect-[4/5] rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 bg-zinc-100 ${
                     selectedImageIndex === idx
-                      ? "border-rose-400 shadow-glow"
-                      : "border-zinc-800 opacity-60 hover:opacity-100"
+                      ? "border-burgundy shadow-xs"
+                      : "border-zinc-200 opacity-60 hover:opacity-100"
                   }`}
                 >
-                  <img src={img.url} alt="" className="w-full h-full object-cover" />
+                  <img src={resolveImageUrl(img.url)} alt="" className="w-full h-full object-cover object-center" />
                 </button>
               ))}
             </div>
@@ -309,7 +320,7 @@ export default function ProductDetailPage() {
         {/* Right Column: Garment Information & Sizing (5 cols) */}
         <div className="lg:col-span-5 space-y-8">
           {/* Header info */}
-          <div className="space-y-2 border-b border-zinc-800 pb-6">
+          <div className="space-y-2 border-b border-zinc-200 pb-6">
             <div className="flex items-center gap-2">
               {product.category_name && (
                 <Badge variant="brand" className="text-xs">
@@ -323,20 +334,20 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-100 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight">
               {product.name}
             </h1>
 
-            <div className="flex items-center gap-4 text-xs text-zinc-400 pt-1">
+            <div className="flex items-center gap-4 text-xs text-zinc-500 pt-1">
               {product.material && (
                 <span>
-                  Fabric: <strong className="text-zinc-200">{product.material}</strong>
+                  Fabric: <strong className="text-zinc-800">{product.material}</strong>
                 </span>
               )}
               {product.style_code && (
                 <span>
                   Style Code:{" "}
-                  <strong className="font-mono text-zinc-200">{product.style_code}</strong>
+                  <strong className="font-mono text-zinc-800">{product.style_code}</strong>
                 </span>
               )}
             </div>
@@ -346,10 +357,10 @@ export default function ProductDetailPage() {
           {uniqueSizes.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+                <label className="text-xs font-bold uppercase tracking-wider text-zinc-700">
                   Select Size
                 </label>
-                <span className="text-xs text-rose-300 font-semibold">{selectedSizeName}</span>
+                <span className="text-xs text-burgundy font-semibold">{selectedSizeName}</span>
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
@@ -362,8 +373,8 @@ export default function ProductDetailPage() {
                       onClick={() => setSelectedSizeId(s.id)}
                       className={`min-w-[48px] px-3 py-2 rounded-xl border text-xs font-bold transition-all ${
                         isSelected
-                          ? "bg-burgundy text-white border-burgundy shadow-sm scale-105"
-                          : "bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                          ? "bg-burgundy text-white border-burgundy shadow-xs scale-105"
+                          : "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-100"
                       }`}
                     >
                       {s.name}
@@ -378,10 +389,10 @@ export default function ProductDetailPage() {
           {uniqueColors.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+                <label className="text-xs font-bold uppercase tracking-wider text-zinc-700">
                   Select Color
                 </label>
-                <span className="text-xs text-rose-300 font-semibold">{selectedColorName}</span>
+                <span className="text-xs text-burgundy font-semibold">{selectedColorName}</span>
               </div>
 
               <div className="flex items-center gap-2.5 flex-wrap">
@@ -394,12 +405,12 @@ export default function ProductDetailPage() {
                       onClick={() => setSelectedColorId(c.id)}
                       className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
                         isSelected
-                          ? "bg-zinc-800 border-rose-400 text-rose-200 shadow-sm scale-105"
-                          : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                          ? "bg-rose-50 border-burgundy text-burgundy font-semibold shadow-xs scale-105"
+                          : "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
                       }`}
                     >
                       <span
-                        className="w-3.5 h-3.5 rounded-full border border-zinc-600 shadow-sm flex-shrink-0"
+                        className="w-3.5 h-3.5 rounded-full border border-zinc-300 shadow-xs flex-shrink-0"
                         style={{ backgroundColor: c.hex_code }}
                       />
                       <span>{c.name}</span>
@@ -411,10 +422,10 @@ export default function ProductDetailPage() {
           )}
 
           {/* Live Variation Stock Status */}
-          <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200 flex items-center justify-between">
             <div>
-              <span className="text-xs text-zinc-400 block">Stock Availability for:</span>
-              <span className="text-xs font-bold text-zinc-200">
+              <span className="text-xs text-zinc-500 block">Stock Availability for:</span>
+              <span className="text-xs font-bold text-zinc-900">
                 {selectedSizeName} / {selectedColorName}
               </span>
             </div>
@@ -422,12 +433,12 @@ export default function ProductDetailPage() {
             <Badge variant={isVariantInStock ? "success" : "danger"} className="text-xs">
               {isVariantInStock ? (
                 <>
-                  <CheckCircle className="w-3 h-3 text-emerald-400" />
+                  <CheckCircle className="w-3 h-3 text-emerald-600" />
                   <span>Available in Store</span>
                 </>
               ) : (
                 <>
-                  <XCircle className="w-3 h-3 text-rose-400" />
+                  <XCircle className="w-3 h-3 text-rose-600" />
                   <span>Sold Out</span>
                 </>
               )}
@@ -441,7 +452,7 @@ export default function ProductDetailPage() {
               href={`https://wa.me/${whatsappPhone}?text=${whatsappMessage}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-md transition-all active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-xs transition-all active:scale-[0.98]"
             >
               <MessageCircle className="w-5 h-5" />
               <span>Inquire & Reserve on WhatsApp</span>
@@ -468,30 +479,30 @@ export default function ProductDetailPage() {
 
           {/* Description & Fabric Details */}
           {product.description && (
-            <div className="space-y-2 border-t border-zinc-800 pt-6">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+            <div className="space-y-2 border-t border-zinc-200 pt-6">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-900">
                 Garment Description
               </h3>
-              <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed whitespace-pre-line">
+              <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed whitespace-pre-line">
                 {product.description}
               </p>
             </div>
           )}
 
           {/* Physical Store Notice Box */}
-          <div className="p-5 rounded-2xl border border-zinc-800 bg-zinc-950/80 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-zinc-200">
-              <Store className="w-4 h-4 text-rose-400" />
+          <div className="p-5 rounded-2xl border border-zinc-200 bg-zinc-50/70 space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-zinc-900">
+              <Store className="w-4 h-4 text-burgundy" />
               <span>Physical Retail Exclusive</span>
             </div>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <p className="text-xs text-zinc-600 leading-relaxed">
               We welcome you to visit our store in{" "}
-              <strong className="text-zinc-200">{store?.city || "Thrissur"}</strong> to try this piece
+              <strong className="text-zinc-900">{store?.city || "Thrissur"}</strong> to try this piece
               in our fitting rooms. All sales and billing are done at our retail counter.
             </p>
             <Link
               href="/visit"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-rose-400 hover:text-rose-300"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-burgundy hover:text-burgundy-700"
             >
               <span>Get store directions & hours</span>
               <ChevronRight className="w-3.5 h-3.5" />

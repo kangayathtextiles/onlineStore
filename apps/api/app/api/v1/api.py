@@ -7,6 +7,9 @@ from app.api.v1.admin import (
     categories as admin_categories,
 )
 from app.api.v1.admin import (
+    media as admin_media,
+)
+from app.api.v1.admin import (
     products as admin_products,
 )
 from app.api.v1.admin import (
@@ -57,4 +60,5 @@ admin_router.include_router(admin_categories.router)
 admin_router.include_router(admin_attributes.router)
 admin_router.include_router(admin_products.router)
 admin_router.include_router(admin_sections.router)
+admin_router.include_router(admin_media.router)
 api_router.include_router(admin_router)

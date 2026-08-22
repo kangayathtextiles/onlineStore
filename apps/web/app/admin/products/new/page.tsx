@@ -111,17 +111,17 @@ export default function NewProductPage() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Top Header */}
+      <div className="flex items-center justify-between border-b border-zinc-200 pb-5">
         <div className="flex items-center gap-3">
           <Link href="/admin/products">
-            <Button variant="ghost" size="icon" aria-label="Back to products list">
+            <Button variant="ghost" size="icon">
               <ArrowLeft className="w-4 h-4" />
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-100">Add New Garment</h1>
-            <p className="text-xs text-zinc-400">Step 1: Enter product basic details and taxonomy</p>
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Add New Garment</h1>
+            <p className="text-xs text-zinc-500">Step 1: Enter product basic details and taxonomy</p>
           </div>
         </div>
       </div>

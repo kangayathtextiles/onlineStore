@@ -19,6 +19,7 @@ import { Modal } from "@/components/ui/modal";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { useToast } from "@/components/ui/toast";
 import { adminApi, ApiError } from "@/lib/api";
+import { resolveImageUrl } from "@/lib/utils";
 import type { Category, SubcategorySummary } from "@/types/api";
 
 export default function AdminCategoriesPage() {
@@ -235,10 +236,10 @@ export default function AdminCategoriesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
             Taxonomy & Categories
           </h1>
-          <p className="text-sm text-zinc-400 mt-1">
+          <p className="text-sm text-zinc-600 mt-1">
             Organize main clothing sections and unlimited subcategories for customer discovery.
           </p>
         </div>
@@ -258,8 +259,8 @@ export default function AdminCategoriesPage() {
         ) : categories.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center text-zinc-500">
-              <FolderTree className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-              <p className="text-sm font-medium text-zinc-300">No categories found</p>
+              <FolderTree className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
+              <p className="text-sm font-medium text-zinc-700">No categories found</p>
               <p className="text-xs text-zinc-500 mt-1">Create your first main category (e.g. Men, Women, Kids).</p>
               <Button variant="primary" size="sm" className="mt-4" onClick={openCreateCategory}>
                 <Plus className="w-4 h-4" />
@@ -271,29 +272,29 @@ export default function AdminCategoriesPage() {
           categories.map((cat) => {
             const isExpanded = Boolean(expandedCats[cat.id]);
             return (
-              <Card key={cat.id} className="overflow-hidden border-zinc-800 bg-zinc-900/90">
+              <Card key={cat.id} className="overflow-hidden border-zinc-200 bg-white shadow-xs">
                 {/* Category Header Row */}
-                <div className="p-4 sm:p-5 flex items-center justify-between gap-4 bg-zinc-900 border-b border-zinc-800/60">
+                <div className="p-4 sm:p-5 flex items-center justify-between gap-4 bg-zinc-50 border-b border-zinc-200">
                   <div className="flex items-center gap-3.5 min-w-0">
                     <button
                       onClick={() => toggleExpand(cat.id)}
-                      className="p-1 rounded text-zinc-400 hover:text-zinc-100 transition-colors"
+                      className="p-1 rounded text-zinc-400 hover:text-zinc-900 transition-colors"
                       title={isExpanded ? "Collapse" : "Expand"}
                     >
                       {isExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
                     </button>
 
-                    <div className="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-zinc-100 border border-zinc-200 flex items-center justify-center overflow-hidden flex-shrink-0">
                       {cat.thumbnail_url ? (
-                        <img src={cat.thumbnail_url} alt={cat.name} className="w-full h-full object-cover" />
+                        <img src={resolveImageUrl(cat.thumbnail_url)} alt={cat.name} className="w-full h-full object-cover" />
                       ) : (
-                        <FolderTree className="w-5 h-5 text-burgundy-400" />
+                        <FolderTree className="w-5 h-5 text-burgundy" />
                       )}
                     </div>
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h2 className="text-base font-bold text-zinc-100 truncate">{cat.name}</h2>
+                        <h2 className="text-base font-bold text-zinc-900 truncate">{cat.name}</h2>
                         <Badge variant={cat.is_active ? "success" : "neutral"} className="text-[10px]">
                           {cat.is_active ? "Active" : "Hidden"}
                         </Badge>
@@ -338,7 +339,7 @@ export default function AdminCategoriesPage() {
 
                 {/* Subcategories List */}
                 {isExpanded && (
-                  <div className="p-4 sm:p-5 bg-zinc-950/40 divide-y divide-zinc-800/40">
+                  <div className="p-4 sm:p-5 bg-zinc-50/50">
                     {cat.subcategories.length === 0 ? (
                       <div className="py-4 text-center text-xs text-zinc-500">
                         No subcategories yet. Click &quot;Add Sub&quot; above to create one.
@@ -348,11 +349,11 @@ export default function AdminCategoriesPage() {
                         {cat.subcategories.map((sub) => (
                           <div
                             key={sub.id}
-                            className="flex items-center justify-between p-3 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:border-zinc-700 transition-colors"
+                            className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 bg-white hover:border-zinc-300 transition-colors shadow-xs"
                           >
                             <div className="min-w-0 pr-2">
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-semibold text-zinc-200 truncate">{sub.name}</span>
+                                <span className="text-sm font-semibold text-zinc-900 truncate">{sub.name}</span>
                                 {!sub.is_active && (
                                   <Badge variant="neutral" className="text-[9px] py-0 px-1">
                                     Hidden
@@ -367,14 +368,14 @@ export default function AdminCategoriesPage() {
                             <div className="flex items-center gap-1 flex-shrink-0">
                               <button
                                 onClick={() => openEditSubcategory(sub)}
-                                className="p-1 text-zinc-400 hover:text-zinc-200 rounded"
+                                className="p-1 text-zinc-400 hover:text-zinc-700 rounded"
                                 title="Edit Subcategory"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => setSubcategoryToDelete(sub)}
-                                className="p-1 text-zinc-500 hover:text-rose-400 rounded"
+                                className="p-1 text-zinc-400 hover:text-rose-600 rounded"
                                 title="Delete Subcategory"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -448,7 +449,7 @@ export default function AdminCategoriesPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200">
             <Button variant="outline" type="button" onClick={() => setIsCategoryModalOpen(false)}>
               Cancel
             </Button>
@@ -512,7 +513,7 @@ export default function AdminCategoriesPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200">
             <Button variant="outline" type="button" onClick={() => setIsSubcategoryModalOpen(false)}>
               Cancel
             </Button>

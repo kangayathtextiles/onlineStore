@@ -31,13 +31,13 @@ export function ConfirmModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} maxWidth="md">
       <div className="space-y-4">
-        <div className="flex items-start gap-3 bg-zinc-950/60 p-3.5 rounded-lg border border-zinc-800">
+        <div className="flex items-start gap-3 bg-zinc-50 p-3.5 rounded-xl border border-zinc-200">
           <AlertTriangle
             className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
-              variant === "danger" ? "text-rose-400" : "text-amber-400"
+              variant === "danger" ? "text-rose-600" : "text-amber-600"
             }`}
           />
-          <p className="text-sm text-zinc-300 leading-relaxed">{message}</p>
+          <p className="text-sm text-zinc-700 leading-relaxed">{message}</p>
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-2">
