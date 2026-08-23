@@ -22,30 +22,37 @@ export function Skeleton({ className, shimmer = true, ...props }: SkeletonProps)
 
 export function ProductCardSkeleton() {
   return (
-    <div className="rounded-2xl border border-zinc-200/80 bg-white overflow-hidden flex flex-col justify-between p-0 shadow-xs">
+    <div className="rounded-2xl border border-zinc-200/90 bg-white overflow-hidden flex flex-col justify-between shadow-xs">
       {/* 4:5 Image Skeleton */}
-      <div className="relative aspect-[4/5] w-full bg-zinc-100/90 overflow-hidden flex items-center justify-center">
-        <Skeleton className="w-full h-full rounded-none bg-zinc-200/60" />
+      <div className="relative aspect-[4/5] w-full bg-[#F0EFED] overflow-hidden flex items-center justify-center">
+        <Skeleton className="w-full h-full rounded-none bg-zinc-200/50" />
         {/* Floating Stock Badge placeholder */}
-        <div className="absolute bottom-3 left-3">
-          <Skeleton className="h-5 w-20 rounded-full bg-zinc-300/60" />
+        <div className="absolute bottom-2.5 left-2.5 sm:bottom-3 sm:left-3 z-10">
+          <Skeleton className="h-5 w-20 rounded-full bg-white/90 border border-zinc-200/60" />
         </div>
         {/* Heart button placeholder */}
-        <div className="absolute top-3 right-3">
-          <Skeleton className="h-8 w-8 rounded-full bg-zinc-300/60" />
+        <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-10">
+          <Skeleton className="h-8 w-8 rounded-full bg-white/90 border border-zinc-200/80" />
         </div>
       </div>
 
       {/* Content Skeleton */}
-      <div className="p-4 sm:p-5 space-y-3">
+      <div className="p-3.5 sm:p-4.5 space-y-2 sm:space-y-2.5">
         {/* Category tag */}
-        <Skeleton className="h-3 w-24 rounded-full bg-zinc-200/70" />
+        <Skeleton className="h-3 w-20 rounded-full bg-zinc-200/70" />
         {/* Product Title */}
-        <Skeleton className="h-4.5 w-4/5 rounded-md bg-zinc-200/90" />
+        <Skeleton className="h-5 w-4/5 rounded-md bg-zinc-200/90" />
         {/* Material / Style Code row */}
-        <div className="flex items-center justify-between pt-1">
-          <Skeleton className="h-3.5 w-28 rounded-md bg-zinc-200/60" />
-          <Skeleton className="h-4 w-12 rounded-sm bg-zinc-200/50" />
+        <div className="flex items-center justify-between pt-0.5">
+          <Skeleton className="h-3.5 w-24 rounded-md bg-zinc-200/60" />
+          <Skeleton className="h-4 w-14 rounded bg-zinc-200/60" />
+        </div>
+        {/* Size chips row */}
+        <div className="flex items-center gap-1 pt-0.5">
+          <Skeleton className="h-4 w-10 rounded bg-zinc-200/50" />
+          <Skeleton className="h-4 w-6 rounded bg-zinc-200/50" />
+          <Skeleton className="h-4 w-6 rounded bg-zinc-200/50" />
+          <Skeleton className="h-4 w-6 rounded bg-zinc-200/50" />
         </div>
       </div>
     </div>
@@ -54,7 +61,7 @@ export function ProductCardSkeleton() {
 
 export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
+    <div className="grid gap-4 sm:gap-6 [grid-template-columns:repeat(auto-fit,minmax(250px,1fr))]">
       {Array.from({ length: count }).map((_, i) => (
         <ProductCardSkeleton key={i} />
       ))}
@@ -64,7 +71,7 @@ export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
 
 export function ProductDetailSkeleton() {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 space-y-8 animate-pulse">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 space-y-8 sm:space-y-12 animate-pulse">
       {/* Breadcrumb skeleton */}
       <div className="flex items-center gap-2">
         <Skeleton className="h-3.5 w-12 rounded" />
@@ -75,22 +82,22 @@ export function ProductDetailSkeleton() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-        {/* Left Column: Image Gallery */}
+        {/* Left Column: Image Gallery (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="rounded-3xl overflow-hidden bg-zinc-100 border border-zinc-200 aspect-[4/5] relative">
-            <Skeleton className="w-full h-full rounded-none bg-zinc-200/70" />
+          <div className="rounded-3xl overflow-hidden bg-[#F0EFED] border border-zinc-200/90 aspect-[4/5] relative">
+            <Skeleton className="w-full h-full rounded-none bg-zinc-200/60" />
             <div className="absolute top-4 left-4">
-              <Skeleton className="h-6 w-32 rounded-full bg-zinc-300/80" />
+              <Skeleton className="h-6 w-32 rounded-full bg-white/95 border border-zinc-200/60" />
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 overflow-x-auto pb-2">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="w-20 aspect-[4/5] rounded-xl bg-zinc-200/60 flex-shrink-0" />
             ))}
           </div>
         </div>
 
-        {/* Right Column: Garment Information */}
+        {/* Right Column: Garment Information (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
           <div className="space-y-3 border-b border-zinc-200 pb-6">
             <div className="flex items-center gap-2">
@@ -108,7 +115,7 @@ export function ProductDetailSkeleton() {
           <div className="space-y-3">
             <Skeleton className="h-4 w-28 rounded" />
             <div className="flex items-center gap-2">
-              {Array.from({ length: 5 }).map((_, i) => (
+              {Array.from({ length: 4 }).map((_, i) => (
                 <Skeleton key={i} className="h-10 w-12 rounded-xl" />
               ))}
             </div>
@@ -118,7 +125,7 @@ export function ProductDetailSkeleton() {
           <div className="space-y-3">
             <Skeleton className="h-4 w-28 rounded" />
             <div className="flex items-center gap-2.5">
-              {Array.from({ length: 4 }).map((_, i) => (
+              {Array.from({ length: 3 }).map((_, i) => (
                 <Skeleton key={i} className="h-10 w-24 rounded-xl" />
               ))}
             </div>
@@ -135,6 +142,9 @@ export function ProductDetailSkeleton() {
               <Skeleton className="h-11 rounded-xl" />
             </div>
           </div>
+
+          {/* Store notice box skeleton */}
+          <Skeleton className="h-28 w-full rounded-2xl" />
         </div>
       </div>
     </div>
