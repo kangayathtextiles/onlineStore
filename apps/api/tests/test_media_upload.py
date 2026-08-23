@@ -289,3 +289,64 @@ async def test_product_image_deletion_cleanup(
 
     # 4. Verify disk file cleaned up
     assert not os.path.exists(disk_path)
+
+
+@pytest.mark.asyncio
+async def test_media_dynamic_recovery_from_stored_media_on_disk_loss(
+    client: AsyncClient, sample_image_bytes: bytes
+) -> None:
+    """Verify that when physical disk cache is wiped (simulating Render restart), the image recovers automatically from StoredMedia."""
+    # 1. Setup category & product
+    cat_res = await client.post(
+        "/api/v1/admin/categories",
+        json={"name": "Silk", "slug": "silk-special", "display_order": 1},
+    )
+    cat_id = cat_res.json()["id"]
+
+    sub_res = await client.post(
+        "/api/v1/admin/categories/subcategories",
+        json={
+            "category_id": cat_id,
+            "name": "Kanchipuram",
+            "slug": "kanchipuram",
+            "display_order": 1,
+        },
+    )
+    sub_id = sub_res.json()["id"]
+
+    prod_res = await client.post(
+        "/api/v1/admin/products",
+        json={"category_id": cat_id, "subcategory_id": sub_id, "name": "Bridal Silk Saree"},
+    )
+    prod_id = prod_res.json()["id"]
+
+    # 2. Upload image
+    files = {"file": ("bridal_saree.png", io.BytesIO(sample_image_bytes), "image/png")}
+    upload_res = await client.post(
+        f"/api/v1/admin/products/{prod_id}/images/upload",
+        files=files,
+        data={"is_primary": "true"},
+    )
+    assert upload_res.status_code == 201
+    img_url = upload_res.json()["images"][0]["url"]
+    filename = img_url.replace("/media/products/", "")
+    disk_path = os.path.join(settings.RESOLVED_MEDIA_ROOT, "products", filename)
+    assert os.path.exists(disk_path)
+
+    # 3. Request media asset via public endpoint
+    fetch_res = await client.get(img_url)
+    assert fetch_res.status_code == 200
+    assert fetch_res.content == sample_image_bytes
+
+    # 4. SIMULATE CONTAINER RESTART / DISK WIPE: delete file from disk
+    if os.path.exists(disk_path):
+        os.remove(disk_path)
+    assert not os.path.exists(disk_path)
+
+    # 5. Request media asset again: should automatically recover from PostgreSQL StoredMedia!
+    recover_res = await client.get(img_url)
+    assert recover_res.status_code == 200
+    assert recover_res.content == sample_image_bytes
+
+    # 6. Verify file is also repopulated on disk cache for fast future serving
+    assert os.path.exists(disk_path)

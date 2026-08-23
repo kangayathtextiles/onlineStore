@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/customer/product-card";
+import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { publicApi } from "@/lib/api";
 import { resolveImageUrl } from "@/lib/utils";
 import type {
@@ -243,9 +244,7 @@ export default function CustomerHomePage() {
         </div>
 
         {loading ? (
-          <div className="py-16 text-center text-zinc-500">
-            <p>Loading showroom garments...</p>
-          </div>
+          <ProductGridSkeleton count={4} />
         ) : featuredProducts.length === 0 ? (
           <div className="py-16 text-center text-zinc-500 bg-zinc-50 rounded-2xl border border-zinc-200">
             <Shirt className="w-10 h-10 text-zinc-400 mx-auto mb-2" />

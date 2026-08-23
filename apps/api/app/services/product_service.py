@@ -2,6 +2,7 @@ import os
 import uuid
 
 from fastapi import UploadFile
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -15,6 +16,7 @@ from app.core.exceptions import (
 from app.core.security import validate_upload_file
 from app.models.enums import LifecycleState
 from app.models.product import Product, ProductImage
+from app.models.stored_media import StoredMedia
 from app.models.variant import ProductVariant
 from app.repositories.attribute_repository import AttributeRepository
 from app.repositories.product_repository import ProductRepository
@@ -441,6 +443,16 @@ class ProductService:
         with open(target_path, "wb") as f:
             f.write(content)
 
+        # Persist binary data into PostgreSQL database for 100% durability across restarts
+        stored_media = StoredMedia(
+            filename=unique_filename,
+            category="products",
+            content_type=file.content_type or "image/jpeg",
+            data=content,
+            size_bytes=file_size,
+        )
+        self.session.add(stored_media)
+
         image_url = f"/media/products/{unique_filename}"
         image_data = ProductImageCreate(
             url=image_url,
@@ -470,6 +482,14 @@ class ProductService:
             remaining = [i for i in product.images if i.id != image_id]
             if remaining:
                 remaining[0].is_primary = True
+
+        # Clean up database StoredMedia entry if local media
+        if deleted_url.startswith("/media/products/"):
+            filename = deleted_url.replace("/media/products/", "")
+            stmt = delete(StoredMedia).where(
+                StoredMedia.filename == filename, StoredMedia.category == "products"
+            )
+            await self.session.execute(stmt)
 
         await self.session.commit()
 

@@ -3,11 +3,13 @@ import uuid
 
 from fastapi import APIRouter, Depends, File, UploadFile
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.dependencies import AdminUserContext, get_current_admin_user
+from app.core.dependencies import AdminUserContext, get_async_session, get_current_admin_user
 from app.core.exceptions import ValidationException
 from app.core.security import validate_upload_file
+from app.models.stored_media import StoredMedia
 
 router = APIRouter(prefix="/media", tags=["Admin Media"])
 
@@ -27,6 +29,7 @@ class MediaUploadResponse(BaseModel):
 )
 async def upload_media_file(
     file: UploadFile = File(...),
+    session: AsyncSession = Depends(get_async_session),
     _admin: AdminUserContext = Depends(get_current_admin_user),
 ) -> MediaUploadResponse:
     if not file.filename:
@@ -50,6 +53,17 @@ async def upload_media_file(
 
     with open(target_path, "wb") as f:
         f.write(content)
+
+    # Persist in PostgreSQL StoredMedia for zero-loss container restarts
+    stored_media = StoredMedia(
+        filename=unique_filename,
+        category="uploads",
+        content_type=file.content_type or "image/jpeg",
+        data=content,
+        size_bytes=file_size,
+    )
+    session.add(stored_media)
+    await session.commit()
 
     return MediaUploadResponse(
         url=f"/media/uploads/{unique_filename}",

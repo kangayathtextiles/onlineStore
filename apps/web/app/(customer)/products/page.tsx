@@ -16,6 +16,7 @@ import { Select } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/customer/product-card";
+import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { publicApi } from "@/lib/api";
 import type {
   ColorOption,
@@ -382,9 +383,7 @@ function ProductsContent() {
           </div>
 
           {loading ? (
-            <div className="py-24 text-center text-zinc-500">
-              <p>Loading garments matching your selection...</p>
-            </div>
+            <ProductGridSkeleton count={8} />
           ) : products.length === 0 ? (
             <div className="py-20 text-center bg-zinc-50 rounded-3xl border border-zinc-200 p-8 space-y-4">
               <Shirt className="w-12 h-12 text-zinc-400 mx-auto" />

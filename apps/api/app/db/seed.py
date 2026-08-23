@@ -196,11 +196,66 @@ async def seed_development_data(session: AsyncSession) -> None:
     logger.info("Development demo data seeded successfully.")
 
 
+async def backfill_media_assets(session: AsyncSession) -> None:
+    """
+    Scans physical disk media directories and ensures all existing media files
+    are persisted into PostgreSQL StoredMedia table for zero-loss recovery.
+    """
+    import mimetypes
+    import os
+
+    from app.core.config import settings
+    from app.models.stored_media import StoredMedia
+
+    media_root = settings.RESOLVED_MEDIA_ROOT
+    if not os.path.exists(media_root):
+        return
+
+    count = 0
+    for category in ["products", "uploads"]:
+        cat_dir = os.path.join(media_root, category)
+        if not os.path.exists(cat_dir):
+            continue
+
+        for fname in os.listdir(cat_dir):
+            file_path = os.path.join(cat_dir, fname)
+            if not os.path.isfile(file_path):
+                continue
+
+            # Check if already present in database
+            stmt = select(StoredMedia).where(
+                StoredMedia.filename == fname, StoredMedia.category == category
+            )
+            res = await session.execute(stmt)
+            if res.scalar_one_or_none() is None:
+                try:
+                    with open(file_path, "rb") as f:
+                        data = f.read()
+                    content_type, _ = mimetypes.guess_type(fname)
+                    session.add(
+                        StoredMedia(
+                            filename=fname,
+                            category=category,
+                            content_type=content_type or "image/jpeg",
+                            data=data,
+                            size_bytes=len(data),
+                        )
+                    )
+                    count += 1
+                except Exception as e:
+                    logger.warning("Could not backfill media file %s: %s", fname, str(e))
+
+    if count > 0:
+        await session.commit()
+        logger.info("Backfilled %d media assets into PostgreSQL StoredMedia.", count)
+
+
 async def run_all_seeds() -> None:
     """Run all seed operations within a standalone session."""
     async with async_session_maker() as session:
         await seed_master_data(session)
         await seed_development_data(session)
+        await backfill_media_assets(session)
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ from app.models.enums import DayOfWeek, LifecycleState, OverrideMode
 from app.models.product import Product, ProductImage
 from app.models.saved_item import SavedItem, SavedItemCollection
 from app.models.store import OperatingSchedule, StoreProfile, StoreStatus
+from app.models.stored_media import StoredMedia
 from app.models.taxonomy import Category, Subcategory
 from app.models.variant import ProductVariant
 
@@ -31,4 +32,5 @@ __all__ = [
     "CustomSectionItem",
     "SavedItemCollection",
     "SavedItem",
+    "StoredMedia",
 ]
