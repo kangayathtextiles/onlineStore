@@ -266,12 +266,12 @@ export default function ProductDetailPage() {
         {/* Left Column: Image Gallery (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
           {/* Responsive Main Photo Container */}
-          <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden bg-[#F0EFED] border border-zinc-200/90 aspect-square sm:aspect-[4/5] flex items-center justify-center">
+          <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden bg-[#F0EFED] border border-zinc-200/90 aspect-[4/5] flex items-center justify-center">
             <ProductImage
               src={currentImage?.url}
               alt={currentImage?.alt_text || product.name}
-              aspectRatio="auto"
-              fit="contain"
+              aspectRatio="4/5"
+              fit="cover"
               zoomOnHover={false}
               priority={true}
               containerClassName="w-full h-full"
@@ -301,7 +301,7 @@ export default function ProductDetailPage() {
                   key={img.id}
                   type="button"
                   onClick={() => setSelectedImageIndex(idx)}
-                  className={`relative w-16 sm:w-20 aspect-square sm:aspect-[4/5] rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 bg-[#F0EFED] ${
+                  className={`relative w-16 sm:w-20 aspect-[4/5] rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 bg-[#F0EFED] ${
                     selectedImageIndex === idx
                       ? "border-burgundy shadow-xs ring-2 ring-burgundy/20"
                       : "border-zinc-200 opacity-70 hover:opacity-100 hover:border-zinc-300"
@@ -310,8 +310,8 @@ export default function ProductDetailPage() {
                   <ProductImage
                     src={img.url}
                     alt=""
-                    aspectRatio="auto"
-                    fit="contain"
+                    aspectRatio="4/5"
+                    fit="cover"
                     zoomOnHover={false}
                     containerClassName="w-full h-full"
                   />

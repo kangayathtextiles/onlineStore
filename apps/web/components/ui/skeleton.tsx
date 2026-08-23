@@ -23,35 +23,29 @@ export function Skeleton({ className, shimmer = true, ...props }: SkeletonProps)
 export function ProductCardSkeleton() {
   return (
     <div className="rounded-2xl border border-zinc-200/90 bg-white overflow-hidden flex flex-col justify-between shadow-xs">
-      {/* Responsive Image Skeleton */}
-      <div className="relative aspect-square sm:aspect-[4/5] w-full bg-[#F0EFED] overflow-hidden flex items-center justify-center">
+      {/* 4:5 Image Canvas Skeleton */}
+      <div className="relative aspect-[4/5] w-full bg-zinc-200/50 overflow-hidden flex items-center justify-center">
         <Skeleton className="w-full h-full rounded-none bg-zinc-200/50" />
-        {/* Floating Stock Badge placeholder */}
-        <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 z-10">
-          <Skeleton className="h-4 sm:h-5 w-14 sm:w-20 rounded-full bg-white/90 border border-zinc-200/60" />
-        </div>
         {/* Heart button placeholder */}
-        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10">
-          <Skeleton className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-white/90 border border-zinc-200/80" />
+        <div className="absolute top-2.5 right-2.5 z-10">
+          <Skeleton className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-zinc-300/80" />
+        </div>
+        {/* Floating Stock Badge placeholder */}
+        <div className="absolute bottom-2.5 left-2.5 z-10">
+          <Skeleton className="h-5 w-18 sm:w-20 rounded-full bg-zinc-300/80" />
         </div>
       </div>
 
       {/* Content Skeleton */}
-      <div className="p-3 sm:p-4.5 space-y-1.5 sm:space-y-2">
+      <div className="p-3 sm:p-4 space-y-2 bg-white">
         {/* Category tag */}
-        <Skeleton className="h-2.5 sm:h-3 w-16 sm:w-20 rounded-full bg-zinc-200/70" />
+        <Skeleton className="h-2.5 sm:h-3 w-16 sm:w-20 rounded-full bg-zinc-200/80" />
         {/* Product Title */}
-        <Skeleton className="h-4 sm:h-5 w-4/5 rounded-md bg-zinc-200/90" />
+        <Skeleton className="h-3.5 sm:h-4 w-4/5 rounded bg-zinc-200/90" />
         {/* Material / Style Code row */}
         <div className="flex items-center justify-between pt-0.5">
-          <Skeleton className="h-3 sm:h-3.5 w-16 sm:w-24 rounded-md bg-zinc-200/60" />
-          <Skeleton className="h-3.5 sm:h-4 w-10 sm:w-14 rounded bg-zinc-200/60" />
-        </div>
-        {/* Size chips row */}
-        <div className="flex items-center gap-1 pt-0.5">
-          <Skeleton className="h-3.5 sm:h-4 w-8 sm:w-10 rounded bg-zinc-200/50" />
-          <Skeleton className="h-3.5 sm:h-4 w-5 sm:w-6 rounded bg-zinc-200/50" />
-          <Skeleton className="h-3.5 sm:h-4 w-5 sm:w-6 rounded bg-zinc-200/50" />
+          <Skeleton className="h-2.5 sm:h-3 w-16 sm:w-24 rounded bg-zinc-200/60" />
+          <Skeleton className="h-2.5 sm:h-3 w-10 sm:w-14 rounded bg-zinc-200/60" />
         </div>
       </div>
     </div>
@@ -83,7 +77,7 @@ export function ProductDetailSkeleton() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
         {/* Left Column: Image Gallery (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="rounded-2xl sm:rounded-3xl overflow-hidden bg-[#F0EFED] border border-zinc-200/90 aspect-square sm:aspect-[4/5] relative">
+          <div className="rounded-2xl sm:rounded-3xl overflow-hidden bg-[#F0EFED] border border-zinc-200/90 aspect-[4/5] relative">
             <Skeleton className="w-full h-full rounded-none bg-zinc-200/60" />
             <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
               <Skeleton className="h-6 w-32 rounded-full bg-white/95 border border-zinc-200/60" />
@@ -91,7 +85,7 @@ export function ProductDetailSkeleton() {
           </div>
           <div className="flex items-center gap-3 overflow-x-auto pb-2">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="w-16 sm:w-20 aspect-square sm:aspect-[4/5] rounded-xl bg-zinc-200/60 flex-shrink-0" />
+              <Skeleton key={i} className="w-16 sm:w-20 aspect-[4/5] rounded-xl bg-zinc-200/60 flex-shrink-0" />
             ))}
           </div>
         </div>
