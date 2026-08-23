@@ -146,13 +146,15 @@ export default function SavedProductsPage() {
                   {/* Thumbnail */}
                   <Link
                     href={`/products/${item.slug}`}
-                    className="w-24 aspect-[4/5] rounded-xl overflow-hidden bg-[#F0EFED] border border-zinc-200 flex-shrink-0 relative group"
+                    className="w-20 sm:w-24 aspect-square sm:aspect-[4/5] rounded-xl overflow-hidden bg-[#F0EFED] border border-zinc-200 flex-shrink-0 relative group"
                   >
                     <ProductImage
                       src={item.primary_image_url}
                       alt={item.name}
-                      aspectRatio="4/5"
+                      aspectRatio="auto"
+                      fit="contain"
                       zoomOnHover={true}
+                      containerClassName="w-full h-full"
                     />
                   </Link>
 

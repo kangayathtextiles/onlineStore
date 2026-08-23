@@ -23,8 +23,8 @@ export function Skeleton({ className, shimmer = true, ...props }: SkeletonProps)
 export function ProductCardSkeleton() {
   return (
     <div className="rounded-2xl border border-zinc-200/90 bg-white overflow-hidden flex flex-col justify-between shadow-xs">
-      {/* 4:5 Image Skeleton */}
-      <div className="relative aspect-[4/5] w-full bg-[#F0EFED] overflow-hidden flex items-center justify-center">
+      {/* Responsive Image Skeleton */}
+      <div className="relative aspect-square sm:aspect-[4/5] w-full bg-[#F0EFED] overflow-hidden flex items-center justify-center">
         <Skeleton className="w-full h-full rounded-none bg-zinc-200/50" />
         {/* Floating Stock Badge placeholder */}
         <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 z-10">
@@ -83,7 +83,7 @@ export function ProductDetailSkeleton() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
         {/* Left Column: Image Gallery (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="rounded-2xl sm:rounded-3xl overflow-hidden bg-[#F0EFED] border border-zinc-200/90 aspect-[4/5] relative">
+          <div className="rounded-2xl sm:rounded-3xl overflow-hidden bg-[#F0EFED] border border-zinc-200/90 aspect-square sm:aspect-[4/5] relative">
             <Skeleton className="w-full h-full rounded-none bg-zinc-200/60" />
             <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
               <Skeleton className="h-6 w-32 rounded-full bg-white/95 border border-zinc-200/60" />
@@ -91,7 +91,7 @@ export function ProductDetailSkeleton() {
           </div>
           <div className="flex items-center gap-3 overflow-x-auto pb-2">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="w-16 sm:w-20 aspect-[4/5] rounded-xl bg-zinc-200/60 flex-shrink-0" />
+              <Skeleton key={i} className="w-16 sm:w-20 aspect-square sm:aspect-[4/5] rounded-xl bg-zinc-200/60 flex-shrink-0" />
             ))}
           </div>
         </div>

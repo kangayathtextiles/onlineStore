@@ -25,13 +25,15 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <div className="group relative rounded-2xl border border-zinc-200/90 bg-white hover:border-burgundy/40 hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col justify-between">
       <Link href={`/products/${product.slug}`} className="block">
-        {/* Thumbnail Container with 4:5 Aspect Ratio */}
-        <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#F0EFED] flex items-center justify-center">
+        {/* Responsive Thumbnail Container */}
+        <div className="relative aspect-square sm:aspect-[4/5] w-full overflow-hidden bg-[#F0EFED] flex items-center justify-center">
           <ProductImage
             src={product.primary_image_url}
             alt={product.name}
-            aspectRatio="4/5"
+            aspectRatio="auto"
+            fit="contain"
             zoomOnHover={true}
+            containerClassName="w-full h-full"
           />
 
           {/* Quick Save Heart Button */}

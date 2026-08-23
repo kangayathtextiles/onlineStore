@@ -9,7 +9,8 @@ export interface ProductImageProps
   extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src"> {
   src?: string | null;
   alt: string;
-  aspectRatio?: "4/5" | "square" | "16/9" | "auto";
+  aspectRatio?: "4/5" | "3/4" | "square" | "16/9" | "responsive" | "auto";
+  fit?: "cover" | "contain";
   zoomOnHover?: boolean;
   priority?: boolean;
   containerClassName?: string;
@@ -18,7 +19,8 @@ export interface ProductImageProps
 export function ProductImage({
   src,
   alt,
-  aspectRatio = "4/5",
+  aspectRatio = "responsive",
+  fit = "contain",
   zoomOnHover = true,
   priority = false,
   className,
@@ -39,13 +41,19 @@ export function ProductImage({
   }, [src]);
 
   const aspectClass =
-    aspectRatio === "4/5"
+    aspectRatio === "responsive"
+      ? "aspect-square sm:aspect-[4/5]"
+      : aspectRatio === "4/5"
       ? "aspect-[4/5]"
+      : aspectRatio === "3/4"
+      ? "aspect-[3/4]"
       : aspectRatio === "square"
       ? "aspect-square"
       : aspectRatio === "16/9"
       ? "aspect-[16/9]"
       : "";
+
+  const fitClass = fit === "contain" ? "object-contain" : "object-cover";
 
   return (
     <div
@@ -75,7 +83,8 @@ export function ProductImage({
           loading={priority ? "eager" : "lazy"}
           decoding="async"
           className={cn(
-            "w-full h-full object-cover object-center transition-all duration-500",
+            "w-full h-full object-center transition-all duration-500",
+            fitClass,
             isLoading ? "opacity-0 scale-98" : "opacity-100 scale-100",
             zoomOnHover && "group-hover:scale-105",
             className
