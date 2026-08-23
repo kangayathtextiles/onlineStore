@@ -227,7 +227,7 @@ export default function ProductDetailPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 space-y-8 sm:space-y-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 pb-24 sm:pb-12 space-y-8 sm:space-y-12">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
@@ -237,7 +237,7 @@ export default function ProductDetailPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-zinc-500 overflow-x-auto pb-1">
+      <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-zinc-500 overflow-x-auto pb-1 scrollbar-none whitespace-nowrap">
         <Link href="/" className="hover:text-zinc-900 transition-colors flex-shrink-0">
           Home
         </Link>
@@ -266,7 +266,7 @@ export default function ProductDetailPage() {
         {/* Left Column: Image Gallery (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
           {/* Main Photo Container with 4:5 Aspect Ratio */}
-          <div className="relative rounded-3xl overflow-hidden bg-[#F0EFED] border border-zinc-200/90 aspect-[4/5] flex items-center justify-center">
+          <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden bg-[#F0EFED] border border-zinc-200/90 aspect-[4/5] flex items-center justify-center">
             <ProductImage
               src={currentImage?.url}
               alt={currentImage?.alt_text || product.name}
@@ -276,7 +276,7 @@ export default function ProductDetailPage() {
             />
 
             {/* In-Stock / Sold-Out Badge */}
-            <div className="absolute top-4 left-4 z-10">
+            <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10">
               <Badge
                 variant={product.is_available ? "success" : "danger"}
                 className="text-xs shadow-xs backdrop-blur-md bg-white/95 border border-zinc-200/60 font-semibold"
@@ -293,13 +293,13 @@ export default function ProductDetailPage() {
 
           {/* Thumbnail Gallery Strip (up to 6 photos) */}
           {product.images.length > 1 && (
-            <div className="flex items-center gap-3 overflow-x-auto pb-2">
+            <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none">
               {product.images.map((img, idx) => (
                 <button
                   key={img.id}
                   type="button"
                   onClick={() => setSelectedImageIndex(idx)}
-                  className={`relative w-20 aspect-[4/5] rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 bg-[#F0EFED] ${
+                  className={`relative w-16 sm:w-20 aspect-[4/5] rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 bg-[#F0EFED] ${
                     selectedImageIndex === idx
                       ? "border-burgundy shadow-xs ring-2 ring-burgundy/20"
                       : "border-zinc-200 opacity-70 hover:opacity-100 hover:border-zinc-300"
@@ -318,17 +318,17 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Right Column: Garment Information & Sizing (5 cols) */}
-        <div className="lg:col-span-5 space-y-8">
+        <div className="lg:col-span-5 space-y-6 sm:space-y-8">
           {/* Header info */}
-          <div className="space-y-2 border-b border-zinc-200 pb-6">
+          <div className="space-y-2 border-b border-zinc-200 pb-5 sm:pb-6">
             <div className="flex items-center gap-2">
               {product.category_name && (
-                <Badge variant="brand" className="text-xs">
+                <Badge variant="brand" className="text-[10px] sm:text-xs">
                   {product.category_name}
                 </Badge>
               )}
               {product.subcategory_name && (
-                <Badge variant="neutral" className="text-xs">
+                <Badge variant="neutral" className="text-[10px] sm:text-xs">
                   {product.subcategory_name}
                 </Badge>
               )}
@@ -355,7 +355,7 @@ export default function ProductDetailPage() {
 
           {/* Size Selectors */}
           {uniqueSizes.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold uppercase tracking-wider text-zinc-700">
                   Select Size
@@ -371,10 +371,10 @@ export default function ProductDetailPage() {
                       key={s.id}
                       type="button"
                       onClick={() => setSelectedSizeId(s.id)}
-                      className={`min-w-[48px] px-3 py-2 rounded-xl border text-xs font-bold transition-all ${
+                      className={`min-w-[44px] h-10 px-3.5 rounded-xl border text-xs font-bold transition-all ${
                         isSelected
-                          ? "bg-burgundy text-white border-burgundy shadow-xs scale-105"
-                          : "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-100"
+                          ? "bg-burgundy border-burgundy text-white shadow-xs scale-105"
+                          : "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
                       }`}
                     >
                       {s.name}
@@ -387,7 +387,7 @@ export default function ProductDetailPage() {
 
           {/* Color Swatch Selectors */}
           {uniqueColors.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold uppercase tracking-wider text-zinc-700">
                   Select Color
@@ -395,7 +395,7 @@ export default function ProductDetailPage() {
                 <span className="text-xs text-burgundy font-semibold">{selectedColorName}</span>
               </div>
 
-              <div className="flex items-center gap-2.5 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
                 {uniqueColors.map((c) => {
                   const isSelected = selectedColorId === c.id;
                   return (
@@ -403,7 +403,7 @@ export default function ProductDetailPage() {
                       key={c.id}
                       type="button"
                       onClick={() => setSelectedColorId(c.id)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
+                      className={`flex items-center gap-2 px-3 py-2 min-h-[40px] rounded-xl border text-xs font-medium transition-all ${
                         isSelected
                           ? "bg-rose-50 border-burgundy text-burgundy font-semibold shadow-xs scale-105"
                           : "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
@@ -422,9 +422,9 @@ export default function ProductDetailPage() {
           )}
 
           {/* Live Variation Stock Status */}
-          <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200 flex items-center justify-between">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-zinc-50 border border-zinc-200 flex items-center justify-between">
             <div>
-              <span className="text-xs text-zinc-500 block">Stock Availability for:</span>
+              <span className="text-[11px] sm:text-xs text-zinc-500 block">Stock Availability for:</span>
               <span className="text-xs font-bold text-zinc-900">
                 {selectedSizeName} / {selectedColorName}
               </span>
@@ -446,7 +446,7 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Action CTAs */}
-          <div className="space-y-3 pt-2">
+          <div className="hidden sm:block space-y-3 pt-2">
             {/* Direct WhatsApp Inquiry */}
             <a
               href={`https://wa.me/${whatsappPhone}?text=${whatsappMessage}`}
@@ -479,7 +479,7 @@ export default function ProductDetailPage() {
 
           {/* Description & Fabric Details */}
           {product.description && (
-            <div className="space-y-2 border-t border-zinc-200 pt-6">
+            <div className="space-y-2 border-t border-zinc-200 pt-5 sm:pt-6">
               <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-900">
                 Garment Description
               </h3>
@@ -490,7 +490,7 @@ export default function ProductDetailPage() {
           )}
 
           {/* Physical Store Notice Box */}
-          <div className="p-5 rounded-2xl border border-zinc-200 bg-zinc-50/70 space-y-3">
+          <div className="p-4 sm:p-5 rounded-2xl border border-zinc-200 bg-zinc-50/70 space-y-2.5 sm:space-y-3">
             <div className="flex items-center gap-2 text-xs font-bold text-zinc-900">
               <Store className="w-4 h-4 text-burgundy" />
               <span>Physical Retail Exclusive</span>
@@ -511,6 +511,28 @@ export default function ProductDetailPage() {
             </Link>
           </div>
         </div>
+      </div>
+
+      {/* Mobile Sticky Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-zinc-200 p-3 sm:hidden shadow-lg flex items-center gap-2">
+        <Button
+          variant={saved ? "danger" : "outline"}
+          size="sm"
+          onClick={() => toggleSave(summaryProduct)}
+          className="h-11 w-11 p-0 flex-shrink-0 rounded-xl"
+          aria-label={saved ? "Remove from wishlist" : "Save for later"}
+        >
+          <Heart className={`w-4 h-4 ${saved ? "fill-current" : ""}`} />
+        </Button>
+        <a
+          href={`https://wa.me/${whatsappPhone}?text=${whatsappMessage}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-emerald-600 active:bg-emerald-700 text-white font-bold text-xs shadow-xs"
+        >
+          <MessageCircle className="w-4 h-4" />
+          <span>Inquire on WhatsApp</span>
+        </a>
       </div>
     </div>
   );

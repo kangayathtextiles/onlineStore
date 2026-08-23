@@ -210,7 +210,7 @@ export default function CustomerHomePage() {
 
           {/* Section Products Grid */}
           {section.products.length > 0 ? (
-            <div className="grid gap-4 sm:gap-6 [grid-template-columns:repeat(auto-fit,minmax(250px,1fr))]">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
               {section.products.map((prod) => (
                 <ProductCard key={prod.id} product={prod} />
               ))}
@@ -252,7 +252,7 @@ export default function CustomerHomePage() {
             <p className="text-xs text-zinc-500 mt-1">Visit our store to view all in-store stock.</p>
           </div>
         ) : (
-          <div className="grid gap-4 sm:gap-6 [grid-template-columns:repeat(auto-fit,minmax(250px,1fr))]">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
             {featuredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
