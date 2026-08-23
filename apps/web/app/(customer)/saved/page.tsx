@@ -11,9 +11,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ProductImage } from "@/components/ui/product-image";
 import { useSavedItems } from "@/lib/saved-items-context";
 import { publicApi } from "@/lib/api";
-import { resolveImageUrl } from "@/lib/utils";
 import type { StoreProfile } from "@/types/api";
 
 export default function SavedProductsPage() {
@@ -147,19 +147,14 @@ export default function SavedProductsPage() {
                   {/* Thumbnail */}
                   <Link
                     href={`/products/${item.slug}`}
-                    className="w-24 aspect-[4/5] rounded-xl overflow-hidden bg-zinc-100 border border-zinc-200 flex-shrink-0 relative group"
+                    className="w-24 aspect-[4/5] rounded-xl overflow-hidden bg-[#F0EFED] border border-zinc-200 flex-shrink-0 relative group"
                   >
-                    {item.primary_image_url ? (
-                      <img
-                        src={resolveImageUrl(item.primary_image_url)}
-                        alt={item.name}
-                        className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-zinc-400">
-                        <Shirt className="w-6 h-6 stroke-1" />
-                      </div>
-                    )}
+                    <ProductImage
+                      src={item.primary_image_url}
+                      alt={item.name}
+                      aspectRatio="4/5"
+                      zoomOnHover={true}
+                    />
                   </Link>
 
                   {/* Info */}
