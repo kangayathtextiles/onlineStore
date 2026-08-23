@@ -19,8 +19,8 @@ export interface ProductImageProps
 export function ProductImage({
   src,
   alt,
-  aspectRatio = "responsive",
-  fit = "contain",
+  aspectRatio = "square",
+  fit = "cover",
   zoomOnHover = true,
   priority = false,
   className,
@@ -41,14 +41,12 @@ export function ProductImage({
   }, [src]);
 
   const aspectClass =
-    aspectRatio === "responsive"
-      ? "aspect-square sm:aspect-[4/5]"
+    aspectRatio === "square" || aspectRatio === "responsive"
+      ? "aspect-square"
       : aspectRatio === "4/5"
       ? "aspect-[4/5]"
       : aspectRatio === "3/4"
       ? "aspect-[3/4]"
-      : aspectRatio === "square"
-      ? "aspect-square"
       : aspectRatio === "16/9"
       ? "aspect-[16/9]"
       : "";
