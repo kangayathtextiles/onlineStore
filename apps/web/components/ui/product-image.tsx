@@ -90,6 +90,7 @@ export function ProductImage({
             className
           )}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           {...(props as any)}
         />
       ) : (
