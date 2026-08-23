@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -62,9 +63,11 @@ export function CustomerNavbar() {
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center group py-2" title="KANGAYATH — Style For Everyone">
-            <img
+            <Image
               src="/brand/logo.png"
               alt="KANGAYATH"
+              width={200}
+              height={60}
               className="h-10 sm:h-12 w-auto object-contain transition-transform group-hover:scale-105"
             />
           </Link>

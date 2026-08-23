@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   Sparkles,
@@ -158,9 +159,9 @@ export default function CustomerHomePage() {
                 className="group relative rounded-2xl border border-zinc-200 bg-white p-5 hover:border-burgundy/30 hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col justify-between"
               >
                 <div className="space-y-2">
-                  <div className="w-12 h-12 rounded-xl bg-zinc-100 border border-zinc-200 flex items-center justify-center overflow-hidden mb-4 group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 relative rounded-xl bg-zinc-100 border border-zinc-200 flex items-center justify-center overflow-hidden mb-4 group-hover:scale-105 transition-transform">
                     {cat.thumbnail_url ? (
-                      <img src={resolveImageUrl(cat.thumbnail_url)} alt={cat.name} className="w-full h-full object-cover" />
+                      <Image src={resolveImageUrl(cat.thumbnail_url)} alt={cat.name} fill unoptimized className="object-cover" />
                     ) : (
                       <Layers className="w-6 h-6 text-burgundy" />
                     )}

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   MapPin,
   MessageCircle,
@@ -43,9 +44,11 @@ export function CustomerFooter() {
           {/* Col 1: Brand & Philosophy */}
           <div className="space-y-4">
             <Link href="/" className="inline-block" title="KANGAYATH">
-              <img
+              <Image
                 src="/brand/logo.png"
                 alt="KANGAYATH"
+                width={200}
+                height={60}
                 className="h-10 w-auto object-contain"
               />
             </Link>

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { Shirt } from "lucide-react";
 import { cn, resolveImageUrl } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -70,24 +71,25 @@ export function ProductImage({
 
       {/* Image Render */}
       {resolvedUrl && !hasError ? (
-        <img
+        <Image
           src={resolvedUrl}
-          alt={alt}
+          alt={alt || "Product image"}
+          fill
+          unoptimized
           onLoad={() => setIsLoading(false)}
           onError={() => {
             setIsLoading(false);
             setHasError(true);
           }}
-          loading={priority ? "eager" : "lazy"}
-          decoding="async"
+          priority={priority}
           className={cn(
-            "w-full h-full object-center transition-all duration-500",
+            "object-center transition-all duration-500",
             fitClass,
             isLoading ? "opacity-0 scale-98" : "opacity-100 scale-100",
             zoomOnHover && "group-hover:scale-105",
             className
           )}
-          {...props}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
       ) : (
         /* Graceful Branded Fallback (No broken-image icon or blank box) */
