@@ -90,6 +90,7 @@ export function ProductImage({
             className
           )}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          {...(props as any)}
         />
       ) : (
         /* Graceful Branded Fallback (No broken-image icon or blank box) */
