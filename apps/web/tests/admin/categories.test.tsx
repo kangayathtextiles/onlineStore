@@ -36,6 +36,7 @@ describe("Admin Categories Page", () => {
         thumbnail_url: null,
         display_order: 0,
         is_active: true,
+        show_prices: true,
         created_at: "2026-08-21T00:00:00Z",
         updated_at: "2026-08-21T00:00:00Z",
         subcategories: [

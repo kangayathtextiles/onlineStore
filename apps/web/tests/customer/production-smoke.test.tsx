@@ -61,6 +61,7 @@ describe("Phase 11 Customer Production Smoke Test Suite", () => {
       google_maps_url: "https://maps.google.com/?q=Kangayath",
       latitude: 10.5276,
       longitude: 76.2144,
+      show_prices: true,
       schedules: [
         {
           day_of_week: "MONDAY",

@@ -41,6 +41,8 @@ describe("Admin Dashboard Page", () => {
           lifecycle_state: "PUBLISHED",
           manual_sold_out: false,
           featured: true,
+          price: null,
+          show_price: true,
           meta_title: null,
           meta_description: null,
           created_at: "2026-08-21T00:00:00Z",
@@ -85,6 +87,7 @@ describe("Admin Dashboard Page", () => {
         thumbnail_url: null,
         display_order: 0,
         is_active: true,
+        show_prices: true,
         created_at: "2026-08-21T00:00:00Z",
         updated_at: "2026-08-21T00:00:00Z",
         subcategories: [
