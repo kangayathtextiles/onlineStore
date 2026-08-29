@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Any
 
 import pytest
 from httpx import AsyncClient
@@ -91,9 +90,7 @@ async def test_price_visibility_matrix_and_precedence(
 
 
 @pytest.mark.asyncio
-async def test_admin_price_management_crud(
-    client: AsyncClient, db_session: AsyncSession
-) -> None:
+async def test_admin_price_management_crud(client: AsyncClient, db_session: AsyncSession) -> None:
     """
     Test Admin Price CRUD:
     - Create product with price
@@ -124,7 +121,11 @@ async def test_admin_price_management_crud(
     assert create_resp.status_code == 201
     prod_data = create_resp.json()
     prod_id = prod_data["id"]
-    assert prod_data["price"] == "2499.50" or prod_data["price"] == 2499.50 or float(prod_data["price"]) == 2499.50
+    assert (
+        prod_data["price"] == "2499.50"
+        or prod_data["price"] == 2499.50
+        or float(prod_data["price"]) == 2499.50
+    )
     assert prod_data["show_price"] is True
 
     # Update price via admin API
@@ -137,4 +138,3 @@ async def test_admin_price_management_crud(
     updated_data = update_resp.json()
     assert float(updated_data["price"]) == 1999.00
     assert updated_data["show_price"] is False
-
