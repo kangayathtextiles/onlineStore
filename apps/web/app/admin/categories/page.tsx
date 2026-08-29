@@ -37,6 +37,7 @@ export default function AdminCategoriesPage() {
   const [catThumbnail, setCatThumbnail] = React.useState("");
   const [catDisplayOrder, setCatDisplayOrder] = React.useState("0");
   const [catIsActive, setCatIsActive] = React.useState(true);
+  const [catShowPrices, setCatShowPrices] = React.useState(true);
   const [isSavingCat, setIsSavingCat] = React.useState(false);
 
   const [isSubcategoryModalOpen, setIsSubcategoryModalOpen] = React.useState(false);
@@ -87,6 +88,7 @@ export default function AdminCategoriesPage() {
     setCatThumbnail("");
     setCatDisplayOrder("0");
     setCatIsActive(true);
+    setCatShowPrices(true);
     setIsCategoryModalOpen(true);
   };
 
@@ -98,6 +100,7 @@ export default function AdminCategoriesPage() {
     setCatThumbnail(cat.thumbnail_url || "");
     setCatDisplayOrder(cat.display_order.toString());
     setCatIsActive(cat.is_active);
+    setCatShowPrices(cat.show_prices !== undefined ? cat.show_prices : true);
     setIsCategoryModalOpen(true);
   };
 
@@ -115,6 +118,7 @@ export default function AdminCategoriesPage() {
           thumbnail_url: catThumbnail.trim() || undefined,
           display_order: parseInt(catDisplayOrder, 10) || 0,
           is_active: catIsActive,
+          show_prices: catShowPrices,
         });
         toast.success("Category Updated", `'${catName}' updated.`);
       } else {
@@ -125,6 +129,7 @@ export default function AdminCategoriesPage() {
           thumbnail_url: catThumbnail.trim() || undefined,
           display_order: parseInt(catDisplayOrder, 10) || 0,
           is_active: catIsActive,
+          show_prices: catShowPrices,
         });
         toast.success("Category Created", `'${catName}' added.`);
       }
@@ -447,6 +452,17 @@ export default function AdminCategoriesPage() {
                 label="Active in Showroom"
               />
             </div>
+          </div>
+
+          <div className="flex items-center justify-between p-3.5 bg-zinc-50 border border-zinc-200/80 rounded-xl">
+            <div>
+              <span className="text-xs font-semibold text-zinc-900 block">Show Product Prices</span>
+              <span className="text-[11px] text-zinc-500 block">Display prices for products in this category</span>
+            </div>
+            <Switch
+              checked={catShowPrices}
+              onCheckedChange={setCatShowPrices}
+            />
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200">

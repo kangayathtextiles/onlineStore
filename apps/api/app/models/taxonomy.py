@@ -30,6 +30,7 @@ class Category(Base, UUIDMixin, TimestampMixin):
     thumbnail_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     display_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    show_prices: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # Relationships
     subcategories: Mapped[list["Subcategory"]] = relationship(

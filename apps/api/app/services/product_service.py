@@ -20,6 +20,7 @@ from app.models.stored_media import StoredMedia
 from app.models.variant import ProductVariant
 from app.repositories.attribute_repository import AttributeRepository
 from app.repositories.product_repository import ProductRepository
+from app.repositories.store_repository import StoreRepository
 from app.repositories.taxonomy_repository import TaxonomyRepository
 from app.schemas.attribute import ColorOptionDTO, SizeOptionDTO
 from app.schemas.common import PaginatedResponse
@@ -49,6 +50,28 @@ class ProductService:
         self.repo = ProductRepository(session)
         self.taxonomy_repo = TaxonomyRepository(session)
         self.attr_repo = AttributeRepository(session)
+        self.store_repo = StoreRepository(session)
+
+    async def get_global_show_prices(self) -> bool:
+        store = await self.store_repo.get_singleton_profile()
+        return store.show_prices if store else True
+
+    # --- Helper: Calculate Price Visibility (Three-Tier Precedence) ---
+    @staticmethod
+    def should_show_price(
+        product: Product,
+        global_show_prices: bool = True,
+    ) -> bool:
+        # Precedence 1: Global OFF -> All customer prices hidden
+        if not global_show_prices:
+            return False
+        # Precedence 2: Category OFF -> Prices in that category hidden
+        if product.category and not product.category.show_prices:
+            return False
+        # Precedence 3: Product OFF -> That product price hidden
+        if not product.show_price:
+            return False
+        return True
 
     # --- Helper: Calculate Product Availability ---
     @staticmethod
@@ -60,7 +83,9 @@ class ProductService:
         return any(v.is_available for v in product.variants)
 
     # --- Mapping Helpers ---
-    def map_to_public_summary(self, product: Product) -> PublicProductSummaryResponse:
+    def map_to_public_summary(
+        self, product: Product, global_show_prices: bool = True
+    ) -> PublicProductSummaryResponse:
         primary_img = next((img.url for img in product.images if img.is_primary), None)
         if not primary_img and product.images:
             primary_img = product.images[0].url
@@ -70,6 +95,10 @@ class ProductService:
         )
         available_colors = sorted(
             {v.color.name for v in product.variants if v.is_available and v.color is not None}
+        )
+
+        visible_price = (
+            product.price if self.should_show_price(product, global_show_prices) else None
         )
 
         return PublicProductSummaryResponse(
@@ -87,9 +116,15 @@ class ProductService:
             subcategory_slug=product.subcategory.slug if product.subcategory else None,
             available_sizes=available_sizes,
             available_colors=available_colors,
+            price=visible_price,
         )
 
-    def map_to_public_detail(self, product: Product) -> PublicProductDetailResponse:
+    def map_to_public_detail(
+        self, product: Product, global_show_prices: bool = True
+    ) -> PublicProductDetailResponse:
+        visible_price = (
+            product.price if self.should_show_price(product, global_show_prices) else None
+        )
         return PublicProductDetailResponse(
             id=product.id,
             name=product.name,
@@ -105,6 +140,7 @@ class ProductService:
             category_slug=product.category.slug if product.category else None,
             subcategory_name=product.subcategory.name if product.subcategory else None,
             subcategory_slug=product.subcategory.slug if product.subcategory else None,
+            price=visible_price,
             images=[
                 ProductImageDTO(
                     id=img.id,
@@ -158,6 +194,8 @@ class ProductService:
             lifecycle_state=product.lifecycle_state,
             manual_sold_out=product.manual_sold_out,
             featured=product.featured,
+            price=product.price,
+            show_price=product.show_price,
             meta_title=product.meta_title,
             meta_description=product.meta_description,
             created_at=product.created_at,
@@ -225,6 +263,7 @@ class ProductService:
         page: int = 1,
         page_size: int = 20,
     ) -> PaginatedResponse[PublicProductSummaryResponse]:
+        global_show_prices = await self.get_global_show_prices()
         items, total = await self.repo.list_public_products(
             category_slug=category_slug,
             subcategory_slug=subcategory_slug,
@@ -235,14 +274,17 @@ class ProductService:
             page=page,
             page_size=page_size,
         )
-        mapped = [self.map_to_public_summary(p) for p in items]
+        mapped = [
+            self.map_to_public_summary(p, global_show_prices=global_show_prices) for p in items
+        ]
         return PaginatedResponse.create(mapped, total, page, page_size)
 
     async def get_public_product_by_slug(self, slug: str) -> PublicProductDetailResponse:
+        global_show_prices = await self.get_global_show_prices()
         product = await self.repo.get_published_by_slug(slug)
         if not product:
             raise EntityNotFoundException("Product", slug)
-        return self.map_to_public_detail(product)
+        return self.map_to_public_detail(product, global_show_prices=global_show_prices)
 
     # --- Admin APIs ---
     async def list_admin_products(
@@ -297,6 +339,8 @@ class ProductService:
             lifecycle_state=data.lifecycle_state,
             manual_sold_out=data.manual_sold_out,
             featured=data.featured,
+            price=data.price,
+            show_price=data.show_price,
             meta_title=data.meta_title,
             meta_description=data.meta_description,
         )
@@ -344,6 +388,10 @@ class ProductService:
             product.manual_sold_out = data.manual_sold_out
         if data.featured is not None:
             product.featured = data.featured
+        if "price" in data.model_fields_set:
+            product.price = data.price
+        if data.show_price is not None:
+            product.show_price = data.show_price
         if data.meta_title is not None:
             product.meta_title = data.meta_title
         if data.meta_description is not None:

@@ -7,6 +7,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea, Select } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api";
 import type { Category, SubcategorySummary, LifecycleState } from "@/types/api";
@@ -27,6 +28,8 @@ export default function NewProductPage() {
   const [material, setMaterial] = React.useState("");
   const [styleCode, setStyleCode] = React.useState("");
   const [description, setDescription] = React.useState("");
+  const [price, setPrice] = React.useState("");
+  const [showPrice, setShowPrice] = React.useState(true);
   const [lifecycleState, setLifecycleState] = React.useState<LifecycleState>("DRAFT");
   const [metaTitle, setMetaTitle] = React.useState("");
   const [metaDescription, setMetaDescription] = React.useState("");
@@ -75,6 +78,9 @@ export default function NewProductPage() {
     if (!name.trim()) newErrors.name = "Garment name is required.";
     if (!categoryId) newErrors.categoryId = "Please select a Category.";
     if (!subcategoryId) newErrors.subcategoryId = "Please select a Subcategory.";
+    if (price.trim() && (isNaN(Number(price)) || Number(price) < 0)) {
+      newErrors.price = "Please enter a valid non-negative price.";
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -92,6 +98,8 @@ export default function NewProductPage() {
         material: material.trim() || undefined,
         style_code: styleCode.trim() || undefined,
         description: description.trim() || undefined,
+        price: price.trim() ? Number(price) : undefined,
+        show_price: showPrice,
         lifecycle_state: lifecycleState,
         meta_title: metaTitle.trim() || undefined,
         meta_description: metaDescription.trim() || undefined,
@@ -196,6 +204,32 @@ export default function NewProductPage() {
                 value={styleCode}
                 onChange={(e) => setStyleCode(e.target.value)}
               />
+            </div>
+
+            {/* Price & Display Price Visibility Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+              <Input
+                label="Product Price (₹)"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="e.g., 799"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                error={errors.price}
+                helperText="Optional retail display price"
+              />
+
+              <div className="flex items-center justify-between p-3.5 bg-zinc-50 border border-zinc-200/80 rounded-xl">
+                <div>
+                  <span className="text-xs font-semibold text-zinc-900 block">Show Price</span>
+                  <span className="text-[11px] text-zinc-500 block">Visible on customer showroom</span>
+                </div>
+                <Switch
+                  checked={showPrice}
+                  onCheckedChange={setShowPrice}
+                />
+              </div>
             </div>
 
             {/* Description */}

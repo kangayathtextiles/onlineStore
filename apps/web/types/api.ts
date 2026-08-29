@@ -45,6 +45,7 @@ export interface StoreProfile {
   latitude: number | null;
   longitude: number | null;
   google_maps_url: string | null;
+  show_prices: boolean;
   schedules: OperatingSchedule[];
   created_at: string;
   updated_at: string;
@@ -69,6 +70,7 @@ export interface StoreProfileUpdate {
   latitude?: number | null;
   longitude?: number | null;
   google_maps_url?: string | null;
+  show_prices?: boolean;
 }
 
 export interface StoreStatusResponse {
@@ -113,6 +115,7 @@ export interface Category {
   thumbnail_url: string | null;
   display_order: number;
   is_active: boolean;
+  show_prices: boolean;
   created_at: string;
   updated_at: string;
   subcategories: SubcategorySummary[];
@@ -125,6 +128,7 @@ export interface CategoryCreate {
   thumbnail_url?: string | null;
   display_order?: number;
   is_active?: boolean;
+  show_prices?: boolean;
 }
 
 export interface CategoryUpdate {
@@ -134,6 +138,7 @@ export interface CategoryUpdate {
   thumbnail_url?: string | null;
   display_order?: number;
   is_active?: boolean;
+  show_prices?: boolean;
 }
 
 export interface SubcategoryCreate {
@@ -241,6 +246,8 @@ export interface AdminProduct {
   lifecycle_state: LifecycleState;
   manual_sold_out: boolean;
   featured: boolean;
+  price: number | null;
+  show_price: boolean;
   meta_title: string | null;
   meta_description: string | null;
   created_at: string;
@@ -262,6 +269,8 @@ export interface ProductCreateRequest {
   lifecycle_state?: LifecycleState;
   manual_sold_out?: boolean;
   featured?: boolean;
+  price?: number | null;
+  show_price?: boolean;
   meta_title?: string | null;
   meta_description?: string | null;
 }
@@ -277,6 +286,8 @@ export interface ProductUpdateRequest {
   lifecycle_state?: LifecycleState;
   manual_sold_out?: boolean;
   featured?: boolean;
+  price?: number | null;
+  show_price?: boolean;
   meta_title?: string | null;
   meta_description?: string | null;
 }
@@ -381,6 +392,7 @@ export interface PublicProductSummary {
   subcategory_slug: string | null;
   available_sizes: string[];
   available_colors: string[];
+  price?: number | null;
 }
 
 export interface PublicProductDetail {
@@ -400,6 +412,7 @@ export interface PublicProductDetail {
   subcategory_slug: string | null;
   images: ProductImage[];
   variants: ProductVariant[];
+  price?: number | null;
 }
 
 export interface PublicCategoryTree {

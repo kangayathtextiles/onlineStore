@@ -59,6 +59,8 @@ export default function EditProductPage() {
   const [material, setMaterial] = React.useState("");
   const [styleCode, setStyleCode] = React.useState("");
   const [description, setDescription] = React.useState("");
+  const [price, setPrice] = React.useState("");
+  const [showPrice, setShowPrice] = React.useState(true);
   const [lifecycleState, setLifecycleState] = React.useState<LifecycleState>("DRAFT");
   const [metaTitle, setMetaTitle] = React.useState("");
   const [metaDescription, setMetaDescription] = React.useState("");
@@ -103,6 +105,8 @@ export default function EditProductPage() {
       setMaterial(prod.material || "");
       setStyleCode(prod.style_code || "");
       setDescription(prod.description || "");
+      setPrice(prod.price !== null && prod.price !== undefined ? String(prod.price) : "");
+      setShowPrice(prod.show_price !== undefined ? prod.show_price : true);
       setLifecycleState(prod.lifecycle_state);
       setMetaTitle(prod.meta_title || "");
       setMetaDescription(prod.meta_description || "");
@@ -151,6 +155,8 @@ export default function EditProductPage() {
         material: material.trim() || undefined,
         style_code: styleCode.trim() || undefined,
         description: description.trim() || undefined,
+        price: price.trim() ? Number(price) : null,
+        show_price: showPrice,
         lifecycle_state: lifecycleState,
         meta_title: metaTitle.trim() || undefined,
         meta_description: metaDescription.trim() || undefined,
@@ -451,6 +457,31 @@ export default function EditProductPage() {
                   onChange={(e) => setStyleCode(e.target.value)}
                   placeholder="e.g. KURTA-101"
                 />
+
+                {/* Price & Display Price Visibility Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                  <Input
+                    label="Product Price (₹)"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="e.g. 799"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    helperText="Optional retail display price"
+                  />
+
+                  <div className="flex items-center justify-between p-3.5 bg-zinc-50 border border-zinc-200/80 rounded-xl">
+                    <div>
+                      <span className="text-xs font-semibold text-zinc-900 block">Show Price</span>
+                      <span className="text-[11px] text-zinc-500 block">Visible on customer showroom</span>
+                    </div>
+                    <Switch
+                      checked={showPrice}
+                      onCheckedChange={setShowPrice}
+                    />
+                  </div>
+                </div>
 
                 <Textarea
                   label="Description"

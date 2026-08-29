@@ -52,6 +52,7 @@ export default function AdminShopPage() {
   const [state, setState] = React.useState("");
   const [pincode, setPincode] = React.useState("");
   const [googleMapsUrl, setGoogleMapsUrl] = React.useState("");
+  const [showPrices, setShowPrices] = React.useState(true);
   const [isSavingProfile, setIsSavingProfile] = React.useState(false);
 
   // Schedule State
@@ -79,6 +80,7 @@ export default function AdminShopPage() {
       setState(profData.state || "Kerala");
       setPincode(profData.pincode || "");
       setGoogleMapsUrl(profData.google_maps_url || "");
+      setShowPrices(profData.show_prices !== undefined ? profData.show_prices : true);
 
       setStatus(statusData);
       setOverrideMode(statusData.effective_mode);
@@ -142,6 +144,7 @@ export default function AdminShopPage() {
         state: state.trim(),
         pincode: pincode.trim(),
         google_maps_url: googleMapsUrl.trim() || undefined,
+        show_prices: showPrices,
       });
       setProfile(updated);
       setName(updated.name || "");
@@ -472,6 +475,20 @@ export default function AdminShopPage() {
               value={googleMapsUrl}
               onChange={(e) => setGoogleMapsUrl(e.target.value)}
             />
+
+            {/* Global Price Visibility Master Switch */}
+            <div className="flex items-center justify-between p-4 bg-zinc-50 border border-zinc-200/80 rounded-xl">
+              <div>
+                <span className="text-sm font-semibold text-zinc-900 block">Customer Product Prices</span>
+                <span className="text-xs text-zinc-500 block mt-0.5">
+                  When disabled, product prices are hidden across the entire customer website.
+                </span>
+              </div>
+              <Switch
+                checked={showPrices}
+                onCheckedChange={setShowPrices}
+              />
+            </div>
 
             <div className="flex justify-end pt-4 border-t border-zinc-200">
               <Button variant="primary" size="md" type="submit" isLoading={isSavingProfile}>

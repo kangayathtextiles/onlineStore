@@ -42,6 +42,7 @@ class CategoryBase(BaseSchema):
     thumbnail_url: str | None = Field(default=None, max_length=500)
     display_order: int = 0
     is_active: bool = True
+    show_prices: bool = True
 
 
 class CategoryCreate(CategoryBase):
@@ -55,6 +56,7 @@ class CategoryUpdate(BaseSchema):
     thumbnail_url: str | None = Field(default=None, max_length=500)
     display_order: int | None = None
     is_active: bool | None = None
+    show_prices: bool | None = None
 
 
 class CategoryResponse(BaseSchema):
@@ -65,6 +67,7 @@ class CategoryResponse(BaseSchema):
     thumbnail_url: str | None = None
     display_order: int
     is_active: bool
+    show_prices: bool
     created_at: datetime
     updated_at: datetime
     subcategories: list[SubcategorySummaryDTO] = Field(default_factory=list)

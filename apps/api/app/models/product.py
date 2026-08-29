@@ -1,5 +1,6 @@
 import uuid
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
@@ -9,6 +10,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     Text,
 )
@@ -63,6 +65,8 @@ class Product(Base, UUIDMixin, TimestampMixin):
     )
     manual_sold_out: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     featured: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True, default=None)
+    show_price: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     meta_title: Mapped[str | None] = mapped_column(String(100), nullable=True)
     meta_description: Mapped[str | None] = mapped_column(String(200), nullable=True)
 

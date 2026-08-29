@@ -279,11 +279,11 @@ async def test_release_candidate_complete_system_loop(
         if isinstance(obj, dict):
             for k, v in obj.items():
                 k_lower = k.lower()
-                assert "price" not in k_lower, f"Forbidden 'price' key detected at {path}.{k}"
                 assert "mrp" not in k_lower, f"Forbidden 'mrp' key detected at {path}.{k}"
                 assert "cost" not in k_lower, f"Forbidden 'cost' key detected at {path}.{k}"
                 assert "amount" not in k_lower, f"Forbidden 'amount' key detected at {path}.{k}"
                 assert "currency" not in k_lower, f"Forbidden 'currency' key detected at {path}.{k}"
+                assert "checkout" not in k_lower, f"Forbidden 'checkout' key detected at {path}.{k}"
                 verify_no_price_tokens(v, f"{path}.{k}")
         elif isinstance(obj, list):
             for i, elem in enumerate(obj):

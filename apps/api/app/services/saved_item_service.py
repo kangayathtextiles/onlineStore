@@ -24,8 +24,9 @@ class SavedItemService:
 
         # Query products
         products = await self.repo.get_products_by_ids(req.product_ids)
+        global_show_prices = await self.product_service.get_global_show_prices()
         public_products = [
-            self.product_service.map_to_public_summary(p)
+            self.product_service.map_to_public_summary(p, global_show_prices=global_show_prices)
             for p in products
             if p.lifecycle_state == LifecycleState.PUBLISHED
         ]

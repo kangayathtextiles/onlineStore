@@ -45,6 +45,7 @@ async def create_category(
         thumbnail_url=cat.thumbnail_url,
         display_order=cat.display_order,
         is_active=cat.is_active,
+        show_prices=cat.show_prices,
         created_at=cat.created_at,
         updated_at=cat.updated_at,
         subcategories=[],
@@ -68,6 +69,7 @@ async def update_category(
         thumbnail_url=cat.thumbnail_url,
         display_order=cat.display_order,
         is_active=cat.is_active,
+        show_prices=cat.show_prices,
         created_at=cat.created_at,
         updated_at=cat.updated_at,
         subcategories=[

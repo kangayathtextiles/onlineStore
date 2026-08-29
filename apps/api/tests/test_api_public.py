@@ -103,7 +103,7 @@ async def test_public_products_discovery_and_filtering(
     body = resp.json()
     assert body["total"] == 1
     assert body["items"][0]["name"] == "Traditional Kanchipuram Silk Saree"
-    assert "price" not in body["items"][0]
+    assert body["items"][0]["price"] is None
 
     # 2. Filter by Category
     cat_filter_resp = await client.get("/api/v1/public/products?category=women")
@@ -126,7 +126,7 @@ async def test_public_products_discovery_and_filtering(
     detail = detail_resp.json()
     assert detail["name"] == "Traditional Kanchipuram Silk Saree"
     assert detail["material"] == "Pure Mulberry Silk"
-    assert "price" not in detail
+    assert detail["price"] is None
 
 
 @pytest.mark.asyncio

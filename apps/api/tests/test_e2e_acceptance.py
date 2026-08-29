@@ -170,8 +170,8 @@ async def test_complete_26_step_e2e_acceptance_journey(
     assert disabled_v["is_available"] is False
     assert active_v["is_available"] is True
 
-    # 15. Customer does NOT see price
-    assert "price" not in cust_detail
+    # 15. Customer does NOT see price when not set
+    assert cust_detail.get("price") is None
     assert "mrp" not in cust_detail
     assert "cost" not in cust_detail
     assert "amount" not in cust_detail

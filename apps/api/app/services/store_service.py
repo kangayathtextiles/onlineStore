@@ -70,6 +70,7 @@ class StoreService:
             latitude=store.latitude,
             longitude=store.longitude,
             google_maps_url=store.google_maps_url,
+            show_prices=store.show_prices,
             created_at=store.created_at,
             updated_at=store.updated_at,
             schedules=[

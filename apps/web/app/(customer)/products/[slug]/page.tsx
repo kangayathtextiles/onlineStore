@@ -180,6 +180,18 @@ export default function ProductDetailPage() {
       name: "Kangayath",
     },
     category: product.category_name,
+    ...(product.price !== null && product.price !== undefined && Number(product.price) > 0
+      ? {
+          offers: {
+            "@type": "Offer",
+            price: Number(product.price),
+            priceCurrency: "INR",
+            availability: product.is_available
+              ? "https://schema.org/InStock"
+              : "https://schema.org/OutOfStock",
+          },
+        }
+      : {}),
   };
 
   const breadcrumbSchema = {
@@ -387,6 +399,18 @@ export default function ProductDetailPage() {
             <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight">
               {product.name}
             </h1>
+
+            {/* Product Price (Rendered ONLY when visible) */}
+            {product.price !== null && product.price !== undefined && Number(product.price) > 0 && (
+              <div className="pt-1 flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-black text-zinc-900">
+                  ₹{Number(product.price).toLocaleString("en-IN")}
+                </span>
+                <span className="text-xs text-zinc-500 font-normal">
+                  (Showroom Price)
+                </span>
+              </div>
+            )}
 
             <div className="flex items-center gap-4 text-xs text-zinc-500 pt-1">
               {product.material && (

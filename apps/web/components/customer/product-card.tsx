@@ -102,6 +102,15 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.name}
           </h3>
 
+          {/* Product Price (Rendered ONLY when visible) */}
+          {product.price !== null && product.price !== undefined && Number(product.price) > 0 && (
+            <div className="pt-0.5">
+              <span className="text-xs sm:text-sm font-bold text-zinc-900">
+                ₹{Number(product.price).toLocaleString("en-IN")}
+              </span>
+            </div>
+          )}
+
           {/* Material & Style Code */}
           <div className="flex items-center justify-between text-[10px] sm:text-xs text-zinc-500 gap-1.5 pt-0.5">
             <span className="truncate font-medium text-zinc-600">

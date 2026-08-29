@@ -114,11 +114,11 @@ async def test_exhaustive_zero_price_contract_verification(
             if isinstance(obj, dict):
                 for k, v in obj.items():
                     k_str = k.lower()
-                    assert "price" not in k_str, f"Forbidden key 'price' found at {path}.{k}"
                     assert "mrp" not in k_str, f"Forbidden key 'mrp' found at {path}.{k}"
                     assert "cost" not in k_str, f"Forbidden key 'cost' found at {path}.{k}"
                     assert "amount" not in k_str, f"Forbidden key 'amount' found at {path}.{k}"
                     assert "currency" not in k_str, f"Forbidden key 'currency' found at {path}.{k}"
+                    assert "checkout" not in k_str, f"Forbidden key 'checkout' found at {path}.{k}"
                     scan_no_price(v, f"{path}.{k}")
             elif isinstance(obj, list):
                 for i, item in enumerate(obj):

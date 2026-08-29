@@ -74,6 +74,7 @@ class TaxonomyService:
                 thumbnail_url=c.thumbnail_url,
                 display_order=c.display_order,
                 is_active=c.is_active,
+                show_prices=c.show_prices,
                 created_at=c.created_at,
                 updated_at=c.updated_at,
                 subcategories=[
@@ -110,6 +111,7 @@ class TaxonomyService:
             thumbnail_url=data.thumbnail_url,
             display_order=data.display_order,
             is_active=data.is_active,
+            show_prices=data.show_prices,
         )
         await self.repo.create(category)
         await self.session.commit()
@@ -135,6 +137,8 @@ class TaxonomyService:
             category.display_order = data.display_order
         if data.is_active is not None:
             category.is_active = data.is_active
+        if data.show_prices is not None:
+            category.show_prices = data.show_prices
 
         await self.session.commit()
         await self.session.refresh(category)

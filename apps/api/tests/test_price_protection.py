@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any
 
 import pytest
@@ -6,104 +7,134 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.seed import seed_development_data, seed_master_data
 from app.models.enums import LifecycleState
-from app.schemas.product import ProductCreateRequest
+from app.schemas.product import ProductCreateRequest, ProductUpdateRequest
+from app.schemas.store import StoreProfileUpdate
+from app.schemas.taxonomy import CategoryUpdate
 from app.services.product_service import ProductService
+from app.services.store_service import StoreService
 from app.services.taxonomy_service import TaxonomyService
-
-FORBIDDEN_PRICE_KEYS = {
-    "price",
-    "mrp",
-    "cost",
-    "unit_price",
-    "sale_price",
-    "discount_price",
-    "amount",
-}
-
-
-def assert_no_price_in_payload(data: Any, path: str = "$") -> None:
-    """
-    Recursively inspects any JSON object/array to verify that zero price-related
-    keys or pricing metadata exist anywhere in the payload.
-    """
-    if isinstance(data, dict):
-        for key, value in data.items():
-            current_path = f"{path}.{key}"
-            assert key.lower() not in FORBIDDEN_PRICE_KEYS, (
-                f"Price protection violation: Found forbidden key '{key}' at '{current_path}'"
-            )
-            assert_no_price_in_payload(value, current_path)
-    elif isinstance(data, list):
-        for idx, item in enumerate(data):
-            assert_no_price_in_payload(item, f"{path}[{idx}]")
 
 
 @pytest.mark.asyncio
-async def test_regression_public_endpoints_zero_price_leakage(
+async def test_price_visibility_matrix_and_precedence(
     client: AsyncClient, db_session: AsyncSession
 ) -> None:
     """
-    Mandatory Regression Test: Verify that every customer-facing public endpoint
-    strictly omits any pricing information.
+    Test the 7-case price visibility matrix:
+    Precedence: Global -> Category -> Product
+    Global OFF always wins.
     """
     await seed_master_data(db_session)
     await seed_development_data(db_session)
 
     tax_service = TaxonomyService(db_session)
     prod_service = ProductService(db_session)
+    store_service = StoreService(db_session)
 
     categories = await tax_service.list_admin_categories()
     women_cat = next(c for c in categories if c.slug == "women")
     sub_saree = women_cat.subcategories[0]
 
-    # Create published sample product
+    # Create published sample product with price 1299.00 and show_price=True
     product = await prod_service.create_product(
         ProductCreateRequest(
             category_id=women_cat.id,
             subcategory_id=sub_saree.id,
             name="Zari Border Wedding Saree",
             material="Kanchipuram Silk",
+            price=Decimal("1299.00"),
+            show_price=True,
             lifecycle_state=LifecycleState.PUBLISHED,
         )
     )
 
-    # 1. Test /api/v1/public/products
-    resp_products = await client.get("/api/v1/public/products")
-    assert resp_products.status_code == 200
-    assert_no_price_in_payload(resp_products.json(), path="GET /public/products")
+    # Helper function to check public product price
+    async def get_public_price() -> Decimal | None:
+        resp = await client.get(f"/api/v1/public/products/{product.slug}")
+        assert resp.status_code == 200
+        val = resp.json().get("price")
+        return Decimal(str(val)) if val is not None else None
 
-    # 2. Test /api/v1/public/products/{slug}
-    resp_detail = await client.get(f"/api/v1/public/products/{product.slug}")
-    assert resp_detail.status_code == 200
-    assert_no_price_in_payload(resp_detail.json(), path=f"GET /public/products/{product.slug}")
+    # Case 1: Global ON, Category ON, Product ON -> price visible
+    await store_service.update_store_profile(StoreProfileUpdate(show_prices=True))
+    await tax_service.update_category(women_cat.id, CategoryUpdate(show_prices=True))
+    await prod_service.update_product(product.id, ProductUpdateRequest(show_price=True))
+    assert await get_public_price() == Decimal("1299.00")
 
-    # 3. Test /api/v1/public/sections
-    resp_sections = await client.get("/api/v1/public/sections")
-    assert resp_sections.status_code == 200
-    assert_no_price_in_payload(resp_sections.json(), path="GET /public/sections")
+    # Case 2: Global ON, Category ON, Product OFF -> price hidden
+    await prod_service.update_product(product.id, ProductUpdateRequest(show_price=False))
+    assert await get_public_price() is None
 
-    # 4. Test /api/v1/public/sections/{slug}
-    resp_sec_detail = await client.get("/api/v1/public/sections/onam-special-offers")
-    assert resp_sec_detail.status_code == 200
-    assert_no_price_in_payload(resp_sec_detail.json(), path="GET /public/sections/{slug}")
+    # Case 3: Global ON, Category OFF, Product ON -> price hidden
+    await tax_service.update_category(women_cat.id, CategoryUpdate(show_prices=False))
+    await prod_service.update_product(product.id, ProductUpdateRequest(show_price=True))
+    assert await get_public_price() is None
 
-    # 5. Test /api/v1/public/categories
-    resp_cats = await client.get("/api/v1/public/categories")
-    assert resp_cats.status_code == 200
-    assert_no_price_in_payload(resp_cats.json(), path="GET /public/categories")
+    # Case 4: Global ON, Category OFF, Product OFF -> price hidden
+    await prod_service.update_product(product.id, ProductUpdateRequest(show_price=False))
+    assert await get_public_price() is None
 
-    # 6. Test /api/v1/public/saved-items/sync
-    resp_sync = await client.post(
-        "/api/v1/public/saved-items/sync",
-        json={"session_token": "test_token_regression", "product_ids": [str(product.id)]},
+    # Case 5: Global OFF, Category ON, Product ON -> price hidden (Global master switch)
+    await store_service.update_store_profile(StoreProfileUpdate(show_prices=False))
+    await tax_service.update_category(women_cat.id, CategoryUpdate(show_prices=True))
+    await prod_service.update_product(product.id, ProductUpdateRequest(show_price=True))
+    assert await get_public_price() is None
+
+    # Case 6: Global OFF, Category OFF, Product ON -> price hidden
+    await tax_service.update_category(women_cat.id, CategoryUpdate(show_prices=False))
+    assert await get_public_price() is None
+
+    # Case 7: Global OFF, Category ON, Product OFF -> price hidden
+    await tax_service.update_category(women_cat.id, CategoryUpdate(show_prices=True))
+    await prod_service.update_product(product.id, ProductUpdateRequest(show_price=False))
+    assert await get_public_price() is None
+
+
+@pytest.mark.asyncio
+async def test_admin_price_management_crud(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    """
+    Test Admin Price CRUD:
+    - Create product with price
+    - Edit product price
+    - Toggle product price visibility
+    """
+    await seed_master_data(db_session)
+    await seed_development_data(db_session)
+
+    tax_service = TaxonomyService(db_session)
+    categories = await tax_service.list_admin_categories()
+    cat = categories[0]
+    sub = cat.subcategories[0]
+
+    # Create via admin API
+    create_resp = await client.post(
+        "/api/v1/admin/products",
+        headers={"X-Admin-Role": "owner"},
+        json={
+            "category_id": str(cat.id),
+            "subcategory_id": str(sub.id),
+            "name": "Festive Kurta Set",
+            "price": 2499.50,
+            "show_price": True,
+            "lifecycle_state": "PUBLISHED",
+        },
     )
-    assert resp_sync.status_code == 200
-    assert_no_price_in_payload(resp_sync.json(), path="POST /public/saved-items/sync")
+    assert create_resp.status_code == 201
+    prod_data = create_resp.json()
+    prod_id = prod_data["id"]
+    assert prod_data["price"] == "2499.50" or prod_data["price"] == 2499.50 or float(prod_data["price"]) == 2499.50
+    assert prod_data["show_price"] is True
 
-    # 7. Test /api/v1/public/saved-items/availability
-    resp_avail = await client.post(
-        "/api/v1/public/saved-items/availability",
-        json={"product_ids": [str(product.id)]},
+    # Update price via admin API
+    update_resp = await client.put(
+        f"/api/v1/admin/products/{prod_id}",
+        headers={"X-Admin-Role": "owner"},
+        json={"price": 1999.00, "show_price": False},
     )
-    assert resp_avail.status_code == 200
-    assert_no_price_in_payload(resp_avail.json(), path="POST /public/saved-items/availability")
+    assert update_resp.status_code == 200
+    updated_data = update_resp.json()
+    assert float(updated_data["price"]) == 1999.00
+    assert updated_data["show_price"] is False
+

@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime
+from decimal import Decimal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from app.models.enums import LifecycleState
 from app.schemas.attribute import ColorOptionDTO, SizeOptionDTO
@@ -84,8 +85,17 @@ class ProductCreateRequest(BaseSchema):
     lifecycle_state: LifecycleState = LifecycleState.DRAFT
     manual_sold_out: bool = False
     featured: bool = False
+    price: Decimal | None = Field(default=None, ge=0, decimal_places=2)
+    show_price: bool = True
     meta_title: str | None = Field(default=None, max_length=100)
     meta_description: str | None = Field(default=None, max_length=200)
+
+    @field_validator("price", mode="before")
+    @classmethod
+    def coerce_price(cls, v: object) -> Decimal | None:
+        if v is None or v == "":
+            return None
+        return Decimal(str(v))
 
 
 class ProductUpdateRequest(BaseSchema):
@@ -99,8 +109,17 @@ class ProductUpdateRequest(BaseSchema):
     lifecycle_state: LifecycleState | None = None
     manual_sold_out: bool | None = None
     featured: bool | None = None
+    price: Decimal | None = Field(default=None, ge=0, decimal_places=2)
+    show_price: bool | None = None
     meta_title: str | None = Field(default=None, max_length=100)
     meta_description: str | None = Field(default=None, max_length=200)
+
+    @field_validator("price", mode="before")
+    @classmethod
+    def coerce_price(cls, v: object) -> Decimal | None:
+        if v is None or v == "":
+            return None
+        return Decimal(str(v))
 
 
 class ProductLifecycleUpdate(BaseSchema):
@@ -123,6 +142,8 @@ class AdminProductResponse(BaseSchema):
     lifecycle_state: LifecycleState
     manual_sold_out: bool
     featured: bool
+    price: Decimal | None = None
+    show_price: bool
     meta_title: str | None = None
     meta_description: str | None = None
     created_at: datetime
@@ -137,7 +158,7 @@ class AdminProductResponse(BaseSchema):
 class PublicProductSummaryResponse(BaseSchema):
     """
     Public customer summary model.
-    CRITICAL: Contains NO price or internal administrative fields.
+    Price is included ONLY when visibility rules permit (otherwise None).
     """
 
     id: uuid.UUID
@@ -156,12 +177,13 @@ class PublicProductSummaryResponse(BaseSchema):
     subcategory_slug: str | None = None
     available_sizes: list[str] = Field(default_factory=list)
     available_colors: list[str] = Field(default_factory=list)
+    price: Decimal | None = None
 
 
 class PublicProductDetailResponse(BaseSchema):
     """
     Public customer detail model.
-    CRITICAL: Contains NO price or internal administrative fields.
+    Price is included ONLY when visibility rules permit (otherwise None).
     """
 
     id: uuid.UUID
@@ -180,3 +202,4 @@ class PublicProductDetailResponse(BaseSchema):
     subcategory_slug: str | None = None
     images: list[ProductImageDTO] = Field(default_factory=list)
     variants: list[ProductVariantDTO] = Field(default_factory=list)
+    price: Decimal | None = None

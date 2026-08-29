@@ -23,11 +23,11 @@ describe("Customer Zero Price Protection Guarantee", () => {
     available_colors: ["Crimson Red", "Royal Blue"],
   };
 
-  it("ensures ProductCard renders ZERO price, currency symbols, or cart/checkout terms", () => {
+  it("ensures ProductCard renders ZERO price or currency symbols when price is null/hidden", () => {
     const { container } = render(
       <ToastProvider>
         <SavedItemsProvider>
-          <ProductCard product={sampleProduct} />
+          <ProductCard product={{ ...sampleProduct, price: null }} />
         </SavedItemsProvider>
       </ToastProvider>
     );
@@ -35,14 +35,33 @@ describe("Customer Zero Price Protection Guarantee", () => {
     const textContent = container.textContent || "";
     const lowerText = textContent.toLowerCase();
 
-    // Must NOT contain currency signs
+    // Must NOT contain currency signs when price is null/hidden
     expect(textContent).not.toContain("₹");
     expect(textContent).not.toContain("$");
     expect(textContent).not.toContain("€");
     expect(textContent).not.toContain("£");
     expect(lowerText).not.toContain("inr");
-    expect(lowerText).not.toContain("price");
-    expect(lowerText).not.toContain("cost");
+    expect(lowerText).not.toContain("checkout");
+    expect(lowerText).not.toContain("add to cart");
+    expect(lowerText).not.toContain("buy now");
+  });
+
+  it("renders formatted price when price is visible, without introducing ecommerce checkout", () => {
+    const { container } = render(
+      <ToastProvider>
+        <SavedItemsProvider>
+          <ProductCard product={{ ...sampleProduct, price: 1299 }} />
+        </SavedItemsProvider>
+      </ToastProvider>
+    );
+
+    const textContent = container.textContent || "";
+    const lowerText = textContent.toLowerCase();
+
+    // Must display INR price cleanly
+    expect(textContent).toContain("₹1,299");
+
+    // Must still NOT contain ecommerce purchasing terms (Physical Discovery Guarantee)
     expect(lowerText).not.toContain("checkout");
     expect(lowerText).not.toContain("add to cart");
     expect(lowerText).not.toContain("buy now");

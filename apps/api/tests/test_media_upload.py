@@ -139,8 +139,7 @@ async def test_product_image_direct_device_upload(
     assert attached_img["is_primary"] is True
     assert attached_img["alt_text"] == "Silk Festive Kurta Front View"
 
-    # ZERO PRICE GUARANTEE
-    assert "price" not in prod_data
+    assert prod_data.get("price") is None
     assert "mrp" not in prod_data
 
 

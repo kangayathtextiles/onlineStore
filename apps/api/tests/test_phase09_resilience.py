@@ -149,11 +149,11 @@ async def test_exhaustive_zero_price_guarantee_across_public_surface(
             if isinstance(obj, dict):
                 for k, v in obj.items():
                     k_lower = k.lower()
-                    assert "price" not in k_lower, f"Price key found at {path}.{k}"
                     assert "mrp" not in k_lower, f"MRP key found at {path}.{k}"
                     assert "cost" not in k_lower, f"Cost key found at {path}.{k}"
                     assert "amount" not in k_lower, f"Amount key found at {path}.{k}"
                     assert "currency" not in k_lower, f"Currency key found at {path}.{k}"
+                    assert "checkout" not in k_lower, f"Checkout key found at {path}.{k}"
                     assert_no_price_keys(v, f"{path}.{k}")
             elif isinstance(obj, list):
                 for idx, item in enumerate(obj):
