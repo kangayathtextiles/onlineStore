@@ -443,7 +443,7 @@ export default function AdminQRScannerPage() {
                   <Input
                     name="query"
                     type="text"
-                    placeholder="QR token or Style Code…"
+                    placeholder="Scan or enter QR token / Style Code…"
                     value={inputCode}
                     onChange={(e) => setInputCode(e.target.value.toUpperCase())}
                     className="pl-9 font-mono uppercase text-sm tracking-wide"
