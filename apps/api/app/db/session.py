@@ -9,6 +9,11 @@ from sqlalchemy.ext.asyncio import (
 
 from app.core.config import settings
 
+# Determine specific connect_args based on environment
+connect_args = {}
+if settings.ENVIRONMENT == "staging":
+    connect_args = {"server_settings": {"search_path": "staging"}}
+
 engine: AsyncEngine = create_async_engine(
     settings.SQLALCHEMY_DATABASE_URI,
     echo=settings.DEBUG,
@@ -18,6 +23,7 @@ engine: AsyncEngine = create_async_engine(
     pool_size=settings.DB_POOL_SIZE,
     max_overflow=settings.DB_MAX_OVERFLOW,
     pool_timeout=settings.DB_POOL_TIMEOUT,
+    connect_args=connect_args,
 )
 
 async_session_maker = async_sessionmaker(
