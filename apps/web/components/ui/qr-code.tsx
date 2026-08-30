@@ -28,9 +28,7 @@ export function QRCodeSVG({
       level="M" // Medium error correction (15%) for optimal scan reliability vs data density
       className={className}
       includeMargin={false}
-      // Cast props to any because qrcode.react's types don't perfectly overlap with raw SVGProps,
-      // but passing them through is safe for standard SVG attributes like style/onClick.
-      {...(props as any)}
+      {...props}
     />
   );
 }

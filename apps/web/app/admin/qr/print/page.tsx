@@ -11,7 +11,6 @@ import {
   ArrowLeft,
   RefreshCw,
   Sparkles,
-  SlidersHorizontal,
   Scissors,
   CircleDot,
   Tag,

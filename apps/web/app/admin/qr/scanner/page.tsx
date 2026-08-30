@@ -64,7 +64,8 @@ function useQRScanner(onDetected: (text: string) => void) {
     setZoom(val);
     if (videoTrackRef.current) {
       videoTrackRef.current.applyConstraints({
-        advanced: [{ zoom: val } as any],
+        // @ts-expect-error - zoom is not yet in standard lib MediaTrackConstraintSet
+        advanced: [{ zoom: val }],
       }).catch((e) => console.warn("Zoom not supported", e));
     }
   }, []);
@@ -96,7 +97,7 @@ function useQRScanner(onDetected: (text: string) => void) {
             },
           },
           videoRef.current,
-          (result, err) => {
+          (result) => {
             if (result) {
               const text = result.getText();
               if (text && text !== lastCodeRef.current && !lockRef.current) {
@@ -124,12 +125,17 @@ function useQRScanner(onDetected: (text: string) => void) {
               // Check for zoom capabilities
               const caps = track.getCapabilities ? track.getCapabilities() : {};
               if ("zoom" in caps) {
-                const z = (caps as any).zoom;
-                setZoomCap({ min: z.min || 1, max: z.max || 3, step: z.step || 0.1 });
+                const z = (caps as Record<string, { min?: number; max?: number; step?: number }>).zoom;
+                if (z) {
+                  setZoomCap({ min: z.min || 1, max: z.max || 3, step: z.step || 0.1 });
+                }
               }
               // Also try to enable continuous autofocus if supported
-              if ("focusMode" in caps && (caps as any).focusMode.includes("continuous")) {
-                track.applyConstraints({ advanced: [{ focusMode: "continuous" } as any] }).catch(() => {});
+              if ("focusMode" in caps && Array.isArray((caps as Record<string, unknown>).focusMode) && ((caps as Record<string, string[]>).focusMode).includes("continuous")) {
+                track.applyConstraints({ 
+                  // @ts-expect-error - focusMode is not yet in standard lib MediaTrackConstraintSet
+                  advanced: [{ focusMode: "continuous" }] 
+                }).catch(() => {});
               }
             }
           }
