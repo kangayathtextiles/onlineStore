@@ -7,13 +7,7 @@ databases:
     databaseName: kangayath_db
     user: kangayath_user
 
-  # ──────────────────────────────────────────────
-  # 2. Staging PostgreSQL Database (New)
-  # ──────────────────────────────────────────────
-  - name: kangayath-db-staging
-    plan: free
-    databaseName: kangayath_db_staging
-    user: kangayath_user_staging
+
 
 services:
   # ──────────────────────────────────────────────
@@ -85,9 +79,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        fromDatabase:
-          name: kangayath-db-staging
-          property: connectionString
+        value: "postgresql+asyncpg://user:pass@host/dbname" # 🔴 User must provide external DB URL here
       - key: BACKEND_CORS_ORIGINS
         value: "https://kangayath-web-staging.onrender.com"
       - key: MEDIA_ROOT
