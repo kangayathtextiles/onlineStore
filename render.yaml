@@ -79,7 +79,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        value: "postgresql+asyncpg://user:pass@host/dbname" # 🔴 User must provide external DB URL here
+        sync: false
       - key: BACKEND_CORS_ORIGINS
         value: "https://kangayath-web-staging.onrender.com"
       - key: MEDIA_ROOT
