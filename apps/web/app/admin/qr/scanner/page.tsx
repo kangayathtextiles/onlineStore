@@ -29,7 +29,7 @@ import type { QRScanResponse, QRActionType } from "@/types/api";
 
 // ─── Native ZXing Stream Decoder Hook ─────────────────────────────────────────
 //
-// Uses ZXing's built-in decodeFromVideoDevice which is highly optimized for
+// Uses ZXing's built-in decodeFromConstraints which is highly optimized for
 // continuously streaming and decoding video feeds across both PC and mobile.
 //
 function useQRScanner(onDetected: (text: string) => void) {
@@ -68,9 +68,15 @@ function useQRScanner(onDetected: (text: string) => void) {
       const reader = new BrowserMultiFormatReader();
 
       if (videoRef.current) {
-        // Use the native ZXing video device stream and decoder loop
-        controlsRef.current = await reader.decodeFromVideoDevice(
-          undefined, // undefined deviceId defaults to environment camera
+        // Use constraints to explicitly request the environment camera without
+        // forcing a specific resolution, allowing the phone to provide its native stream.
+        controlsRef.current = await reader.decodeFromConstraints(
+          {
+            audio: false,
+            video: {
+              facingMode: "environment",
+            },
+          },
           videoRef.current,
           (result, err) => {
             if (result) {
@@ -272,7 +278,7 @@ export default function AdminQRScannerPage() {
               <canvas ref={scanner.canvasRef} className="hidden" />
 
               <div
-                className={`relative aspect-video sm:aspect-square bg-zinc-950 rounded-xl overflow-hidden flex items-center justify-center border-2 transition-all duration-300 ${
+                className={`relative aspect-[3/4] sm:aspect-video bg-zinc-950 rounded-xl overflow-hidden flex items-center justify-center border-2 transition-all duration-300 ${
                   scanner.flashGreen
                     ? "border-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.4)]"
                     : scanner.active
@@ -286,7 +292,7 @@ export default function AdminQRScannerPage() {
                   autoPlay
                   playsInline
                   muted
-                  className={`w-full h-full object-cover ${scanner.active ? "block" : "hidden"}`}
+                  className={`w-full h-full object-contain ${scanner.active ? "block" : "hidden"}`}
                 />
 
                 {/* Idle placeholder */}
