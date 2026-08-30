@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import (
 from app.core.config import settings
 
 # Determine specific connect_args based on environment
-connect_args = {}
+connect_args: dict[str, object] = {}
 # No schema override needed since Staging uses its own dedicated database project.
 
 engine: AsyncEngine = create_async_engine(
