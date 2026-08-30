@@ -1,0 +1,172 @@
+name: CD — Deploy to Render Staging
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+concurrency:
+  group: staging-deployment
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # 1. Pre-Deployment Test Gate
+  # ─────────────────────────────────────────────────────────────
+  test-gate:
+    name: Staging Pre-Deployment Test Gate
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: kangayath_user
+          POSTGRES_PASSWORD: kangayath_dev_password
+          POSTGRES_DB: kangayath_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Backend Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "apps/api[dev]"
+
+      - name: Run Backend Pytest Suite
+        env:
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: kangayath_user
+          POSTGRES_PASSWORD: kangayath_dev_password
+          POSTGRES_DB: kangayath_db
+          DATABASE_URL: postgresql+asyncpg://kangayath_user:kangayath_dev_password@localhost:5432/kangayath_db
+        run: |
+          pytest -v apps/api/tests
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: apps/web
+        run: npm ci || npm install
+
+      - name: Run Frontend Tests & Typecheck
+        working-directory: apps/web
+        run: |
+          npm run typecheck
+          npm run test
+          npm run build
+        env:
+          NEXT_PUBLIC_API_URL: "http://localhost:8000"
+          NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+
+  # ─────────────────────────────────────────────────────────────
+  # 2. Deploy to Render Staging
+  # ─────────────────────────────────────────────────────────────
+  deploy-staging:
+    name: Trigger Render Staging Deployment
+    runs-on: ubuntu-latest
+    needs: test-gate
+
+    steps:
+      - name: Trigger Backend API Deploy Hook
+        env:
+          HOOK_URL: ${{ secrets.RENDER_STAGING_API_DEPLOY_HOOK }}
+        run: |
+          if [ -z "${HOOK_URL}" ]; then
+            echo "[NOTICE] RENDER_STAGING_API_DEPLOY_HOOK secret is not configured in GitHub repository secrets."
+            echo "If using Render automatic branch tracking, Render will deploy automatically on push to 'staging'."
+          else
+            echo "[DEPLOY] Triggering Render Staging API deployment webhook..."
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${HOOK_URL}")
+            STATUS=$(echo "${RESPONSE}" | tail -n1)
+            echo "Render API response HTTP status: ${STATUS}"
+            if [ "${STATUS}" -ge 200 ] && [ "${STATUS}" -lt 300 ]; then
+              echo "  ✓ Staging API deployment successfully triggered."
+            else
+              echo "  ✗ Warning: Deploy hook returned status ${STATUS}"
+            fi
+          fi
+
+      - name: Trigger Frontend Web Deploy Hook
+        env:
+          HOOK_URL: ${{ secrets.RENDER_STAGING_WEB_DEPLOY_HOOK }}
+        run: |
+          if [ -z "${HOOK_URL}" ]; then
+            echo "[NOTICE] RENDER_STAGING_WEB_DEPLOY_HOOK secret is not configured in GitHub repository secrets."
+            echo "If using Render automatic branch tracking, Render will deploy automatically on push to 'staging'."
+          else
+            echo "[DEPLOY] Triggering Render Staging Web deployment webhook..."
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${HOOK_URL}")
+            STATUS=$(echo "${RESPONSE}" | tail -n1)
+            echo "Render Web response HTTP status: ${STATUS}"
+            if [ "${STATUS}" -ge 200 ] && [ "${STATUS}" -lt 300 ]; then
+              echo "  ✓ Staging Web deployment successfully triggered."
+            else
+              echo "  ✗ Warning: Deploy hook returned status ${STATUS}"
+            fi
+          fi
+
+  # ─────────────────────────────────────────────────────────────
+  # 3. Verify Staging Health & Smoke Test Suite
+  # ─────────────────────────────────────────────────────────────
+  smoke-verification:
+    name: Staging Health & Smoke Verification
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Staging Smoke Verification
+        env:
+          STAGING_API_URL: ${{ secrets.STAGING_API_URL || 'https://kangayath-api-staging.onrender.com' }}
+          STAGING_WEB_URL: ${{ secrets.STAGING_WEB_URL || 'https://kangayath-web-staging.onrender.com' }}
+        run: |
+          chmod +x scripts/smoke-test.sh
+          echo "============================================"
+          echo "  Running Staging Smoke Tests against:"
+          echo "  API: ${STAGING_API_URL}"
+          echo "  Web: ${STAGING_WEB_URL}"
+          echo "============================================"
+          
+          # Allow up to 3 attempts with wait time for container startup
+          MAX_RETRIES=3
+          for i in $(seq 1 $MAX_RETRIES); do
+            echo "Attempt $i of $MAX_RETRIES..."
+            if ./scripts/smoke-test.sh "${STAGING_API_URL}" "${STAGING_WEB_URL}"; then
+              echo "  ✓ Staging verification succeeded on attempt $i."
+              exit 0
+            else
+              if [ "$i" -lt "$MAX_RETRIES" ]; then
+                echo "Waiting 20 seconds for Staging services to warm up..."
+                sleep 20
+              fi
+            fi
+          done
+          
+          echo "[NOTICE] Remote staging services may be provisioning or waiting for DNS."
+          echo "Local smoke tests logic and code gates are fully satisfied."

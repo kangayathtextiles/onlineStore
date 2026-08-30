@@ -1,0 +1,149 @@
+name: CI — Monorepo Continuous Integration
+
+on:
+  pull_request:
+    branches: [main, staging, develop]
+  push:
+    branches: [main, staging, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # 1. Backend CI (FastAPI, Ruff, Mypy, Pytest & PostgreSQL)
+  # ─────────────────────────────────────────────────────────────
+  backend-ci:
+    name: Backend CI (FastAPI & PostgreSQL)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: kangayath_user
+          POSTGRES_PASSWORD: kangayath_dev_password
+          POSTGRES_DB: kangayath_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: apps/api
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run Ruff Linter
+        run: ruff check apps/api
+        working-directory: .
+
+      - name: Run Ruff Formatter Check
+        run: ruff format --check apps/api
+        working-directory: .
+
+      - name: Run Mypy Type Check
+        run: mypy app
+
+      - name: Run Pytest Suite with PostgreSQL & Coverage
+        env:
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: kangayath_user
+          POSTGRES_PASSWORD: kangayath_dev_password
+          POSTGRES_DB: kangayath_db
+          DATABASE_URL: postgresql+asyncpg://kangayath_user:kangayath_dev_password@localhost:5432/kangayath_db
+        run: |
+          pytest -v --cov=app --cov-report=term-missing --cov-report=xml
+
+      - name: Verify Backend Docker Build
+        run: docker build -t kangayath/api:ci -f apps/api/Dockerfile apps/api
+        working-directory: .
+
+  # ─────────────────────────────────────────────────────────────
+  # 2. Frontend CI (Next.js, ESLint, Typecheck, Vitest & Build)
+  # ─────────────────────────────────────────────────────────────
+  frontend-ci:
+    name: Frontend CI (Next.js & Vitest)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/web
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci || npm install
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript Check
+        run: npm run typecheck
+
+      - name: Run Vitest Test Suite
+        run: npm run test
+
+      - name: Run Next.js Production Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: "http://localhost:8000"
+          NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+
+      - name: Verify Frontend Docker Build
+        run: docker build -t kangayath/web:ci -f apps/web/Dockerfile apps/web
+        working-directory: .
+        env:
+          NEXT_PUBLIC_API_URL: "http://localhost:8000"
+          NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+
+  # ─────────────────────────────────────────────────────────────
+  # 3. Quality & Price Protection Regression Gate
+  # ─────────────────────────────────────────────────────────────
+  quality-gate:
+    name: Monorepo Quality & Regression Gate
+    runs-on: ubuntu-latest
+    needs: [backend-ci, frontend-ci]
+
+    steps:
+      - name: Confirm All CI Checks Passed
+        run: |
+          echo "============================================"
+          echo "  ✓ Backend Unit & PostgreSQL Tests Passed"
+          echo "  ✓ Backend Docker Image Build Passed"
+          echo "  ✓ Frontend Vitest & TypeScript Passed"
+          echo "  ✓ Frontend Production Next.js Build Passed"
+          echo "  ✓ Frontend Docker Image Build Passed"
+          echo "  STATUS: PULL REQUEST GATES SATISFIED"
+          echo "============================================"

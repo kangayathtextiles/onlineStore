@@ -68,13 +68,36 @@ docker-compose up
 
 ---
 
+## 🚀 CI/CD & Multi-Environment Deployment
+
+KANGAYATH WEB operates an automated, test-gated CI/CD pipeline targeting **Render** via **GitHub Actions**:
+
+```text
+feature/* ──(PR)──> staging ──(Render Staging)──> main ──(Render Production)
+```
+
+| Environment | Branch | Web Application | Backend API | Database |
+|---|---|---|---|---|
+| **Staging** | `staging` | https://kangayath-web-staging.onrender.com | https://kangayath-api-staging.onrender.com | `kangayath-db-staging` |
+| **Production** | `main` | https://kangayath-web.onrender.com | https://kangayath-api.onrender.com | `kangayath-db-prod` |
+
+Complete documentation:
+- **Deployment Guide**: [docs/deployment.md](docs/deployment.md)
+- **Testing Strategy**: [docs/testing.md](docs/testing.md)
+- **Development Workflows**: [docs/development.md](docs/development.md)
+
+---
+
 ## 🚢 Production Deployment
 
-See [docs/operations/PRODUCTION_DEPLOYMENT.md](docs/operations/PRODUCTION_DEPLOYMENT.md) for complete deployment instructions.
+See [docs/deployment.md](docs/deployment.md) and [docs/operations/PRODUCTION_DEPLOYMENT.md](docs/operations/PRODUCTION_DEPLOYMENT.md) for complete deployment instructions.
 
 ```bash
-# Quick production deploy
+# Quick production deploy via Docker Compose:
 docker compose -f docker-compose.production.yml up -d --build
+
+# Run post-deployment smoke test:
+./scripts/smoke-test.sh
 ```
 
 ---
@@ -93,6 +116,8 @@ docker compose -f docker-compose.production.yml up -d --build
 - [x] Phase 10: Final Integration & Release Candidate Validation
 - [x] Phase 11: Final System Verification & QA Hardening
 - [x] Phase 12: Production Readiness, Deployment & Handover
+- [x] Phase 13: QR Code Physical Identification & Product Lifecycle Management
+- [x] Phase 14: CI/CD Pipeline & Dedicated Staging Environment
 
 ---
 
@@ -100,7 +125,10 @@ docker compose -f docker-compose.production.yml up -d --build
 
 | Document | Path |
 |---|---|
-| Deployment Guide | [docs/operations/PRODUCTION_DEPLOYMENT.md](docs/operations/PRODUCTION_DEPLOYMENT.md) |
+| Deployment & Staging Guide | [docs/deployment.md](docs/deployment.md) |
+| Automated Testing Manual | [docs/testing.md](docs/testing.md) |
+| Development Workflows | [docs/development.md](docs/development.md) |
+| Architecture Reference | [docs/operations/ARCHITECTURE_REFERENCE.md](docs/operations/ARCHITECTURE_REFERENCE.md) |
 | Environment Guide | [docs/operations/ENVIRONMENT_GUIDE.md](docs/operations/ENVIRONMENT_GUIDE.md) |
 | Migration Guide | [docs/operations/DATABASE_MIGRATIONS.md](docs/operations/DATABASE_MIGRATIONS.md) |
 | Backup & Restore | [docs/operations/BACKUP_RESTORE_RUNBOOK.md](docs/operations/BACKUP_RESTORE_RUNBOOK.md) |
