@@ -11,8 +11,7 @@ from app.core.config import settings
 
 # Determine specific connect_args based on environment
 connect_args = {}
-if settings.ENVIRONMENT == "staging":
-    connect_args = {"server_settings": {"search_path": "staging"}}
+# No schema override needed since Staging uses its own dedicated database project.
 
 engine: AsyncEngine = create_async_engine(
     settings.SQLALCHEMY_DATABASE_URI,

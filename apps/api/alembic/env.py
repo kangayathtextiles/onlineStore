@@ -50,8 +50,7 @@ def do_run_migrations(connection: Connection) -> None:
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode with async engine."""
     connect_args = {}
-    if settings.ENVIRONMENT == "staging":
-        connect_args = {"server_settings": {"search_path": "staging"}}
+    # No schema override needed since Staging uses its own dedicated database project.
 
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
