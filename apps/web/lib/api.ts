@@ -42,7 +42,22 @@ import type {
   VariantMatrixGenerateRequest,
 } from "@/types/api";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+export function getApiBaseUrl(): string {
+  // If running in browser, determine correct environment dynamically
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host.includes("-staging.onrender.com") || host.includes("staging")) {
+      return "https://kangayath-api-staging.onrender.com";
+    }
+    if (host.endsWith(".onrender.com")) {
+      return "https://kangayath-api.onrender.com";
+    }
+    if (host.includes("kangayath.in")) {
+      return "https://api.kangayath.in";
+    }
+  }
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+}
 
 export class ApiError extends Error {
   constructor(
@@ -61,7 +76,7 @@ async function request<T>(
   options: RequestInit = {},
   retries = 2
 ): Promise<T> {
-  const url = `${API_BASE_URL}/api/v1${endpoint}`;
+  const url = `${getApiBaseUrl()}/api/v1${endpoint}`;
   const headers = {
     "Content-Type": "application/json",
     ...options.headers,
@@ -116,7 +131,7 @@ async function upload<T>(
   options: RequestInit = {},
   retries = 1
 ): Promise<T> {
-  const url = `${API_BASE_URL}/api/v1${endpoint}`;
+  const url = `${getApiBaseUrl()}/api/v1${endpoint}`;
   const headers = {
     ...options.headers,
   };
