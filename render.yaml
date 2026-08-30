@@ -1,14 +1,14 @@
 databases:
   # ──────────────────────────────────────────────
-  # 1. Production PostgreSQL Database
+  # 1. Production PostgreSQL Database (Existing)
   # ──────────────────────────────────────────────
-  - name: kangayath-db-prod
+  - name: kangayath-db
     plan: free
-    databaseName: kangayath_db_prod
-    user: kangayath_user_prod
+    databaseName: kangayath_db
+    user: kangayath_user
 
   # ──────────────────────────────────────────────
-  # 2. Staging PostgreSQL Database
+  # 2. Staging PostgreSQL Database (New)
   # ──────────────────────────────────────────────
   - name: kangayath-db-staging
     plan: free
@@ -36,7 +36,7 @@ services:
         generateValue: true
       - key: DATABASE_URL
         fromDatabase:
-          name: kangayath-db-prod
+          name: kangayath-db
           property: connectionString
       - key: BACKEND_CORS_ORIGINS
         value: "https://kangayath-web.onrender.com"
