@@ -17,6 +17,7 @@ import {
   Sparkles,
   RefreshCw,
   ExternalLink,
+  ScanLine,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,75 +35,64 @@ export default function AdminQRScannerPage() {
   const [scannedProduct, setScannedProduct] = React.useState<QRScanResponse | null>(null);
   const [scanHistory, setScanHistory] = React.useState<QRScanResponse[]>([]);
 
-  // Camera Scanner State
+  // Camera / Decoder State
   const [cameraActive, setCameraActive] = React.useState(false);
   const [cameraError, setCameraError] = React.useState<string | null>(null);
+  const [lastScannedRaw, setLastScannedRaw] = React.useState<string | null>(null);
+  const [scanFlash, setScanFlash] = React.useState(false); // visual feedback on decode
+
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
-  const mediaStreamRef = React.useRef<MediaStream | null>(null);
+  const readerRef = React.useRef<InstanceType<typeof import("@zxing/browser").BrowserMultiFormatReader> | null>(null);
+  const scanLockRef = React.useRef(false); // prevent concurrent lookups for same code
 
-  // Search/Lookup by QR Code or Style Code
-  const handleLookup = async (codeToLookup?: string) => {
-    let query = (typeof codeToLookup === "string" ? codeToLookup : "").trim();
-    if (!query) {
-      query = inputCode.trim();
-    }
-    if (!query && typeof document !== "undefined") {
-      const inputEl = document.querySelector('input[placeholder*="Scan or enter"]') as HTMLInputElement | null;
-      if (inputEl && inputEl.value) {
-        query = inputEl.value.trim();
+  // ── Lookup ───────────────────────────────────────────────────────────────
+  const handleLookup = React.useCallback(
+    async (codeToLookup?: string) => {
+      const query = (codeToLookup ?? inputCode).trim();
+      if (!query) {
+        toast.info("Enter QR Code", "Please enter or scan a valid QR Code or Style Code.");
+        return;
       }
-    }
 
-    if (!query) {
-      toast.info("Enter QR Code", "Please enter or scan a valid QR Code or Style Code.");
-      return;
-    }
+      try {
+        setIsSearching(true);
+        const product = await adminApi.qr.lookup(query);
+        setScannedProduct(product);
+        setInputCode(product.qr_code);
+        setScanHistory((prev) => {
+          const filtered = prev.filter((p) => p.product_id !== product.product_id);
+          return [product, ...filtered].slice(0, 10);
+        });
+        toast.success("Product Identified", `${product.name} (${product.style_code})`);
+      } catch (err: unknown) {
+        toast.error(
+          "Lookup Failed",
+          (err as Error).message || "Could not find physical product with this QR code."
+        );
+      } finally {
+        setIsSearching(false);
+        scanLockRef.current = false;
+      }
+    },
+    [inputCode, toast]
+  );
 
-    try {
-      setIsSearching(true);
-      const product = await adminApi.qr.lookup(query);
-      setScannedProduct(product);
-      setInputCode(product.qr_code);
-
-      // Add to session history
-      setScanHistory((prev) => {
-        const filtered = prev.filter((p) => p.product_id !== product.product_id);
-        return [product, ...filtered].slice(0, 10);
-      });
-
-      toast.success("Product Identified", `${product.name} (${product.style_code})`);
-    } catch (err: unknown) {
-      toast.error("Lookup Failed", (err as Error).message || "Could not find physical product with this QR code.");
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  // Execute one of the 3 authoritative lifecycle actions
+  // ── Lifecycle Actions ─────────────────────────────────────────────────────
   const handleAction = async (action: QRActionType) => {
     if (!scannedProduct) return;
-
     try {
       setIsActing(true);
-      const updated = await adminApi.qr.executeAction({
-        qr_code: scannedProduct.qr_code,
-        action,
-      });
-
+      const updated = await adminApi.qr.executeAction({ qr_code: scannedProduct.qr_code, action });
       setScannedProduct(updated);
-
-      // Update in history
       setScanHistory((prev) =>
         prev.map((p) => (p.product_id === updated.product_id ? updated : p))
       );
-
-      if (action === "SOLD_OUT") {
+      if (action === "SOLD_OUT")
         toast.success("Marked SOLD OUT", `${updated.name} has been marked sold out.`);
-      } else if (action === "DAMAGED") {
+      else if (action === "DAMAGED")
         toast.info("Marked DAMAGED", `${updated.name} has been removed from customer showroom.`);
-      } else if (action === "RETURN") {
+      else if (action === "RETURN")
         toast.success("RETURN Processed", `${updated.name} is now back in available showroom stock.`);
-      }
     } catch (err: unknown) {
       toast.error("Action Failed", (err as Error).message);
     } finally {
@@ -110,23 +100,59 @@ export default function AdminQRScannerPage() {
     }
   };
 
-  // Camera Management
+  // ── Camera: Start ─────────────────────────────────────────────────────────
   const startCamera = async () => {
     setCameraError(null);
+    setLastScannedRaw(null);
+    scanLockRef.current = false;
+
     try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Camera video access is not supported by your browser.");
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Camera access is not supported by your browser.");
       }
 
+      // Dynamically import ZXing so it doesn't break SSR/build
+      const { BrowserMultiFormatReader } = await import("@zxing/browser");
+      const { NotFoundException } = await import("@zxing/library");
+      const reader = new BrowserMultiFormatReader();
+      readerRef.current = reader;
+
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
       });
-      mediaStreamRef.current = stream;
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
+
       setCameraActive(true);
+
+      // Continuously decode frames
+      reader.decodeFromStream(stream, videoRef.current!, (result, error) => {
+        if (result) {
+          const decoded = result.getText();
+
+          // Debounce: skip if same code is still being processed
+          if (scanLockRef.current || decoded === lastScannedRaw) return;
+
+          scanLockRef.current = true;
+          setLastScannedRaw(decoded);
+
+          // Visual flash feedback
+          setScanFlash(true);
+          setTimeout(() => setScanFlash(false), 400);
+
+          // Trigger lookup
+          setInputCode(decoded);
+          handleLookup(decoded);
+        }
+
+        // Swallow "no barcode found in frame" errors (expected every frame)
+        if (error && !(error instanceof NotFoundException)) {
+          console.warn("[QR Scanner] decode error:", error);
+        }
+      });
     } catch (err: unknown) {
       const msg = (err as Error).message || "Could not access device camera.";
       setCameraError(msg);
@@ -135,58 +161,55 @@ export default function AdminQRScannerPage() {
     }
   };
 
+  // ── Camera: Stop ─────────────────────────────────────────────────────────
   const stopCamera = () => {
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
-      mediaStreamRef.current = null;
+    if (readerRef.current) {
+      readerRef.current = null;
     }
-    if (videoRef.current) {
+    if (videoRef.current?.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach((t) => t.stop());
       videoRef.current.srcObject = null;
     }
     setCameraActive(false);
+    setLastScannedRaw(null);
+    scanLockRef.current = false;
   };
 
-  React.useEffect(() => {
-    return () => {
-      stopCamera();
-    };
-  }, []);
+  // Cleanup on unmount
+  React.useEffect(() => () => stopCamera(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Status Badge ──────────────────────────────────────────────────────────
   const getStatusBadge = (status: string, isDamaged: boolean, manualSoldOut: boolean) => {
-    if (isDamaged) {
+    if (isDamaged)
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300">
-          <AlertTriangle className="w-3.5 h-3.5" />
-          DAMAGED (UNSELLABLE)
+          <AlertTriangle className="w-3.5 h-3.5" /> DAMAGED (UNSELLABLE)
         </span>
       );
-    }
-    if (status === "SOLD_OUT" || manualSoldOut) {
+    if (status === "SOLD_OUT" || manualSoldOut)
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-300">
-          <Ban className="w-3.5 h-3.5" />
-          SOLD OUT
+          <Ban className="w-3.5 h-3.5" /> SOLD OUT
         </span>
       );
-    }
-    if (status === "RETIRED") {
+    if (status === "RETIRED")
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-600 border border-zinc-300">
           RETIRED (2-YR RETENTION)
         </span>
       );
-    }
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300">
-        <CheckCircle2 className="w-3.5 h-3.5" />
-        AVAILABLE IN SHOWROOM
+        <CheckCircle2 className="w-3.5 h-3.5" /> AVAILABLE IN SHOWROOM
       </span>
     );
   };
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="p-4 sm:p-8 max-w-6xl mx-auto space-y-8">
-      {/* Header Banner */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-200 pb-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-zinc-950 font-serif flex items-center gap-3">
@@ -194,10 +217,10 @@ export default function AdminQRScannerPage() {
             Physical QR Scanner
           </h1>
           <p className="text-sm text-zinc-600 mt-1">
-            Scan physical garment QR labels to immediately identify products and perform lifecycle actions: SOLD OUT, DAMAGED, or RETURN.
+            Scan physical garment QR labels to immediately identify products and perform lifecycle
+            actions: SOLD OUT, DAMAGED, or RETURN.
           </p>
         </div>
-
         <div className="flex items-center gap-2">
           <Link href="/admin/qr/print">
             <Button variant="outline" className="gap-2">
@@ -209,30 +232,51 @@ export default function AdminQRScannerPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Scanner View & Manual Input */}
+        {/* ── LEFT COLUMN ── */}
         <div className="lg:col-span-5 space-y-6">
-          {/* Camera Viewfinder Card */}
+          {/* Camera Viewfinder */}
           <Card className="overflow-hidden border-zinc-200 shadow-sm">
             <CardHeader className="bg-zinc-50/80 border-b border-zinc-200 py-3.5 px-4 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-sm font-semibold text-zinc-900 flex items-center gap-2">
                   <Camera className="w-4 h-4 text-zinc-700" />
                   Live Camera Scanner
+                  {cameraActive && (
+                    <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse inline-block" />
+                      ACTIVE
+                    </span>
+                  )}
                 </CardTitle>
               </div>
               {cameraActive ? (
-                <Button size="sm" variant="outline" onClick={stopCamera} className="h-7 text-xs gap-1 text-rose-700 border-rose-200">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={stopCamera}
+                  className="h-7 text-xs gap-1 text-rose-700 border-rose-200"
+                >
                   <CameraOff className="w-3.5 h-3.5" /> Stop
                 </Button>
               ) : (
-                <Button size="sm" variant="outline" onClick={startCamera} className="h-7 text-xs gap-1 text-burgundy border-burgundy/30">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={startCamera}
+                  className="h-7 text-xs gap-1 text-burgundy border-burgundy/30"
+                >
                   <Camera className="w-3.5 h-3.5" /> Start Camera
                 </Button>
               )}
             </CardHeader>
 
             <CardContent className="p-4">
-              <div className="relative aspect-video sm:aspect-square bg-zinc-950 rounded-lg overflow-hidden flex items-center justify-center border border-zinc-800">
+              <div
+                className={`relative aspect-video sm:aspect-square bg-zinc-950 rounded-lg overflow-hidden flex items-center justify-center border transition-colors ${
+                  scanFlash ? "border-emerald-400 ring-2 ring-emerald-400/50" : "border-zinc-800"
+                }`}
+              >
+                {/* Video element always mounted so ref is stable */}
                 <video
                   ref={videoRef}
                   autoPlay
@@ -241,11 +285,13 @@ export default function AdminQRScannerPage() {
                   className={`w-full h-full object-cover ${cameraActive ? "block" : "hidden"}`}
                 />
 
+                {/* Idle / error state */}
                 {!cameraActive && (
                   <div className="text-center p-6 text-zinc-400 space-y-3">
                     <QrCode className="w-12 h-12 mx-auto text-zinc-600 stroke-[1.5]" />
                     <p className="text-xs text-zinc-400 max-w-xs">
-                      Click &quot;Start Camera&quot; to scan product tags directly, or use a handheld barcode gun / manual input below.
+                      Click &quot;Start Camera&quot; to scan product tags directly, or use a
+                      handheld barcode gun / manual input below.
                     </p>
                     {cameraError && (
                       <p className="text-xs text-rose-400 bg-rose-950/50 p-2 rounded border border-rose-800">
@@ -255,21 +301,66 @@ export default function AdminQRScannerPage() {
                   </div>
                 )}
 
+                {/* Scan overlay when active */}
                 {cameraActive && (
-                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                    <div className="w-48 h-48 border-2 border-emerald-400 rounded-xl relative shadow-[0_0_15px_rgba(52,211,153,0.3)] animate-pulse">
-                      <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-emerald-400 -mt-1 -ml-1 rounded-tl" />
-                      <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-emerald-400 -mt-1 -mr-1 rounded-tr" />
-                      <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-emerald-400 -mb-1 -ml-1 rounded-bl" />
-                      <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-emerald-400 -mb-1 -mr-1 rounded-br" />
+                  <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center gap-3">
+                    {/* Corner bracket viewfinder */}
+                    <div
+                      className={`w-48 h-48 relative transition-all ${
+                        scanFlash ? "opacity-100 scale-105" : "opacity-80"
+                      }`}
+                    >
+                      <div className="absolute top-0 left-0 w-6 h-6 border-t-[3px] border-l-[3px] border-emerald-400 rounded-tl" />
+                      <div className="absolute top-0 right-0 w-6 h-6 border-t-[3px] border-r-[3px] border-emerald-400 rounded-tr" />
+                      <div className="absolute bottom-0 left-0 w-6 h-6 border-b-[3px] border-l-[3px] border-emerald-400 rounded-bl" />
+                      <div className="absolute bottom-0 right-0 w-6 h-6 border-b-[3px] border-r-[3px] border-emerald-400 rounded-br" />
+
+                      {/* Scanning line animation */}
+                      {!scanFlash && (
+                        <div
+                          className="absolute left-2 right-2 h-0.5 bg-emerald-400/80 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                          style={{ animation: "scanLine 2s ease-in-out infinite" }}
+                        />
+                      )}
+
+                      {/* Flash indicator on successful decode */}
+                      {scanFlash && (
+                        <div className="absolute inset-0 bg-emerald-400/20 rounded flex items-center justify-center">
+                          <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+                        </div>
+                      )}
                     </div>
+
+                    {/* Hint text */}
+                    {!scanFlash && (
+                      <p className="text-[11px] text-zinc-300 bg-black/40 px-3 py-1 rounded-full flex items-center gap-1.5">
+                        <ScanLine className="w-3.5 h-3.5 text-emerald-400" />
+                        Point at QR code to scan automatically
+                      </p>
+                    )}
+
+                    {/* Last decoded value */}
+                    {lastScannedRaw && (
+                      <p className="text-[10px] font-mono text-emerald-300 bg-black/50 px-2 py-0.5 rounded">
+                        {lastScannedRaw}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
+
+              {/* Scan animation keyframe */}
+              <style>{`
+                @keyframes scanLine {
+                  0%   { top: 8px;   opacity: 1; }
+                  50%  { top: calc(100% - 8px); opacity: 1; }
+                  100% { top: 8px;   opacity: 1; }
+                }
+              `}</style>
             </CardContent>
           </Card>
 
-          {/* Manual Input Card / Barcode Gun Input */}
+          {/* Manual / Gun Scanner Input */}
           <Card className="border-zinc-200 shadow-sm">
             <CardHeader className="py-3 px-4 bg-zinc-50 border-b border-zinc-200">
               <CardTitle className="text-xs font-semibold text-zinc-800 uppercase tracking-wider">
@@ -297,18 +388,21 @@ export default function AdminQRScannerPage() {
                 </div>
                 <Button
                   type="submit"
-                  onClick={() => handleLookup()}
                   disabled={isSearching}
                   className="bg-burgundy hover:bg-burgundy/90 gap-2 shrink-0"
                 >
-                  {isSearching ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  {isSearching ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Search className="w-4 h-4" />
+                  )}
                   Identify
                 </Button>
               </form>
             </CardContent>
           </Card>
 
-          {/* Recent Scans Session History */}
+          {/* Recent Scan History */}
           {scanHistory.length > 0 && (
             <Card className="border-zinc-200 shadow-sm">
               <CardHeader className="py-3 px-4 bg-zinc-50 border-b border-zinc-200 flex flex-row items-center justify-between">
@@ -346,7 +440,7 @@ export default function AdminQRScannerPage() {
           )}
         </div>
 
-        {/* Right Column: Scanned Product Identification & 3 Actions */}
+        {/* ── RIGHT COLUMN: Product Card & Actions ── */}
         <div className="lg:col-span-7">
           {scannedProduct ? (
             <Card className="border-zinc-300 shadow-md bg-white overflow-hidden">
@@ -361,7 +455,6 @@ export default function AdminQRScannerPage() {
                   </div>
                   <h2 className="text-xl font-bold font-serif">{scannedProduct.name}</h2>
                 </div>
-
                 <div>
                   {getStatusBadge(
                     scannedProduct.operational_status,
@@ -372,29 +465,31 @@ export default function AdminQRScannerPage() {
               </div>
 
               <CardContent className="p-6 space-y-6">
-                {/* Product Summary Grid */}
+                {/* Product Summary */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-zinc-50 border border-zinc-200 text-sm">
                   <div>
                     <span className="text-xs text-zinc-500 font-medium block">Style Code</span>
-                    <span className="font-mono font-bold text-zinc-900 text-base">{scannedProduct.style_code || "N/A"}</span>
+                    <span className="font-mono font-bold text-zinc-900 text-base">
+                      {scannedProduct.style_code || "N/A"}
+                    </span>
                   </div>
-
                   <div>
                     <span className="text-xs text-zinc-500 font-medium block">Category / Section</span>
                     <span className="font-semibold text-zinc-800">
                       {scannedProduct.category_name} &rsaquo; {scannedProduct.subcategory_name}
                     </span>
                   </div>
-
                   <div>
                     <span className="text-xs text-zinc-500 font-medium block">Retail Price</span>
                     <span className="font-bold text-burgundy text-base">
-                      {scannedProduct.price ? `₹${Number(scannedProduct.price).toLocaleString("en-IN")}` : "Unset"}
+                      {scannedProduct.price
+                        ? `₹${Number(scannedProduct.price).toLocaleString("en-IN")}`
+                        : "Unset"}
                     </span>
                   </div>
                 </div>
 
-                {/* Available Variants */}
+                {/* Variants */}
                 {scannedProduct.variants.length > 0 && (
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">
@@ -417,7 +512,7 @@ export default function AdminQRScannerPage() {
                   </div>
                 )}
 
-                {/* Authoritative 3-Action Panel */}
+                {/* 3 Lifecycle Actions */}
                 <div className="border-t border-zinc-200 pt-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-900 flex items-center gap-2">
@@ -428,7 +523,7 @@ export default function AdminQRScannerPage() {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {/* 1. SOLD OUT */}
+                    {/* SOLD OUT */}
                     <button
                       type="button"
                       disabled={isActing || scannedProduct.operational_status === "SOLD_OUT"}
@@ -446,7 +541,7 @@ export default function AdminQRScannerPage() {
                       </span>
                     </button>
 
-                    {/* 2. DAMAGED */}
+                    {/* DAMAGED */}
                     <button
                       type="button"
                       disabled={isActing || scannedProduct.is_damaged}
@@ -464,7 +559,7 @@ export default function AdminQRScannerPage() {
                       </span>
                     </button>
 
-                    {/* 3. RETURN */}
+                    {/* RETURN */}
                     <button
                       type="button"
                       disabled={isActing || (!scannedProduct.manual_sold_out && !scannedProduct.is_damaged)}
@@ -484,7 +579,7 @@ export default function AdminQRScannerPage() {
                   </div>
                 </div>
 
-                {/* Direct Product Links */}
+                {/* Footer Links */}
                 <div className="border-t border-zinc-200 pt-4 flex items-center justify-between text-xs text-zinc-500">
                   <span>Product ID: {scannedProduct.product_id}</span>
                   <Link
@@ -504,9 +599,16 @@ export default function AdminQRScannerPage() {
               <div className="max-w-sm space-y-1">
                 <h3 className="font-bold text-zinc-800 text-base">Awaiting QR Scan</h3>
                 <p className="text-xs text-zinc-500">
-                  Scan a garment&apos;s physical QR Code with your camera or enter the QR Code string above to view product details and execute actions.
+                  Scan a garment&apos;s physical QR Code with your camera or enter the code above
+                  to view product details and execute lifecycle actions.
                 </p>
               </div>
+              {isSearching && (
+                <div className="flex items-center gap-2 text-sm text-zinc-500">
+                  <RefreshCw className="w-4 h-4 animate-spin text-burgundy" />
+                  Looking up product…
+                </div>
+              )}
             </div>
           )}
         </div>
