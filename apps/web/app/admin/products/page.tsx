@@ -23,89 +23,68 @@ import { adminApi } from "@/lib/api";
 import { resolveImageUrl } from "@/lib/utils";
 import type { AdminProduct, Category, LifecycleState } from "@/types/api";
 
-export default function AdminProductsPage() {
-  const [products, setProducts] = React.useState<AdminProduct[]>([]);
-  const [categories, setCategories] = React.useState<Category[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [page, setPage] = React.useState(1);
-  const [totalPages, setTotalPages] = React.useState(1);
-  const [totalCount, setTotalCount] = React.useState(0);
+import useSWR from "swr";
 
-  // Filters
+export default function AdminProductsPage() {
+  const [page, setPage] = React.useState(1);
   const [search, setSearch] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState<string>("");
   const [selectedLifecycle, setSelectedLifecycle] = React.useState<string>("");
 
-  // Deletion modal state
   const [productToDelete, setProductToDelete] = React.useState<AdminProduct | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
   const toast = useToast();
 
-  const loadCategories = React.useCallback(async (isMountedRef?: { current: boolean }) => {
-    try {
-      const data = await adminApi.categories.list();
-      if (!isMountedRef || isMountedRef.current) {
-        setCategories(data);
-      }
-    } catch {
-      // Ignored
-    }
-  }, []);
+  const { data: categories = [] } = useSWR("admin-categories", () =>
+    adminApi.categories.list().catch(() => [] as Category[])
+  );
 
-  const loadProducts = React.useCallback(async (isMountedRef?: { current: boolean }) => {
-    try {
-      setLoading(true);
-      const res = await adminApi.products.list({
-        page,
-        page_size: 15,
-        search: search || undefined,
-        category_id: selectedCategory || undefined,
-        lifecycle_state: (selectedLifecycle as LifecycleState) || undefined,
-      });
+  const { data: prodRes, mutate: mutateProducts, isLoading: isProductsLoading } = useSWR(
+    ["admin-products", page, search, selectedCategory, selectedLifecycle],
+    () => adminApi.products.list({
+      page,
+      page_size: 15,
+      search: search || undefined,
+      category_id: selectedCategory || undefined,
+      lifecycle_state: (selectedLifecycle as LifecycleState) || undefined,
+    }).catch(() => ({ 
+      items: [] as AdminProduct[], 
+      total: 0, 
+      page: 1, 
+      page_size: 15, 
+      total_pages: 1,
+      has_next: false,
+      has_previous: false
+    }))
+  );
 
-      if (!isMountedRef || isMountedRef.current) {
-        setProducts(res.items);
-        setTotalPages(res.total_pages);
-        setTotalCount(res.total);
-      }
-    } catch (err: unknown) {
-      if (!isMountedRef || isMountedRef.current) {
-        toast.error("Failed to load products", (err as Error).message);
-      }
-    } finally {
-      if (!isMountedRef || isMountedRef.current) {
-        setLoading(false);
-      }
-    }
-  }, [page, search, selectedCategory, selectedLifecycle, toast]);
-
-  React.useEffect(() => {
-    const isMounted = { current: true };
-    loadCategories(isMounted);
-    return () => {
-      isMounted.current = false;
-    };
-  }, [loadCategories]);
-
-  React.useEffect(() => {
-    const isMounted = { current: true };
-    loadProducts(isMounted);
-    return () => {
-      isMounted.current = false;
-    };
-  }, [loadProducts]);
+  const loading = !prodRes && isProductsLoading;
+  const products = prodRes?.items || [];
+  const totalPages = prodRes?.total_pages || 1;
+  const totalCount = prodRes?.total || 0;
 
   const handleToggleSoldOut = async (product: AdminProduct) => {
     try {
       const nextState = !product.manual_sold_out;
-      const updated = await adminApi.products.updateSoldOut(product.id, nextState);
-      setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      
+      mutateProducts((current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          items: current.items.map(p => p.id === product.id ? { ...p, manual_sold_out: nextState, is_available: !nextState } : p)
+        };
+      }, { revalidate: false });
+
+      await adminApi.products.updateSoldOut(product.id, nextState);
+      mutateProducts();
+      
       toast.success(
         nextState ? "Marked as Sold Out" : "Restored In-Stock",
         `'${product.name}' availability updated.`
       );
     } catch (err: unknown) {
+      mutateProducts();
       toast.error("Failed to update availability", (err as Error).message);
     }
   };
@@ -117,7 +96,7 @@ export default function AdminProductsPage() {
       await adminApi.products.delete(productToDelete.id);
       toast.success("Product Deleted", `'${productToDelete.name}' removed from catalog.`);
       setProductToDelete(null);
-      loadProducts();
+      mutateProducts();
     } catch (err: unknown) {
       toast.error("Delete failed", (err as Error).message);
     } finally {

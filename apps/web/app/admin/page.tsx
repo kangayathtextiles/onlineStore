@@ -21,64 +21,62 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api";
 import { formatISTTime, resolveImageUrl } from "@/lib/utils";
-import type { AdminProduct, StoreStatusResponse, Category, AdminSection } from "@/types/api";
+import type { AdminProduct, Category, AdminSection } from "@/types/api";
+import useSWR from "swr";
 
 export default function AdminDashboardPage() {
-  const [loading, setLoading] = React.useState(true);
-  const [products, setProducts] = React.useState<AdminProduct[]>([]);
-  const [totalProducts, setTotalProducts] = React.useState(0);
-  const [categories, setCategories] = React.useState<Category[]>([]);
-  const [sections, setSections] = React.useState<AdminSection[]>([]);
-  const [storeStatus, setStoreStatus] = React.useState<StoreStatusResponse | null>(null);
-
   const toast = useToast();
 
-  const loadDashboardData = React.useCallback(async (isMountedRef?: { current: boolean }) => {
-    try {
-      setLoading(true);
-      const [prodRes, catRes, secRes, statusRes] = await Promise.all([
-        adminApi.products.list({ page: 1, page_size: 6 }).catch(() => ({ items: [], total: 0 })),
-        adminApi.categories.list().catch(() => []),
-        adminApi.sections.list().catch(() => []),
-        adminApi.store.getStatus().catch(() => null),
-      ]);
+  const { data: prodRes, mutate: mutateProducts } = useSWR(
+    "admin-dashboard-products",
+    () => adminApi.products.list({ page: 1, page_size: 6 }).catch(() => ({ 
+      items: [] as AdminProduct[], 
+      total: 0, 
+      page: 1, 
+      page_size: 6, 
+      total_pages: 1,
+      has_next: false,
+      has_previous: false
+    }))
+  );
+  const { data: categories } = useSWR("admin-categories", () =>
+    adminApi.categories.list().catch(() => [] as Category[])
+  );
+  const { data: sections } = useSWR("admin-sections", () =>
+    adminApi.sections.list().catch(() => [] as AdminSection[])
+  );
+  const { data: storeStatus } = useSWR("admin-store-status", () =>
+    adminApi.store.getStatus().catch(() => null)
+  );
 
-      if (!isMountedRef || isMountedRef.current) {
-        setProducts(prodRes.items || []);
-        setTotalProducts(prodRes.total || 0);
-        setCategories(Array.isArray(catRes) ? catRes : []);
-        setSections(Array.isArray(secRes) ? secRes : []);
-        setStoreStatus(statusRes);
-      }
-    } catch (err: unknown) {
-      if (!isMountedRef || isMountedRef.current) {
-        toast.error("Dashboard error", (err as Error).message);
-      }
-    } finally {
-      if (!isMountedRef || isMountedRef.current) {
-        setLoading(false);
-      }
-    }
-  }, [toast]);
-
-  React.useEffect(() => {
-    const isMounted = { current: true };
-    loadDashboardData(isMounted);
-    return () => {
-      isMounted.current = false;
-    };
-  }, [loadDashboardData]);
+  const loading = !prodRes || !categories || !sections || storeStatus === undefined;
+  const products = prodRes?.items || [];
+  const totalProducts = prodRes?.total || 0;
+  const safeCategories = categories || [];
+  const safeSections = sections || [];
 
   const handleToggleSoldOut = async (product: AdminProduct) => {
     try {
       const nextState = !product.manual_sold_out;
-      const updated = await adminApi.products.updateSoldOut(product.id, nextState);
-      setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      
+      // Optimistic update
+      mutateProducts((current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          items: current.items.map(p => p.id === product.id ? { ...p, manual_sold_out: nextState, is_available: !nextState } : p)
+        };
+      }, { revalidate: false });
+
+      await adminApi.products.updateSoldOut(product.id, nextState);
+      mutateProducts(); // revalidate
+      
       toast.success(
         nextState ? "Marked as Sold Out" : "Restored In-Stock",
         `Product '${product.name}' is now ${nextState ? "Sold Out" : "Available"}.`
       );
     } catch (err: unknown) {
+      mutateProducts(); // rollback on error
       toast.error("Failed to toggle sold out", (err as Error).message);
     }
   };
@@ -194,12 +192,12 @@ export default function AdminDashboardPage() {
               <FolderTree className="w-4 h-4 text-emerald-600" />
             </div>
             <CardTitle className="text-2xl sm:text-3xl font-bold mt-1">
-              {loading ? "..." : categories.length}
+              {loading ? "..." : safeCategories.length}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-zinc-500">
-              {categories.reduce((acc, c) => acc + c.subcategories.length, 0)} subcategories active
+              {safeCategories.reduce((acc, c) => acc + c.subcategories.length, 0)} subcategories active
             </p>
           </CardContent>
         </Card>
@@ -212,12 +210,12 @@ export default function AdminDashboardPage() {
               <Sparkles className="w-4 h-4 text-amber-600" />
             </div>
             <CardTitle className="text-2xl sm:text-3xl font-bold mt-1">
-              {loading ? "..." : sections.length}
+              {loading ? "..." : safeSections.length}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-zinc-500">
-              {sections.filter((s) => s.is_active).length} active on customer showcase
+              {safeSections.filter((s) => s.is_active).length} active on customer showcase
             </p>
           </CardContent>
         </Card>

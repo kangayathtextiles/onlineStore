@@ -24,10 +24,15 @@ import { adminApi } from "@/lib/api";
 import { resolveImageUrl } from "@/lib/utils";
 import type { AdminProduct, AdminSection, CustomSectionItem } from "@/types/api";
 
+import useSWR from "swr";
+
 export default function AdminSectionsPage() {
   const toast = useToast();
-  const [sections, setSections] = React.useState<AdminSection[]>([]);
-  const [loading, setLoading] = React.useState(true);
+
+  const { data: sections = [], mutate: mutateSections, isLoading: loading } = useSWR(
+    "admin-sections",
+    () => adminApi.sections.list().catch(() => [] as AdminSection[])
+  );
 
   // Section Modal
   const [isSectionModalOpen, setIsSectionModalOpen] = React.useState(false);
@@ -51,22 +56,6 @@ export default function AdminSectionsPage() {
   // Deletion
   const [sectionToDelete, setSectionToDelete] = React.useState<AdminSection | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
-
-  const loadSections = React.useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await adminApi.sections.list();
-      setSections(data);
-    } catch (err: unknown) {
-      toast.error("Failed to load sections", (err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
-
-  React.useEffect(() => {
-    loadSections();
-  }, [loadSections]);
 
   // --- Section Handlers ---
   const openCreateSection = () => {
@@ -119,7 +108,7 @@ export default function AdminSectionsPage() {
         toast.success("Section Created", `'${title}' created.`);
       }
       setIsSectionModalOpen(false);
-      loadSections();
+      mutateSections();
     } catch (err: unknown) {
       toast.error("Failed to save section", (err as Error).message);
     } finally {
@@ -134,7 +123,7 @@ export default function AdminSectionsPage() {
       await adminApi.sections.delete(sectionToDelete.id);
       toast.success("Section Deleted", `'${sectionToDelete.title}' removed.`);
       setSectionToDelete(null);
-      loadSections();
+      mutateSections();
     } catch (err: unknown) {
       toast.error("Delete failed", (err as Error).message);
     } finally {
@@ -206,7 +195,7 @@ export default function AdminSectionsPage() {
       await adminApi.sections.reorderItems(curatingSection.id, { items: payload });
       toast.success("Section Products Saved", "Curated showcase sequence updated.");
       setIsCuratorOpen(false);
-      loadSections();
+      mutateSections();
     } catch (err: unknown) {
       toast.error("Failed to save sequence", (err as Error).message);
     } finally {

@@ -11,13 +11,28 @@ import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api";
 import type { SizeOption, ColorOption } from "@/types/api";
 
+import useSWR from "swr";
+
 export default function AdminAttributesPage() {
   const toast = useToast();
   const [activeTab, setActiveTab] = React.useState<"sizes" | "colors">("sizes");
 
-  const [sizes, setSizes] = React.useState<SizeOption[]>([]);
-  const [colors, setColors] = React.useState<ColorOption[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const { data: sizes = [], mutate: mutateSizes, isLoading: isSizesLoading } = useSWR(
+    "admin-attributes-sizes",
+    () => adminApi.attributes.listSizes().catch(() => [] as SizeOption[])
+  );
+  
+  const { data: colors = [], mutate: mutateColors, isLoading: isColorsLoading } = useSWR(
+    "admin-attributes-colors",
+    () => adminApi.attributes.listColors().catch(() => [] as ColorOption[])
+  );
+
+  const loading = isSizesLoading || isColorsLoading;
+
+  const refreshAttributes = () => {
+    mutateSizes();
+    mutateColors();
+  };
 
   // Size Modal
   const [isSizeModalOpen, setIsSizeModalOpen] = React.useState(false);
@@ -37,26 +52,6 @@ export default function AdminAttributesPage() {
   const [isSavingColor, setIsSavingColor] = React.useState(false);
   const [colorToDelete, setColorToDelete] = React.useState<ColorOption | null>(null);
   const [isDeletingColor, setIsDeletingColor] = React.useState(false);
-
-  const loadAttributes = React.useCallback(async () => {
-    try {
-      setLoading(true);
-      const [sizeList, colorList] = await Promise.all([
-        adminApi.attributes.listSizes(),
-        adminApi.attributes.listColors(),
-      ]);
-      setSizes(sizeList);
-      setColors(colorList);
-    } catch (err: unknown) {
-      toast.error("Failed to load attributes", (err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
-
-  React.useEffect(() => {
-    loadAttributes();
-  }, [loadAttributes]);
 
   // --- Size Handlers ---
   const openCreateSize = () => {
@@ -93,7 +88,7 @@ export default function AdminAttributesPage() {
         toast.success("Size Added", `'${sizeName}' added to dictionary.`);
       }
       setIsSizeModalOpen(false);
-      loadAttributes();
+      refreshAttributes();
     } catch (err: unknown) {
       toast.error("Failed to save size", (err as Error).message);
     } finally {
@@ -108,7 +103,7 @@ export default function AdminAttributesPage() {
       await adminApi.attributes.deleteSize(sizeToDelete.id);
       toast.success("Size Deleted", `'${sizeToDelete.name}' removed.`);
       setSizeToDelete(null);
-      loadAttributes();
+      refreshAttributes();
     } catch (err: unknown) {
       toast.error("Delete failed", (err as Error).message);
     } finally {
@@ -155,7 +150,7 @@ export default function AdminAttributesPage() {
         toast.success("Color Added", `'${colorName}' added to dictionary.`);
       }
       setIsColorModalOpen(false);
-      loadAttributes();
+      refreshAttributes();
     } catch (err: unknown) {
       toast.error("Failed to save color", (err as Error).message);
     } finally {
@@ -170,7 +165,7 @@ export default function AdminAttributesPage() {
       await adminApi.attributes.deleteColor(colorToDelete.id);
       toast.success("Color Deleted", `'${colorToDelete.name}' removed.`);
       setColorToDelete(null);
-      loadAttributes();
+      refreshAttributes();
     } catch (err: unknown) {
       toast.error("Delete failed", (err as Error).message);
     } finally {

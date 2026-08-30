@@ -28,11 +28,24 @@ const DAYS_ORDER: DayOfWeek[] = [
   "SUNDAY",
 ];
 
+import useSWR from "swr";
+
 export default function AdminShopPage() {
   const toast = useToast();
-  const [loading, setLoading] = React.useState(true);
   const [profile, setProfile] = React.useState<StoreProfile | null>(null);
   const [status, setStatus] = React.useState<StoreStatusResponse | null>(null);
+
+  const { data: storeData, mutate: mutateStoreData, isLoading: loading } = useSWR(
+    "admin-store",
+    async () => {
+      const [profData, statusData] = await Promise.all([
+        adminApi.store.get(),
+        adminApi.store.getStatus(),
+      ]);
+      return { profData, statusData };
+    },
+    { revalidateOnFocus: false }
+  );
 
   // Override Form
   const [overrideMode, setOverrideMode] = React.useState<OverrideMode>("AUTO");
@@ -60,14 +73,9 @@ export default function AdminShopPage() {
   const [schedules, setSchedules] = React.useState<OperatingSchedule[]>([]);
   const [isSavingSchedule, setIsSavingSchedule] = React.useState(false);
 
-  const loadStoreData = React.useCallback(async () => {
-    try {
-      setLoading(true);
-      const [profData, statusData] = await Promise.all([
-        adminApi.store.get(),
-        adminApi.store.getStatus(),
-      ]);
-
+  React.useEffect(() => {
+    if (storeData && !profile) {
+      const { profData, statusData } = storeData;
       setProfile(profData);
       setName(profData.name || "");
       setTagline(profData.tagline || "");
@@ -93,16 +101,8 @@ export default function AdminShopPage() {
         (a, b) => DAYS_ORDER.indexOf(a.day_of_week) - DAYS_ORDER.indexOf(b.day_of_week)
       );
       setSchedules(sorted);
-    } catch (err: unknown) {
-      toast.error("Failed to load store settings", (err as Error).message);
-    } finally {
-      setLoading(false);
     }
-  }, [toast]);
-
-  React.useEffect(() => {
-    loadStoreData();
-  }, [loadStoreData]);
+  }, [storeData, profile]);
 
   // --- Handlers ---
   const handleSaveOverride = async (e: React.FormEvent) => {
@@ -188,7 +188,7 @@ export default function AdminShopPage() {
       const updated = await adminApi.store.updateSchedule(payload);
       setSchedules(updated);
       toast.success("Weekly Hours Saved", "Store operating schedule updated.");
-      loadStoreData();
+      mutateStoreData();
     } catch (err: unknown) {
       toast.error("Schedule update failed", (err as Error).message);
     } finally {

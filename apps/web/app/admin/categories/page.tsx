@@ -23,11 +23,27 @@ import { adminApi, ApiError } from "@/lib/api";
 import { resolveImageUrl } from "@/lib/utils";
 import type { Category, SubcategorySummary } from "@/types/api";
 
+import useSWR from "swr";
+
 export default function AdminCategoriesPage() {
   const toast = useToast();
-  const [categories, setCategories] = React.useState<Category[]>([]);
-  const [loading, setLoading] = React.useState(true);
   const [expandedCats, setExpandedCats] = React.useState<Record<string, boolean>>({});
+
+  const { data: categories, mutate: mutateCategories, isLoading } = useSWR(
+    "admin-categories",
+    () => adminApi.categories.list().catch(() => [] as Category[])
+  );
+
+  React.useEffect(() => {
+    if (categories && Object.keys(expandedCats).length === 0) {
+      const expanded: Record<string, boolean> = {};
+      categories.forEach((c) => (expanded[c.id] = true));
+      setExpandedCats(expanded);
+    }
+  }, [categories, expandedCats]);
+
+  const loading = isLoading && !categories;
+  const safeCategories = categories || [];
 
   // Modals
   const [isCategoryModalOpen, setIsCategoryModalOpen] = React.useState(false);
@@ -55,26 +71,6 @@ export default function AdminCategoriesPage() {
   const [isDeletingCat, setIsDeletingCat] = React.useState(false);
   const [subcategoryToDelete, setSubcategoryToDelete] = React.useState<SubcategorySummary | null>(null);
   const [isDeletingSub, setIsDeletingSub] = React.useState(false);
-
-  const loadCategories = React.useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await adminApi.categories.list();
-      setCategories(data);
-      // Auto expand all
-      const expanded: Record<string, boolean> = {};
-      data.forEach((c) => (expanded[c.id] = true));
-      setExpandedCats(expanded);
-    } catch (err: unknown) {
-      toast.error("Failed to load categories", (err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
-
-  React.useEffect(() => {
-    loadCategories();
-  }, [loadCategories]);
 
   const toggleExpand = (catId: string) => {
     setExpandedCats((prev) => ({ ...prev, [catId]: !prev[catId] }));
@@ -135,7 +131,7 @@ export default function AdminCategoriesPage() {
         toast.success("Category Created", `'${catName}' added.`);
       }
       setIsCategoryModalOpen(false);
-      loadCategories();
+      mutateCategories();
     } catch (err: unknown) {
       toast.error("Category save failed", (err as Error).message);
     } finally {
@@ -150,7 +146,7 @@ export default function AdminCategoriesPage() {
       await adminApi.categories.delete(categoryToDelete.id);
       toast.success("Category Deleted", `'${categoryToDelete.name}' removed.`);
       setCategoryToDelete(null);
-      loadCategories();
+      mutateCategories();
     } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 409) {
         toast.error(
@@ -211,7 +207,7 @@ export default function AdminCategoriesPage() {
         toast.success("Subcategory Created", `'${subName}' added.`);
       }
       setIsSubcategoryModalOpen(false);
-      loadCategories();
+      mutateCategories();
     } catch (err: unknown) {
       toast.error("Subcategory save failed", (err as Error).message);
     } finally {
@@ -226,7 +222,7 @@ export default function AdminCategoriesPage() {
       await adminApi.categories.deleteSubcategory(subcategoryToDelete.id);
       toast.success("Subcategory Deleted", `'${subcategoryToDelete.name}' removed.`);
       setSubcategoryToDelete(null);
-      loadCategories();
+      mutateCategories();
     } catch (err: unknown) {
       toast.error(
         "Cannot Delete Subcategory",
@@ -268,7 +264,7 @@ export default function AdminCategoriesPage() {
               </p>
             </CardContent>
           </Card>
-        ) : categories.length === 0 ? (
+        ) : safeCategories.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center text-zinc-500">
               <FolderTree className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
@@ -281,7 +277,7 @@ export default function AdminCategoriesPage() {
             </CardContent>
           </Card>
         ) : (
-          categories.map((cat) => {
+          safeCategories.map((cat) => {
             const isExpanded = Boolean(expandedCats[cat.id]);
             return (
               <Card key={cat.id} className="overflow-hidden border-zinc-200 bg-white shadow-xs">
@@ -497,7 +493,7 @@ export default function AdminCategoriesPage() {
             value={targetParentCatId}
             onChange={(e) => setTargetParentCatId(e.target.value)}
           >
-            {categories.map((c) => (
+            {safeCategories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>

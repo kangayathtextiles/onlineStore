@@ -42,6 +42,8 @@ import type {
   SubcategorySummary,
 } from "@/types/api";
 
+import useSWR from "swr";
+
 export default function EditProductPage() {
   const params = useParams();
   const toast = useToast();
@@ -52,7 +54,22 @@ export default function EditProductPage() {
   const [subcategories, setSubcategories] = React.useState<SubcategorySummary[]>([]);
   const [sizes, setSizes] = React.useState<SizeOption[]>([]);
   const [colors, setColors] = React.useState<ColorOption[]>([]);
-  const [loading, setLoading] = React.useState(true);
+
+  const { data: pageData, isLoading } = useSWR(
+    `admin-product-${productId}`,
+    async () => {
+      const [prod, cats, sizeList, colorList] = await Promise.all([
+        adminApi.products.get(productId),
+        adminApi.categories.list(),
+        adminApi.attributes.listSizes(),
+        adminApi.attributes.listColors(),
+      ]);
+      return { prod, cats, sizeList, colorList };
+    },
+    { revalidateOnFocus: false }
+  );
+
+  const loading = isLoading && !product;
   const [isSavingDetails, setIsSavingDetails] = React.useState(false);
 
   // Form State
@@ -91,16 +108,9 @@ export default function EditProductPage() {
 
   const [variantToDelete, setVariantToDelete] = React.useState<ProductVariant | null>(null);
 
-  const loadData = React.useCallback(async () => {
-    try {
-      setLoading(true);
-      const [prod, cats, sizeList, colorList] = await Promise.all([
-        adminApi.products.get(productId),
-        adminApi.categories.list(),
-        adminApi.attributes.listSizes(),
-        adminApi.attributes.listColors(),
-      ]);
-
+  React.useEffect(() => {
+    if (pageData && !product) {
+      const { prod, cats, sizeList, colorList } = pageData;
       setProduct(prod);
       setName(prod.name);
       setCategoryId(prod.category_id);
@@ -122,16 +132,8 @@ export default function EditProductPage() {
 
       setSizes(sizeList);
       setColors(colorList);
-    } catch (err: unknown) {
-      toast.error("Failed to load product", (err as Error).message);
-    } finally {
-      setLoading(false);
     }
-  }, [productId, toast]);
-
-  React.useEffect(() => {
-    loadData();
-  }, [loadData]);
+  }, [pageData, product]);
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedId = e.target.value;
