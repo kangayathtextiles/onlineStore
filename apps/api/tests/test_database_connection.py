@@ -18,7 +18,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.core.config import settings
 from app.core.dependencies import get_async_session
+from app.db.seed import seed_development_data, seed_master_data
 from app.main import app
+from app.models import Base
 from app.repositories.taxonomy_repository import TaxonomyRepository
 
 
@@ -37,7 +39,23 @@ async def live_pg_engine():
         await eng.dispose()
         pytest.skip(f"Live PostgreSQL server is not reachable in this test environment: {exc}")
 
+    # Create tables and seed data in live PostgreSQL test container
+    async with eng.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    session_maker = async_sessionmaker(
+        eng,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+    async with session_maker() as session:
+        await seed_master_data(session)
+        await seed_development_data(session)
+
     yield eng
+
+    async with eng.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
     await eng.dispose()
 
 
