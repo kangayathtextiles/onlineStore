@@ -91,42 +91,55 @@ jobs:
     needs: test-gate
 
     steps:
-      - name: Trigger Backend API Deploy Hook
+      - name: Trigger Render Blueprint Sync / Deploy Hooks
         env:
-          HOOK_URL: ${{ secrets.RENDER_STAGING_API_DEPLOY_HOOK }}
+          SYNC_HOOK: ${{ secrets.RENDER_SYNC_HOOK || secrets.RENDER_BLUEPRINT_SYNC_HOOK }}
+          API_HOOK: ${{ secrets.RENDER_STAGING_API_DEPLOY_HOOK }}
+          WEB_HOOK: ${{ secrets.RENDER_STAGING_WEB_DEPLOY_HOOK }}
         run: |
-          if [ -z "${HOOK_URL}" ]; then
-            echo "[NOTICE] RENDER_STAGING_API_DEPLOY_HOOK secret is not configured in GitHub repository secrets."
-            echo "If using Render automatic branch tracking, Render will deploy automatically on push to 'staging'."
-          else
-            echo "[DEPLOY] Triggering Render Staging API deployment webhook..."
-            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${HOOK_URL}")
+          DEPLOYED=false
+
+          # 1. Blueprint Sync Hook (Master Sync)
+          if [ -n "${SYNC_HOOK}" ]; then
+            echo "[DEPLOY] Triggering Render Blueprint Sync Hook..."
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${SYNC_HOOK}")
             STATUS=$(echo "${RESPONSE}" | tail -n1)
-            echo "Render API response HTTP status: ${STATUS}"
+            echo "Render Sync response status: ${STATUS}"
             if [ "${STATUS}" -ge 200 ] && [ "${STATUS}" -lt 300 ]; then
-              echo "  ✓ Staging API deployment successfully triggered."
+              echo "  ✓ Render Blueprint Sync successfully triggered."
+              DEPLOYED=true
             else
-              echo "  ✗ Warning: Deploy hook returned status ${STATUS}"
+              echo "  ✗ Warning: Blueprint Sync Hook returned HTTP ${STATUS}"
             fi
           fi
 
-      - name: Trigger Frontend Web Deploy Hook
-        env:
-          HOOK_URL: ${{ secrets.RENDER_STAGING_WEB_DEPLOY_HOOK }}
-        run: |
-          if [ -z "${HOOK_URL}" ]; then
-            echo "[NOTICE] RENDER_STAGING_WEB_DEPLOY_HOOK secret is not configured in GitHub repository secrets."
-            echo "If using Render automatic branch tracking, Render will deploy automatically on push to 'staging'."
-          else
-            echo "[DEPLOY] Triggering Render Staging Web deployment webhook..."
-            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${HOOK_URL}")
+          # 2. Individual Staging API Deploy Hook
+          if [ -n "${API_HOOK}" ]; then
+            echo "[DEPLOY] Triggering Render Staging API Deploy Hook..."
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${API_HOOK}")
             STATUS=$(echo "${RESPONSE}" | tail -n1)
-            echo "Render Web response HTTP status: ${STATUS}"
+            echo "Render API response status: ${STATUS}"
+            if [ "${STATUS}" -ge 200 ] && [ "${STATUS}" -lt 300 ]; then
+              echo "  ✓ Staging API deployment successfully triggered."
+              DEPLOYED=true
+            fi
+          fi
+
+          # 3. Individual Staging Web Deploy Hook
+          if [ -n "${WEB_HOOK}" ]; then
+            echo "[DEPLOY] Triggering Render Staging Web Deploy Hook..."
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${WEB_HOOK}")
+            STATUS=$(echo "${RESPONSE}" | tail -n1)
+            echo "Render Web response status: ${STATUS}"
             if [ "${STATUS}" -ge 200 ] && [ "${STATUS}" -lt 300 ]; then
               echo "  ✓ Staging Web deployment successfully triggered."
-            else
-              echo "  ✗ Warning: Deploy hook returned status ${STATUS}"
+              DEPLOYED=true
             fi
+          fi
+
+          if [ "${DEPLOYED}" = false ]; then
+            echo "[NOTICE] No deploy hook secrets configured in GitHub Actions."
+            echo "Render will automatically deploy via branch auto-sync on commit to 'staging'."
           fi
 
   # ─────────────────────────────────────────────────────────────
@@ -153,7 +166,6 @@ jobs:
           echo "  Web: ${STAGING_WEB_URL}"
           echo "============================================"
           
-          # Allow up to 3 attempts with wait time for container startup
           MAX_RETRIES=3
           for i in $(seq 1 $MAX_RETRIES); do
             echo "Attempt $i of $MAX_RETRIES..."
