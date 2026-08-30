@@ -56,7 +56,11 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+async function request<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  retries = 2
+): Promise<T> {
   const url = `${API_BASE_URL}/api/v1${endpoint}`;
   const headers = {
     "Content-Type": "application/json",
@@ -95,11 +99,23 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     if (error instanceof ApiError) {
       throw error;
     }
+
+    // Retry for transient network / cold-start drops
+    if (retries > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return request<T>(endpoint, options, retries - 1);
+    }
+
     throw new ApiError(0, "NETWORK_ERROR", (error as Error).message || "Network request failed");
   }
 }
 
-async function upload<T>(endpoint: string, formData: FormData, options: RequestInit = {}): Promise<T> {
+async function upload<T>(
+  endpoint: string,
+  formData: FormData,
+  options: RequestInit = {},
+  retries = 1
+): Promise<T> {
   const url = `${API_BASE_URL}/api/v1${endpoint}`;
   const headers = {
     ...options.headers,
@@ -108,9 +124,9 @@ async function upload<T>(endpoint: string, formData: FormData, options: RequestI
   try {
     const res = await fetch(url, {
       ...options,
-      method: options.method || "POST",
-      headers,
+      method: "POST",
       body: formData,
+      headers,
       cache: "no-store",
     });
 
@@ -121,16 +137,9 @@ async function upload<T>(endpoint: string, formData: FormData, options: RequestI
       } catch {
         errPayload = { error: { code: `HTTP_${res.status}`, message: res.statusText, details: {} } };
       }
-
       const code = errPayload?.error?.code || `HTTP_${res.status}`;
-      const message = errPayload?.error?.message || `Request failed with status ${res.status}`;
-      const details = errPayload?.error?.details || {};
-
-      throw new ApiError(res.status, code, message, details);
-    }
-
-    if (res.status === 204) {
-      return {} as T;
+      const message = errPayload?.error?.message || `Upload failed with status ${res.status}`;
+      throw new ApiError(res.status, code, message, errPayload?.error?.details || {});
     }
 
     return (await res.json()) as T;
@@ -138,7 +147,13 @@ async function upload<T>(endpoint: string, formData: FormData, options: RequestI
     if (error instanceof ApiError) {
       throw error;
     }
-    throw new ApiError(0, "NETWORK_ERROR", (error as Error).message || "Network request failed");
+
+    if (retries > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return upload<T>(endpoint, formData, options, retries - 1);
+    }
+
+    throw new ApiError(0, "NETWORK_ERROR", (error as Error).message || "Upload request failed");
   }
 }
 

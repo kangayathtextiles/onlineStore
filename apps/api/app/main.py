@@ -86,14 +86,11 @@ if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
-        allow_origin_regex=(
-            r"^https?://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$"
-            if not settings.is_production
-            else None
-        ),
+        allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|\[::1\]|.*\.onrender\.com|kangayath\.in|.*\.kangayath\.in)(:[0-9]+)?$",
         allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+        allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["*"],
     )
 
 
