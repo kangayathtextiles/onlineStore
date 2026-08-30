@@ -16,8 +16,8 @@ your production database and import it into your staging database.
 #>
 
 # 🔴 Replace these with your actual External Database URLs from Render
-$PROD_DB_URL = "postgresql://USER:PASSWORD@HOST/kangayath_db"
-$STAGING_DB_URL = "postgresql://postgres.gdojzkljtarbnwrmimes:%40Abinabi9947@aws-0-ap-south-1.pooler.supabase.com:5432/postgres?options=-c%20search_path=staging"
+$PROD_DB_URL = "postgresql://kangayath_user:fEFf3szktNHScCeTnhjlp6ApQEi08oMa@dpg-da4lk6c9v7es738ijm50-a.oregon-postgres.render.com/kangayath_db"
+$STAGING_DB_URL = "postgresql://postgres.gdojzkljtarbnwrmimes:%40Abinabi9947@aws-0-ap-south-1.pooler.supabase.com:5432/postgres"
 
 $BACKUP_FILE = "production_backup.sql"
 
@@ -39,6 +39,7 @@ Write-Host "✅ Export successful. Backup saved temporarily as $BACKUP_FILE." -F
 
 # Step 2: Import into Staging
 Write-Host "`n[2/3] Importing data into Staging Database..." -ForegroundColor Yellow
+$env:PGOPTIONS = "-c search_path=staging"
 psql -d $STAGING_DB_URL -f $BACKUP_FILE
 
 if ($LASTEXITCODE -ne 0) {
