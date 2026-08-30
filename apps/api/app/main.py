@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -75,6 +76,9 @@ app = FastAPI(
         "catalog discovery platform. Provides separate /api/v1/public and /api/v1/admin namespaces."
     ),
 )
+
+# GZip Compression for fast network transfers (>500 bytes)
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 # CORS configuration
 if settings.BACKEND_CORS_ORIGINS:

@@ -71,58 +71,115 @@ export class ApiError extends Error {
   }
 }
 
+// In-flight request deduplication map (prevents duplicate simultaneous network calls)
+const inFlightRequests = new Map<string, Promise<unknown>>();
+
+// Lightweight in-memory TTL cache for public metadata (15 seconds TTL)
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+const memoryCache = new Map<string, CacheEntry<unknown>>();
+const CACHE_TTL_MS = 15000; // 15s
+
+export function clearApiCache(): void {
+  memoryCache.clear();
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {},
   retries = 2
 ): Promise<T> {
+  const method = (options.method || "GET").toUpperCase();
+  const isGet = method === "GET";
   const url = `${getApiBaseUrl()}/api/v1${endpoint}`;
-  const headers = {
-    "Content-Type": "application/json",
-    ...options.headers,
-  };
+  const cacheKey = `${method}:${url}`;
 
-  try {
-    const res = await fetch(url, {
-      ...options,
-      headers,
-      cache: "no-store",
-    });
+  // 1. Check in-memory TTL cache for GET requests
+  if (isGet && memoryCache.has(cacheKey)) {
+    const entry = memoryCache.get(cacheKey)!;
+    if (Date.now() - entry.timestamp < CACHE_TTL_MS) {
+      return entry.data as T;
+    }
+    memoryCache.delete(cacheKey);
+  }
 
-    if (!res.ok) {
-      let errPayload;
-      try {
-        errPayload = await res.json();
-      } catch {
-        errPayload = { error: { code: `HTTP_${res.status}`, message: res.statusText, details: {} } };
+  // 2. Invalidate cache on write operations (POST, PUT, DELETE, PATCH)
+  if (!isGet) {
+    memoryCache.clear();
+  }
+
+  // 3. Deduplicate concurrent identical in-flight GET requests
+  if (isGet && inFlightRequests.has(cacheKey)) {
+    return inFlightRequests.get(cacheKey) as Promise<T>;
+  }
+
+  const execute = async (): Promise<T> => {
+    const headers = {
+      "Content-Type": "application/json",
+      ...options.headers,
+    };
+
+    try {
+      const res = await fetch(url, {
+        ...options,
+        headers,
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        let errPayload;
+        try {
+          errPayload = await res.json();
+        } catch {
+          errPayload = { error: { code: `HTTP_${res.status}`, message: res.statusText, details: {} } };
+        }
+
+        const code = errPayload?.error?.code || `HTTP_${res.status}`;
+        const message = errPayload?.error?.message || `Request failed with status ${res.status}`;
+        const details = errPayload?.error?.details || {};
+
+        throw new ApiError(res.status, code, message, details);
       }
 
-      const code = errPayload?.error?.code || `HTTP_${res.status}`;
-      const message = errPayload?.error?.message || `Request failed with status ${res.status}`;
-      const details = errPayload?.error?.details || {};
+      // For 204 or empty response
+      if (res.status === 204) {
+        return {} as T;
+      }
 
-      throw new ApiError(res.status, code, message, details);
+      const data = (await res.json()) as T;
+
+      // Cache successful public GET responses
+      if (isGet && endpoint.startsWith("/public/")) {
+        memoryCache.set(cacheKey, { data, timestamp: Date.now() });
+      }
+
+      return data;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      // Retry for transient network / cold-start drops
+      if (retries > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        return request<T>(endpoint, options, retries - 1);
+      }
+
+      throw new ApiError(0, "NETWORK_ERROR", (error as Error).message || "Network request failed");
+    } finally {
+      if (isGet) {
+        inFlightRequests.delete(cacheKey);
+      }
     }
+  };
 
-    // For 204 or empty response
-    if (res.status === 204) {
-      return {} as T;
-    }
-
-    return (await res.json()) as T;
-  } catch (error) {
-    if (error instanceof ApiError) {
-      throw error;
-    }
-
-    // Retry for transient network / cold-start drops
-    if (retries > 0) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return request<T>(endpoint, options, retries - 1);
-    }
-
-    throw new ApiError(0, "NETWORK_ERROR", (error as Error).message || "Network request failed");
+  const promise = execute();
+  if (isGet) {
+    inFlightRequests.set(cacheKey, promise);
   }
+  return promise;
 }
 
 async function upload<T>(

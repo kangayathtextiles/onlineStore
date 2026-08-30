@@ -14,12 +14,20 @@ class TaxonomyRepository(BaseRepository[Category]):
         super().__init__(Category, session)
 
     async def get_by_slug(self, slug: str) -> Category | None:
-        stmt = select(Category).where(Category.slug == slug)
+        from sqlalchemy.orm import selectinload
+
+        stmt = (
+            select(Category)
+            .where(Category.slug == slug)
+            .options(selectinload(Category.subcategories))
+        )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
     async def list_categories(self, active_only: bool = False) -> Sequence[Category]:
-        stmt = select(Category).order_by(Category.display_order)
+        from sqlalchemy.orm import selectinload
+
+        stmt = select(Category).order_by(Category.display_order).options(selectinload(Category.subcategories))
         if active_only:
             stmt = stmt.where(Category.is_active.is_(True))
         result = await self.session.execute(stmt)

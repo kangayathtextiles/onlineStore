@@ -171,13 +171,22 @@ class ProductRepository(BaseRepository[Product]):
                 )
             )
 
+        from sqlalchemy.orm import selectinload
+
         # Count total
         count_query = select(func.count()).select_from(query.subquery())
         total = (await self.session.execute(count_query)).scalar() or 0
 
-        # Paginate and order (Featured first, then newest)
+        # Paginate and order (Featured first, then newest) with full eager loading
         query = (
             query.order_by(Product.featured.desc(), Product.created_at.desc())
+            .options(
+                selectinload(Product.category),
+                selectinload(Product.subcategory),
+                selectinload(Product.images),
+                selectinload(Product.variants).selectinload(ProductVariant.size),
+                selectinload(Product.variants).selectinload(ProductVariant.color),
+            )
             .offset((page - 1) * page_size)
             .limit(page_size)
         )
@@ -200,6 +209,8 @@ class ProductRepository(BaseRepository[Product]):
         """
         Query administrative products including drafts, hidden, and archived items.
         """
+        from sqlalchemy.orm import selectinload
+
         query = select(Product)
 
         if not include_retired and not operational_status:
@@ -230,6 +241,13 @@ class ProductRepository(BaseRepository[Product]):
 
         query = (
             query.order_by(Product.created_at.desc())
+            .options(
+                selectinload(Product.category),
+                selectinload(Product.subcategory),
+                selectinload(Product.images),
+                selectinload(Product.variants).selectinload(ProductVariant.size),
+                selectinload(Product.variants).selectinload(ProductVariant.color),
+            )
             .offset((page - 1) * page_size)
             .limit(page_size)
         )

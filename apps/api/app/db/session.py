@@ -14,6 +14,7 @@ engine: AsyncEngine = create_async_engine(
     echo=settings.DEBUG,
     future=True,
     pool_pre_ping=True,
+    pool_recycle=300,
     pool_size=settings.DB_POOL_SIZE,
     max_overflow=settings.DB_MAX_OVERFLOW,
     pool_timeout=settings.DB_POOL_TIMEOUT,
