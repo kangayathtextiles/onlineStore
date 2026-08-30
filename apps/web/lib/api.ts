@@ -32,6 +32,10 @@ import type {
   PublicProductDetail,
   PublicProductSummary,
   PublicSection,
+  QRActionRequest,
+  QRCleanupResponse,
+  QRPrintItem,
+  QRScanResponse,
   SavedItemAvailability,
   SavedItemSyncResponse,
   VariantCreateRequest,
@@ -361,6 +365,36 @@ export const adminApi = {
     delete: (id: string) =>
       request<SuccessResponse>(`/admin/sections/${id}`, {
         method: "DELETE",
+      }),
+  },
+
+  // --- QR Management & Lifecycle ---
+  qr: {
+    lookup: (code: string) =>
+      request<QRScanResponse>(`/admin/qr/lookup?code=${encodeURIComponent(code)}`),
+    executeAction: (data: QRActionRequest) =>
+      request<QRScanResponse>("/admin/qr/action", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    getPrintData: (params?: {
+      category_id?: string;
+      subcategory_id?: string;
+      operational_status?: string;
+      search?: string;
+    }) => {
+      const query = new URLSearchParams();
+      if (params?.category_id) query.set("category_id", params.category_id);
+      if (params?.subcategory_id) query.set("subcategory_id", params.subcategory_id);
+      if (params?.operational_status) query.set("operational_status", params.operational_status);
+      if (params?.search) query.set("search", params.search);
+
+      const qs = query.toString();
+      return request<QRPrintItem[]>(`/admin/qr/print-data${qs ? `?${qs}` : ""}`);
+    },
+    runCleanup: (retentionYears = 2) =>
+      request<QRCleanupResponse>(`/admin/qr/cleanup?retention_years=${retentionYears}`, {
+        method: "POST",
       }),
   },
 };

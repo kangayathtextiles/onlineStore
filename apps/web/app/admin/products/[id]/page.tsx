@@ -16,6 +16,8 @@ import {
   Palette,
   UploadCloud,
   Link2,
+  QrCode,
+  Printer,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +27,7 @@ import { Switch } from "@/components/ui/switch";
 import { Modal } from "@/components/ui/modal";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { QRCodeSVG } from "@/components/ui/qr-code";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api";
 import { resolveImageUrl } from "@/lib/utils";
@@ -451,12 +454,47 @@ export default function EditProductPage() {
                   placeholder="e.g. Linen, Silk, Cotton"
                 />
 
-                <Input
-                  label="Style Code"
-                  value={styleCode}
-                  onChange={(e) => setStyleCode(e.target.value)}
-                  placeholder="e.g. KURTA-101"
-                />
+                {/* QR & Style Code Identity Card */}
+                <div className="p-4 rounded-xl border border-zinc-200 bg-zinc-50/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-zinc-900 flex items-center gap-1.5 uppercase tracking-wider">
+                      <QrCode className="w-4 h-4 text-burgundy" /> Physical QR Identity
+                    </span>
+                    <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-zinc-200 text-zinc-800">
+                      {product?.operational_status || "AVAILABLE"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    {product?.qr_code && (
+                      <div className="p-1.5 bg-white rounded border border-zinc-200 shrink-0">
+                        <QRCodeSVG value={product.qr_code} size={64} />
+                      </div>
+                    )}
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="text-[11px] text-zinc-500 font-medium">Style Code</div>
+                      <div className="font-mono font-bold text-xs text-zinc-900 truncate">
+                        {styleCode || "Generating..."}
+                      </div>
+                      <div className="text-[11px] text-zinc-400 font-mono truncate">
+                        QR: {product?.qr_code || "N/A"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2 border-t border-zinc-200/60">
+                    <Link href={`/admin/qr/scanner`} className="flex-1">
+                      <Button type="button" size="sm" variant="outline" className="w-full text-xs h-7 gap-1">
+                        <QrCode className="w-3.5 h-3.5" /> Scan Status
+                      </Button>
+                    </Link>
+                    <Link href={`/admin/qr/print`} className="flex-1">
+                      <Button type="button" size="sm" variant="outline" className="w-full text-xs h-7 gap-1">
+                        <Printer className="w-3.5 h-3.5" /> Print Tag
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
 
                 {/* Price & Display Price Visibility Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">

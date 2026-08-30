@@ -11,6 +11,12 @@ export type OverrideMode = "AUTO" | "FORCE_OPEN" | "FORCE_CLOSED";
 
 export type LifecycleState = "DRAFT" | "PUBLISHED" | "HIDDEN" | "ARCHIVED";
 
+export type OperationalStatus = "AVAILABLE" | "SOLD_OUT" | "DAMAGED" | "RETIRED";
+
+export type QRStatus = "ACTIVE" | "RELEASED";
+
+export type QRActionType = "SOLD_OUT" | "DAMAGED" | "RETURN";
+
 export interface OperatingSchedule {
   day_of_week: DayOfWeek;
   is_closed: boolean;
@@ -46,6 +52,7 @@ export interface StoreProfile {
   longitude: number | null;
   google_maps_url: string | null;
   show_prices: boolean;
+  show_style_codes: boolean;
   schedules: OperatingSchedule[];
   created_at: string;
   updated_at: string;
@@ -71,6 +78,7 @@ export interface StoreProfileUpdate {
   longitude?: number | null;
   google_maps_url?: string | null;
   show_prices?: boolean;
+  show_style_codes?: boolean;
 }
 
 export interface StoreStatusResponse {
@@ -243,6 +251,14 @@ export interface AdminProduct {
   description: string | null;
   material: string | null;
   style_code: string | null;
+  qr_code: string | null;
+  qr_status: QRStatus;
+  operational_status: OperationalStatus;
+  is_damaged: boolean;
+  is_retired: boolean;
+  sold_out_at?: string | null;
+  damaged_at?: string | null;
+  retired_at?: string | null;
   lifecycle_state: LifecycleState;
   manual_sold_out: boolean;
   featured: boolean;
@@ -256,6 +272,57 @@ export interface AdminProduct {
   subcategory?: SubcategorySummary | null;
   images: ProductImage[];
   variants: ProductVariant[];
+}
+
+export interface QRScanResponse {
+  product_id: string;
+  name: string;
+  slug: string;
+  style_code: string | null;
+  qr_code: string;
+  qr_status: QRStatus;
+  operational_status: OperationalStatus;
+  is_damaged: boolean;
+  is_retired: boolean;
+  manual_sold_out: boolean;
+  is_available: boolean;
+  price: number | null;
+  show_price: boolean;
+  category_id: string;
+  category_name: string | null;
+  subcategory_id: string;
+  subcategory_name: string | null;
+  primary_image_url: string | null;
+  sold_out_at: string | null;
+  damaged_at: string | null;
+  retired_at: string | null;
+  variants: ProductVariant[];
+}
+
+export interface QRActionRequest {
+  qr_code: string;
+  action: QRActionType;
+  notes?: string | null;
+}
+
+export interface QRPrintItem {
+  product_id: string;
+  name: string;
+  slug: string;
+  style_code: string;
+  qr_code: string;
+  category_name: string | null;
+  subcategory_name: string | null;
+  price: number | null;
+  operational_status: OperationalStatus;
+  primary_image_url: string | null;
+}
+
+export interface QRCleanupResponse {
+  retired_count: number;
+  released_qr_count: number;
+  cutoff_date: string;
+  message: string;
 }
 
 export interface ProductCreateRequest {

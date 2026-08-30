@@ -3,7 +3,15 @@
 from app.models.attribute import ColorOption, SizeOption
 from app.models.base import Base, TimestampMixin, UUIDMixin
 from app.models.custom_section import CustomSection, CustomSectionItem
-from app.models.enums import DayOfWeek, LifecycleState, OverrideMode
+from app.models.enums import (
+    DayOfWeek,
+    LifecycleEventType,
+    LifecycleState,
+    OperationalStatus,
+    OverrideMode,
+    QRStatus,
+)
+from app.models.lifecycle_log import ProductLifecycleLog
 from app.models.product import Product, ProductImage
 from app.models.saved_item import SavedItem, SavedItemCollection
 from app.models.store import OperatingSchedule, StoreProfile, StoreStatus
@@ -16,6 +24,9 @@ __all__ = [
     "UUIDMixin",
     "TimestampMixin",
     "LifecycleState",
+    "OperationalStatus",
+    "QRStatus",
+    "LifecycleEventType",
     "OverrideMode",
     "DayOfWeek",
     "StoreProfile",
@@ -28,6 +39,7 @@ __all__ = [
     "Product",
     "ProductImage",
     "ProductVariant",
+    "ProductLifecycleLog",
     "CustomSection",
     "CustomSectionItem",
     "SavedItemCollection",

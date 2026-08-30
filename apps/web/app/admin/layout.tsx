@@ -10,6 +10,8 @@ import {
   Palette,
   Sparkles,
   Store,
+  QrCode,
+  Printer,
   Menu,
   X,
   Clock,
@@ -26,6 +28,8 @@ import type { StoreStatusResponse, OverrideMode } from "@/types/api";
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Products", href: "/admin/products", icon: Shirt },
+  { name: "QR Scanner", href: "/admin/qr/scanner", icon: QrCode },
+  { name: "QR Print", href: "/admin/qr/print", icon: Printer },
   { name: "Categories", href: "/admin/categories", icon: FolderTree },
   { name: "Sizes & Colors", href: "/admin/attributes", icon: Palette },
   { name: "Custom Sections", href: "/admin/sections", icon: Sparkles },

@@ -8,6 +8,28 @@ class LifecycleState(StrEnum):
     ARCHIVED = "ARCHIVED"
 
 
+class OperationalStatus(StrEnum):
+    AVAILABLE = "AVAILABLE"
+    SOLD_OUT = "SOLD_OUT"
+    DAMAGED = "DAMAGED"
+    RETIRED = "RETIRED"
+
+
+class QRStatus(StrEnum):
+    ACTIVE = "ACTIVE"
+    RELEASED = "RELEASED"
+
+
+class LifecycleEventType(StrEnum):
+    CREATED = "CREATED"
+    QR_ASSIGNED = "QR_ASSIGNED"
+    SOLD_OUT = "SOLD_OUT"
+    DAMAGED = "DAMAGED"
+    RETURNED = "RETURNED"
+    RETIRED = "RETIRED"
+    QR_RELEASED = "QR_RELEASED"
+
+
 class OverrideMode(StrEnum):
     AUTO = "AUTO"
     FORCE_OPEN = "FORCE_OPEN"

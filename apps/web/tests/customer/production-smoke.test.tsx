@@ -62,6 +62,7 @@ describe("Phase 11 Customer Production Smoke Test Suite", () => {
       latitude: 10.5276,
       longitude: 76.2144,
       show_prices: true,
+      show_style_codes: true,
       schedules: [
         {
           day_of_week: "MONDAY",

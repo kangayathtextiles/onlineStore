@@ -53,6 +53,7 @@ export default function AdminShopPage() {
   const [pincode, setPincode] = React.useState("");
   const [googleMapsUrl, setGoogleMapsUrl] = React.useState("");
   const [showPrices, setShowPrices] = React.useState(true);
+  const [showStyleCodes, setShowStyleCodes] = React.useState(true);
   const [isSavingProfile, setIsSavingProfile] = React.useState(false);
 
   // Schedule State
@@ -81,6 +82,7 @@ export default function AdminShopPage() {
       setPincode(profData.pincode || "");
       setGoogleMapsUrl(profData.google_maps_url || "");
       setShowPrices(profData.show_prices !== undefined ? profData.show_prices : true);
+      setShowStyleCodes(profData.show_style_codes !== undefined ? profData.show_style_codes : true);
 
       setStatus(statusData);
       setOverrideMode(statusData.effective_mode);
@@ -145,6 +147,7 @@ export default function AdminShopPage() {
         pincode: pincode.trim(),
         google_maps_url: googleMapsUrl.trim() || undefined,
         show_prices: showPrices,
+        show_style_codes: showStyleCodes,
       });
       setProfile(updated);
       setName(updated.name || "");
@@ -487,6 +490,20 @@ export default function AdminShopPage() {
               <Switch
                 checked={showPrices}
                 onCheckedChange={setShowPrices}
+              />
+            </div>
+
+            {/* Global Style Code Visibility Master Switch */}
+            <div className="flex items-center justify-between p-4 bg-zinc-50 border border-zinc-200/80 rounded-xl">
+              <div>
+                <span className="text-sm font-semibold text-zinc-900 block">Product Style Code Visibility</span>
+                <span className="text-xs text-zinc-500 block mt-0.5">
+                  When disabled, Style Codes are hidden from the customer digital showroom (Admin, QR Print, and QR Scanner always see Style Codes).
+                </span>
+              </div>
+              <Switch
+                checked={showStyleCodes}
+                onCheckedChange={setShowStyleCodes}
               />
             </div>
 

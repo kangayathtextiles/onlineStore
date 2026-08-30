@@ -21,6 +21,7 @@ from app.models.enums import LifecycleState
 
 if TYPE_CHECKING:
     from app.models.custom_section import CustomSectionItem
+    from app.models.lifecycle_log import ProductLifecycleLog
     from app.models.saved_item import SavedItem
     from app.models.taxonomy import Category, Subcategory
     from app.models.variant import ProductVariant
@@ -40,6 +41,8 @@ class Product(Base, UUIDMixin, TimestampMixin):
             "subcategory_id",
         ),
         Index("idx_products_search_name", "name"),
+        Index("idx_products_operational_status", "operational_status"),
+        Index("idx_products_qr_code", "qr_code"),
     )
 
     category_id: Mapped[uuid.UUID] = mapped_column(
@@ -56,7 +59,19 @@ class Product(Base, UUIDMixin, TimestampMixin):
     slug: Mapped[str] = mapped_column(String(180), unique=True, index=True, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     material: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    style_code: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    style_code: Mapped[str | None] = mapped_column(
+        String(50), nullable=True, unique=True, index=True
+    )
+    qr_code: Mapped[str | None] = mapped_column(String(50), nullable=True, unique=True, index=True)
+    qr_status: Mapped[str] = mapped_column(String(20), default="ACTIVE", nullable=False)
+    operational_status: Mapped[str] = mapped_column(
+        String(20), default="AVAILABLE", nullable=False, index=True
+    )
+    is_damaged: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_retired: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    sold_out_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    damaged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    retired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     lifecycle_state: Mapped[LifecycleState] = mapped_column(
         Enum(LifecycleState, native_enum=False, length=20),
         default=LifecycleState.DRAFT,
@@ -101,6 +116,13 @@ class Product(Base, UUIDMixin, TimestampMixin):
         back_populates="product",
         cascade="all, delete-orphan",
         lazy="selectin",
+    )
+    lifecycle_logs: Mapped[list["ProductLifecycleLog"]] = relationship(
+        "ProductLifecycleLog",
+        back_populates="product",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="ProductLifecycleLog.created_at.desc()",
     )
 
 

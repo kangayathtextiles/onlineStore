@@ -43,6 +43,7 @@ class StoreProfileBase(BaseSchema):
     longitude: Decimal | None = None
     google_maps_url: str | None = None
     show_prices: bool = True
+    show_style_codes: bool = True
 
 
 class StoreProfileUpdate(BaseSchema):
@@ -66,6 +67,7 @@ class StoreProfileUpdate(BaseSchema):
     longitude: Decimal | None = None
     google_maps_url: str | None = None
     show_prices: bool | None = None
+    show_style_codes: bool | None = None
 
 
 class StoreStatusResponse(BaseSchema):

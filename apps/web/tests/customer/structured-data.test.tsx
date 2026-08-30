@@ -47,6 +47,7 @@ describe("Zero-Price JSON-LD Structured Data Verification", () => {
       latitude: 10.5276,
       longitude: 76.2144,
       show_prices: true,
+      show_style_codes: true,
       schedules: [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

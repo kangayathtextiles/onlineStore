@@ -37,6 +37,7 @@ describe("Customer Saved Products Page", () => {
       longitude: null,
       google_maps_url: null,
       show_prices: true,
+      show_style_codes: true,
       schedules: [],
       created_at: "2026-08-21T00:00:00Z",
       updated_at: "2026-08-21T00:00:00Z",

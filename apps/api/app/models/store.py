@@ -47,6 +47,7 @@ class StoreProfile(Base, UUIDMixin, TimestampMixin):
     longitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)
     google_maps_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     show_prices: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    show_style_codes: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # Relationships
     schedules: Mapped[list["OperatingSchedule"]] = relationship(

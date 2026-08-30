@@ -85,7 +85,7 @@ class ProductCreateRequest(BaseSchema):
     lifecycle_state: LifecycleState = LifecycleState.DRAFT
     manual_sold_out: bool = False
     featured: bool = False
-    price: Decimal | None = Field(default=None, ge=0, decimal_places=2)
+    price: Decimal | None = Field(default=None, ge=Decimal("0"), decimal_places=2)
     show_price: bool = True
     meta_title: str | None = Field(default=None, max_length=100)
     meta_description: str | None = Field(default=None, max_length=200)
@@ -109,7 +109,7 @@ class ProductUpdateRequest(BaseSchema):
     lifecycle_state: LifecycleState | None = None
     manual_sold_out: bool | None = None
     featured: bool | None = None
-    price: Decimal | None = Field(default=None, ge=0, decimal_places=2)
+    price: Decimal | None = Field(default=None, ge=Decimal("0"), decimal_places=2)
     show_price: bool | None = None
     meta_title: str | None = Field(default=None, max_length=100)
     meta_description: str | None = Field(default=None, max_length=200)
@@ -139,6 +139,14 @@ class AdminProductResponse(BaseSchema):
     description: str | None = None
     material: str | None = None
     style_code: str | None = None
+    qr_code: str | None = None
+    qr_status: str = "ACTIVE"
+    operational_status: str = "AVAILABLE"
+    is_damaged: bool = False
+    is_retired: bool = False
+    sold_out_at: datetime | None = None
+    damaged_at: datetime | None = None
+    retired_at: datetime | None = None
     lifecycle_state: LifecycleState
     manual_sold_out: bool
     featured: bool
@@ -152,6 +160,58 @@ class AdminProductResponse(BaseSchema):
     subcategory: SubcategorySummaryDTO | None = None
     images: list[ProductImageDTO] = Field(default_factory=list)
     variants: list[ProductVariantDTO] = Field(default_factory=list)
+
+
+# --- QR Scanner & Print Schemas ---
+class QRScanResponse(BaseSchema):
+    product_id: uuid.UUID
+    name: str
+    slug: str
+    style_code: str | None
+    qr_code: str
+    qr_status: str
+    operational_status: str
+    is_damaged: bool
+    is_retired: bool
+    manual_sold_out: bool
+    is_available: bool
+    price: Decimal | None = None
+    show_price: bool = True
+    category_id: uuid.UUID
+    category_name: str | None = None
+    subcategory_id: uuid.UUID
+    subcategory_name: str | None = None
+    primary_image_url: str | None = None
+    variants: list[ProductVariantDTO] = Field(default_factory=list)
+    sold_out_at: datetime | None = None
+    damaged_at: datetime | None = None
+    retired_at: datetime | None = None
+
+
+class QRActionRequest(BaseSchema):
+    qr_code: str = Field(min_length=1, max_length=50)
+    action: str = Field(pattern=r"^(SOLD_OUT|DAMAGED|RETURN)$")
+    notes: str | None = Field(default=None, max_length=255)
+
+
+class QRPrintItemDTO(BaseSchema):
+    product_id: uuid.UUID
+    name: str
+    slug: str
+    style_code: str
+    qr_code: str
+    category_name: str | None = None
+    subcategory_name: str | None = None
+    price: Decimal | None = None
+    operational_status: str
+    primary_image_url: str | None = None
+
+
+class QRCleanupResponse(BaseSchema):
+    retired_count: int
+    released_qr_count: int
+    cutoff_date: datetime
+    message: str
 
 
 # --- Customer Public Schemas (ZERO PRICE GUARANTEE) ---

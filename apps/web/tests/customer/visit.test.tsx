@@ -34,6 +34,7 @@ describe("Customer Visit Store Page", () => {
       longitude: 76.2144,
       google_maps_url: "https://maps.google.com/?q=kangayath",
       show_prices: true,
+      show_style_codes: true,
       schedules: [
         {
           day_of_week: "MONDAY",

@@ -1,5 +1,6 @@
 import uuid
 from collections.abc import Sequence
+from datetime import datetime
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -49,6 +50,29 @@ class ProductRepository(BaseRepository[Product]):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_by_qr_code(self, qr_code: str) -> Product | None:
+        from sqlalchemy.orm import selectinload
+
+        stmt = (
+            select(Product)
+            .where(Product.qr_code == qr_code)
+            .options(
+                selectinload(Product.category),
+                selectinload(Product.subcategory),
+                selectinload(Product.images),
+                selectinload(Product.variants).selectinload(ProductVariant.size),
+                selectinload(Product.variants).selectinload(ProductVariant.color),
+                selectinload(Product.lifecycle_logs),
+            )
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_by_style_code(self, style_code: str) -> Product | None:
+        stmt = select(Product).where(Product.style_code == style_code)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def get_published_by_slug(self, slug: str) -> Product | None:
         from sqlalchemy.orm import selectinload
 
@@ -59,6 +83,8 @@ class ProductRepository(BaseRepository[Product]):
             .where(
                 Product.slug == slug,
                 Product.lifecycle_state == LifecycleState.PUBLISHED,
+                Product.is_damaged.is_(False),
+                Product.is_retired.is_(False),
                 Category.is_active.is_(True),
                 Subcategory.is_active.is_(True),
             )
@@ -86,6 +112,7 @@ class ProductRepository(BaseRepository[Product]):
     ) -> tuple[Sequence[Product], int]:
         """
         Query public published products with active category/subcategory filters and faceted search.
+        Damaged and retired items are strictly excluded from public discovery.
         """
         query = (
             select(Product)
@@ -93,6 +120,8 @@ class ProductRepository(BaseRepository[Product]):
             .join(Subcategory, Product.subcategory_id == Subcategory.id)
             .where(
                 Product.lifecycle_state == LifecycleState.PUBLISHED,
+                Product.is_damaged.is_(False),
+                Product.is_retired.is_(False),
                 Category.is_active.is_(True),
                 Subcategory.is_active.is_(True),
             )
@@ -162,6 +191,8 @@ class ProductRepository(BaseRepository[Product]):
         lifecycle_state: LifecycleState | None = None,
         category_id: uuid.UUID | None = None,
         subcategory_id: uuid.UUID | None = None,
+        operational_status: str | None = None,
+        include_retired: bool = False,
         search: str | None = None,
         page: int = 1,
         page_size: int = 20,
@@ -171,12 +202,17 @@ class ProductRepository(BaseRepository[Product]):
         """
         query = select(Product)
 
+        if not include_retired and not operational_status:
+            query = query.where(Product.is_retired.is_(False))
+
         if lifecycle_state:
             query = query.where(Product.lifecycle_state == lifecycle_state)
         if category_id:
             query = query.where(Product.category_id == category_id)
         if subcategory_id:
             query = query.where(Product.subcategory_id == subcategory_id)
+        if operational_status:
+            query = query.where(Product.operational_status == operational_status)
 
         if search:
             search_pattern = f"%{search.strip()}%"
@@ -184,6 +220,7 @@ class ProductRepository(BaseRepository[Product]):
                 or_(
                     Product.name.ilike(search_pattern),
                     Product.style_code.ilike(search_pattern),
+                    Product.qr_code.ilike(search_pattern),
                     Product.material.ilike(search_pattern),
                 )
             )
@@ -200,6 +237,27 @@ class ProductRepository(BaseRepository[Product]):
         items = result.scalars().all()
 
         return items, total
+
+    async def find_expired_retention_products(self, cutoff_date: datetime) -> Sequence[Product]:
+        """
+        Find products eligible for 2-year retention cleanup:
+        - (manual_sold_out is True and sold_out_at <= cutoff_date) OR
+        - (is_damaged is True and damaged_at <= cutoff_date)
+        where is_retired is False.
+        """
+        stmt = select(Product).where(
+            Product.is_retired.is_(False),
+            or_(
+                (Product.manual_sold_out.is_(True))
+                & (Product.sold_out_at.is_not(None))
+                & (Product.sold_out_at <= cutoff_date),
+                (Product.is_damaged.is_(True))
+                & (Product.damaged_at.is_not(None))
+                & (Product.damaged_at <= cutoff_date),
+            ),
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().all()
 
     # --- Image Repository Methods ---
     async def count_product_images(self, product_id: uuid.UUID) -> int:

@@ -154,9 +154,9 @@ export default function ProductDetailPage() {
     : "919876543210";
 
   const whatsappMessage = encodeURIComponent(
-    `Hello Kangayath! I am inquiring about "${product.name}" (Style Code: ${
-      product.style_code || "N/A"
-    }) in Size: ${selectedSizeName}, Color: ${selectedColorName}. Is this piece available for trial at your retail store?`
+    `Hello Kangayath! I am inquiring about "${product.name}"${
+      product.style_code ? ` (Style Code: ${product.style_code})` : ""
+    } in Size: ${selectedSizeName}, Color: ${selectedColorName}. Is this piece available for trial at your retail store?`
   );
 
   const handleCopyLink = () => {

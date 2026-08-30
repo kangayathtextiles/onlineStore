@@ -26,7 +26,6 @@ export default function NewProductPage() {
   const [categoryId, setCategoryId] = React.useState("");
   const [subcategoryId, setSubcategoryId] = React.useState("");
   const [material, setMaterial] = React.useState("");
-  const [styleCode, setStyleCode] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [price, setPrice] = React.useState("");
   const [showPrice, setShowPrice] = React.useState(true);
@@ -96,7 +95,6 @@ export default function NewProductPage() {
         subcategory_id: subcategoryId,
         name: name.trim(),
         material: material.trim() || undefined,
-        style_code: styleCode.trim() || undefined,
         description: description.trim() || undefined,
         price: price.trim() ? Number(price) : undefined,
         show_price: showPrice,
@@ -189,8 +187,8 @@ export default function NewProductPage() {
               </Select>
             </div>
 
-            {/* Material & Style Code Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Material & Auto-Generated QR / Style Code Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
               <Input
                 label="Material / Fabric"
                 placeholder="e.g., 100% Pure Handloom Cotton"
@@ -198,12 +196,15 @@ export default function NewProductPage() {
                 onChange={(e) => setMaterial(e.target.value)}
               />
 
-              <Input
-                label="Internal Style Code / Tag"
-                placeholder="e.g., KASAVU-2024-01"
-                value={styleCode}
-                onChange={(e) => setStyleCode(e.target.value)}
-              />
+              <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl space-y-1">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-900">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Automatic QR &amp; Style Code
+                </div>
+                <p className="text-[11px] text-zinc-500 leading-tight">
+                  A unique Style Code (e.g. KGY-WOM-SAR-...) and QR Code identity are automatically generated upon creation.
+                </p>
+              </div>
             </div>
 
             {/* Price & Display Price Visibility Grid */}

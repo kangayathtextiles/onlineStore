@@ -30,17 +30,22 @@ class CustomSectionService:
     async def list_public_sections(self) -> list[PublicSectionResponse]:
         sections = await self.repo.list_sections(active_only=True)
         global_show_prices = await self.product_service.get_global_show_prices()
+        global_show_style_codes = await self.product_service.get_global_show_style_codes()
         results: list[PublicSectionResponse] = []
 
         for sec in sections:
             # Filter published products
             published_products = [
                 self.product_service.map_to_public_summary(
-                    item.product, global_show_prices=global_show_prices
+                    item.product,
+                    global_show_prices=global_show_prices,
+                    global_show_style_codes=global_show_style_codes,
                 )
                 for item in sec.items
                 if item.product
                 and item.product.lifecycle_state == LifecycleState.PUBLISHED
+                and not item.product.is_damaged
+                and not item.product.is_retired
                 and item.product.category
                 and item.product.category.is_active
             ]
@@ -63,13 +68,18 @@ class CustomSectionService:
             raise EntityNotFoundException("CustomSection", slug)
 
         global_show_prices = await self.product_service.get_global_show_prices()
+        global_show_style_codes = await self.product_service.get_global_show_style_codes()
         published_products = [
             self.product_service.map_to_public_summary(
-                item.product, global_show_prices=global_show_prices
+                item.product,
+                global_show_prices=global_show_prices,
+                global_show_style_codes=global_show_style_codes,
             )
             for item in sec.items
             if item.product
             and item.product.lifecycle_state == LifecycleState.PUBLISHED
+            and not item.product.is_damaged
+            and not item.product.is_retired
             and item.product.category
             and item.product.category.is_active
         ]
