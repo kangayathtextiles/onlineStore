@@ -86,10 +86,21 @@ export function clearApiCache(): void {
   memoryCache.clear();
 }
 
+// Fast non-blocking background warmup probe
+let warmupTriggered = false;
+export function warmupApiBackend(): void {
+  if (typeof window === "undefined" || warmupTriggered) return;
+  warmupTriggered = true;
+  const healthUrl = `${getApiBaseUrl()}/health`;
+  fetch(healthUrl, { method: "GET", cache: "no-store" }).catch(() => {
+    // Non-blocking warmup probe
+  });
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {},
-  retries = 2
+  retries = 6
 ): Promise<T> {
   const method = (options.method || "GET").toUpperCase();
   const isGet = method === "GET";
@@ -161,9 +172,9 @@ async function request<T>(
         throw error;
       }
 
-      // Retry for transient network / cold-start drops
+      // Retry for transient network / cold-start drops (polls every 2s up to 6 times)
       if (retries > 0) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         return request<T>(endpoint, options, retries - 1);
       }
 

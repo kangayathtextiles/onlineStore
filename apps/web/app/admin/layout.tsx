@@ -22,7 +22,7 @@ import { useToast } from "@/components/ui/toast";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
-import { adminApi } from "@/lib/api";
+import { adminApi, warmupApiBackend } from "@/lib/api";
 import type { StoreStatusResponse, OverrideMode } from "@/types/api";
 
 const NAV_ITEMS = [
@@ -56,19 +56,22 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         setOverrideBanner(data.banner_message || "");
       }
     } catch {
-      // Ignored if offline in dev
+      // Retrying automatically
     }
   }, []);
 
   React.useEffect(() => {
     const isMounted = { current: true };
+    warmupApiBackend();
     fetchStatus(isMounted);
-    const interval = setInterval(() => fetchStatus(isMounted), 30000); // 30s live poll
+    // Poll every 3s while connecting, and 30s once connected
+    const intervalTime = storeStatus ? 30000 : 3000;
+    const interval = setInterval(() => fetchStatus(isMounted), intervalTime);
     return () => {
       isMounted.current = false;
       clearInterval(interval);
     };
-  }, [fetchStatus]);
+  }, [fetchStatus, storeStatus]);
 
   const handleApplyOverride = async () => {
     setIsUpdatingStatus(true);

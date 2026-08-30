@@ -9,6 +9,7 @@ import {
   ChevronDown,
   ChevronRight,
   FolderPlus,
+  RefreshCw,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -258,9 +259,15 @@ export default function AdminCategoriesPage() {
       {/* Categories Tree */}
       <div className="space-y-4">
         {loading ? (
-          <div className="py-12 text-center text-zinc-500">
-            <p>Loading category hierarchy...</p>
-          </div>
+          <Card className="border-dashed border-zinc-300 bg-zinc-50/50">
+            <CardContent className="py-16 text-center text-zinc-500 space-y-3">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-burgundy" />
+              <p className="text-sm font-semibold text-zinc-800">Connecting to Category Database...</p>
+              <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+                Syncing with cloud API. Connecting automatically...
+              </p>
+            </CardContent>
+          </Card>
         ) : categories.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center text-zinc-500">
