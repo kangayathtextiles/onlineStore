@@ -1,6 +1,6 @@
-"""0004_add_qr_and_lifecycle_management
+"""0004_qr_lifecycle_mgmt
 
-Revision ID: 0004_add_qr_and_lifecycle_management
+Revision ID: 0004_qr_lifecycle_mgmt
 Revises: 0003_add_price_visibility
 Create Date: 2026-08-30 08:00:00.000000
 
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "0004_add_qr_and_lifecycle_management"
+revision: str = "0004_qr_lifecycle_mgmt"
 down_revision: str | None = "0003_add_price_visibility"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
