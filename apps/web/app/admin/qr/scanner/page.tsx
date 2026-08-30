@@ -64,8 +64,10 @@ function useQRScanner(onDetected: (text: string) => void) {
     }
 
     try {
-      const { BrowserMultiFormatReader } = await import("@zxing/browser");
-      const reader = new BrowserMultiFormatReader();
+      const { BrowserQRCodeReader } = await import("@zxing/browser");
+      // Use the dedicated QR reader which is significantly faster and more accurate
+      // than the MultiFormatReader because it doesn't try to run 1D barcode decoders.
+      const reader = new BrowserQRCodeReader();
 
       if (videoRef.current) {
         // Use constraints to explicitly request the environment camera without
@@ -75,6 +77,9 @@ function useQRScanner(onDetected: (text: string) => void) {
             audio: false,
             video: {
               facingMode: "environment",
+              // Providing ideal constraints helps some iOS devices pick a better frame rate/resolution
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
             },
           },
           videoRef.current,
