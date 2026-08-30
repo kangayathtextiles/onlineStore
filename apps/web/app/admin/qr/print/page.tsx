@@ -10,6 +10,11 @@ import {
   QrCode,
   ArrowLeft,
   RefreshCw,
+  Sparkles,
+  SlidersHorizontal,
+  Scissors,
+  CircleDot,
+  Tag,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +23,9 @@ import { useToast } from "@/components/ui/toast";
 import { QRCodeSVG } from "@/components/ui/qr-code";
 import { adminApi } from "@/lib/api";
 import type { Category, SubcategorySummary, QRPrintItem } from "@/types/api";
+
+type TagTheme = "luxury" | "modern" | "vintage";
+type TagSize = "standard" | "compact" | "large";
 
 export default function AdminQRPrintPage() {
   const toast = useToast();
@@ -36,8 +44,12 @@ export default function AdminQRPrintPage() {
   // Selected Items for Printing
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
 
-  // Label Size Config
-  const [labelSize, setLabelSize] = React.useState<"standard" | "compact" | "large">("standard");
+  // Label Styling Config
+  const [tagTheme, setTagTheme] = React.useState<TagTheme>("luxury");
+  const [tagSize, setTagSize] = React.useState<TagSize>("standard");
+  const [showHolePunch, setShowHolePunch] = React.useState(true);
+  const [showCutGuides, setShowCutGuides] = React.useState(true);
+  const [showPrice, setShowPrice] = React.useState(true);
 
   const loadData = React.useCallback(async () => {
     try {
@@ -103,6 +115,9 @@ export default function AdminQRPrintPage() {
 
   const selectedPrintItems = items.filter((i) => selectedIds.has(i.product_id));
 
+  // QR Code pixel dimensions based on tag size
+  const qrPixelSize = tagSize === "compact" ? 85 : tagSize === "large" ? 140 : 105;
+
   return (
     <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-8">
       {/* Screen-Only Navigation & Header */}
@@ -110,7 +125,7 @@ export default function AdminQRPrintPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-200 pb-6">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <Link href="/admin/products" className="text-zinc-500 hover:text-zinc-800">
+              <Link href="/admin/products" className="text-zinc-500 hover:text-zinc-800 transition-colors">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
               <h1 className="text-2xl sm:text-3xl font-bold text-zinc-950 font-serif flex items-center gap-3">
@@ -119,7 +134,7 @@ export default function AdminQRPrintPage() {
               </h1>
             </div>
             <p className="text-sm text-zinc-600 ml-8">
-              Generate, preview, and print physical QR garment tags with unique Style Codes and showroom details.
+              Generate, preview, and print physical luxury garment swing tags with unique QR identifiers and Style Codes.
             </p>
           </div>
 
@@ -127,7 +142,7 @@ export default function AdminQRPrintPage() {
             <Button
               onClick={handlePrint}
               disabled={selectedIds.size === 0}
-              className="bg-burgundy hover:bg-burgundy/90 text-white font-bold gap-2 px-6 shadow-sm"
+              className="bg-burgundy hover:bg-burgundy/90 text-white font-bold gap-2 px-6 shadow-sm cursor-pointer"
             >
               <Printer className="w-4 h-4" />
               Print Selected ({selectedIds.size})
@@ -135,10 +150,11 @@ export default function AdminQRPrintPage() {
           </div>
         </div>
 
-        {/* Filters Bar */}
+        {/* Filters & Styling Customizer Bar */}
         <Card className="border-zinc-200 shadow-xs">
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <CardContent className="p-4 space-y-4">
+            {/* Top Row: Data Filters */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {/* Search */}
               <div className="relative">
                 <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -190,25 +206,80 @@ export default function AdminQRPrintPage() {
                 <option value="SOLD_OUT">Sold Out</option>
                 <option value="DAMAGED">Damaged</option>
               </Select>
+            </div>
 
-              {/* Label Size */}
-              <Select
-                value={labelSize}
-                onChange={(e) => setLabelSize(e.target.value as "standard" | "compact" | "large")}
-                className="text-sm"
-              >
-                <option value="standard">Standard Tag (2x3 in)</option>
-                <option value="compact">Compact Tag (1.5x2 in)</option>
-                <option value="large">Large Shelf Tag (3x4 in)</option>
-              </Select>
+            {/* Bottom Row: Tag Style & Size Controls */}
+            <div className="pt-3 border-t border-zinc-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-center">
+              {/* Tag Theme */}
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-gold shrink-0" />
+                <Select
+                  value={tagTheme}
+                  onChange={(e) => setTagTheme(e.target.value as TagTheme)}
+                  className="text-xs font-medium"
+                >
+                  <option value="luxury">Luxury Swing Tag (Gold/Burgundy)</option>
+                  <option value="modern">Modern Retail Barcode</option>
+                  <option value="vintage">Vintage Handloom Heritage</option>
+                </Select>
+              </div>
+
+              {/* Tag Size */}
+              <div className="flex items-center gap-2">
+                <Tag className="w-4 h-4 text-zinc-500 shrink-0" />
+                <Select
+                  value={tagSize}
+                  onChange={(e) => setTagSize(e.target.value as TagSize)}
+                  className="text-xs font-medium"
+                >
+                  <option value="standard">Standard Swing Tag (2.25 × 3.5 in)</option>
+                  <option value="compact">Compact Sticker Tag (1.75 × 2.25 in)</option>
+                  <option value="large">Large Shelf / Stack Tag (3.5 × 4.5 in)</option>
+                </Select>
+              </div>
+
+              {/* Toggle Options */}
+              <div className="flex items-center gap-4 col-span-1 lg:col-span-3 justify-end text-xs text-zinc-700">
+                <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={showHolePunch}
+                    onChange={(e) => setShowHolePunch(e.target.checked)}
+                    className="rounded border-zinc-300 text-burgundy focus:ring-burgundy"
+                  />
+                  <CircleDot className="w-3.5 h-3.5 text-zinc-500" />
+                  Hole Punch Guide
+                </label>
+
+                <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={showCutGuides}
+                    onChange={(e) => setShowCutGuides(e.target.checked)}
+                    className="rounded border-zinc-300 text-burgundy focus:ring-burgundy"
+                  />
+                  <Scissors className="w-3.5 h-3.5 text-zinc-500" />
+                  Cut Guides
+                </label>
+
+                <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={showPrice}
+                    onChange={(e) => setShowPrice(e.target.checked)}
+                    className="rounded border-zinc-300 text-burgundy focus:ring-burgundy"
+                  />
+                  Showroom Price
+                </label>
+              </div>
             </div>
 
             {/* Selection Toolbar */}
-            <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between text-xs text-zinc-600">
+            <div className="pt-3 border-t border-zinc-100 flex items-center justify-between text-xs text-zinc-600">
               <button
                 type="button"
                 onClick={toggleSelectAll}
-                className="flex items-center gap-1.5 font-medium text-zinc-800 hover:text-burgundy"
+                className="flex items-center gap-1.5 font-medium text-zinc-800 hover:text-burgundy transition-colors"
               >
                 {selectedIds.size === items.length && items.length > 0 ? (
                   <CheckSquare className="w-4 h-4 text-burgundy" />
@@ -230,7 +301,7 @@ export default function AdminQRPrintPage() {
       <div className="space-y-4">
         <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-700 print:hidden flex items-center gap-2">
           <QrCode className="w-4 h-4 text-zinc-500" />
-          Physical Label Sheets Preview ({selectedPrintItems.length} tags)
+          Physical Garment Tag Preview ({selectedPrintItems.length} tags)
         </h3>
 
         {loading ? (
@@ -244,10 +315,10 @@ export default function AdminQRPrintPage() {
           </div>
         ) : (
           <div
-            className={`grid gap-4 print:gap-2 ${
-              labelSize === "compact"
+            className={`grid gap-4 print:gap-3 ${
+              tagSize === "compact"
                 ? "grid-cols-2 sm:grid-cols-4 md:grid-cols-6 print:grid-cols-4"
-                : labelSize === "large"
+                : tagSize === "large"
                 ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 print:grid-cols-2"
                 : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 print:grid-cols-3"
             }`}
@@ -262,14 +333,25 @@ export default function AdminQRPrintPage() {
                 <div
                   key={item.product_id}
                   onClick={() => toggleSelectItem(item.product_id)}
-                  className={`relative p-4 rounded-xl border transition-all cursor-pointer select-none bg-white text-zinc-950 flex flex-col items-center justify-between text-center print:border-zinc-800 print:rounded-none print:shadow-none ${
+                  className={`relative p-3.5 sm:p-4 rounded-xl border transition-all cursor-pointer select-none bg-white text-zinc-950 flex flex-col items-center justify-between text-center print:rounded-lg print:shadow-none print:break-inside-avoid ${
+                    showCutGuides ? "border-dashed" : "border-solid"
+                  } ${
+                    tagTheme === "luxury"
+                      ? "border-zinc-300 ring-1 ring-zinc-100 print:border-zinc-800"
+                      : tagTheme === "vintage"
+                      ? "border-amber-700/30 bg-[#FAF7F2] print:border-zinc-800"
+                      : "border-zinc-400 print:border-zinc-900"
+                  } ${
                     isSelected
-                      ? "border-zinc-800 shadow-sm ring-1 ring-zinc-800"
-                      : "border-zinc-200 opacity-40 hover:opacity-75 print:hidden"
+                      ? "shadow-md ring-2 ring-burgundy/40"
+                      : "opacity-40 hover:opacity-75 print:hidden"
                   }`}
+                  style={{
+                    minHeight: tagSize === "compact" ? "200px" : tagSize === "large" ? "320px" : "260px",
+                  }}
                 >
-                  {/* Selection Indicator on Screen */}
-                  <div className="absolute top-2.5 right-2.5 print:hidden">
+                  {/* Selection Checkbox on Screen */}
+                  <div className="absolute top-2.5 right-2.5 print:hidden z-10">
                     {isSelected ? (
                       <CheckSquare className="w-4 h-4 text-burgundy" />
                     ) : (
@@ -277,38 +359,73 @@ export default function AdminQRPrintPage() {
                     )}
                   </div>
 
-                  {/* Brand Header */}
-                  <div className="w-full border-b border-zinc-100 pb-1.5 mb-2.5 flex items-center justify-between text-[10px] text-zinc-500 font-medium">
-                    <span className="font-serif font-bold text-zinc-900 tracking-wider">KANGAYATH</span>
-                    <span className="truncate max-w-[90px]">{item.category_name}</span>
+                  {/* Hole Punch Indicator Guide */}
+                  {showHolePunch && (
+                    <div className="mb-2 flex flex-col items-center">
+                      <div className="w-3 h-3 rounded-full border border-dashed border-zinc-400 bg-zinc-50 print:border-zinc-600 print:bg-white" />
+                    </div>
+                  )}
+
+                  {/* Luxury Brand Header */}
+                  <div className="w-full pb-2 mb-2 border-b border-zinc-200/80">
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="font-serif font-extrabold text-[12px] sm:text-[13px] tracking-widest text-zinc-950 uppercase">
+                        KANGAYATH
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-center gap-1.5 text-[9px] font-semibold text-zinc-500 uppercase tracking-wider mt-0.5">
+                      <span>TEXTILES</span>
+                      <span>&bull;</span>
+                      <span>KERALA</span>
+                    </div>
+                    {item.category_name && (
+                      <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full bg-zinc-100 border border-zinc-200 text-[9px] font-bold text-zinc-700 uppercase tracking-wider">
+                        {item.category_name} {item.subcategory_name ? `• ${item.subcategory_name}` : ""}
+                      </div>
+                    )}
                   </div>
 
-                  {/* High-Resolution Vector QR Code */}
-                  <div className="p-2 bg-white rounded border border-zinc-100 my-1 flex items-center justify-center">
+                  {/* QR Code Container with High Contrast & Register Guides */}
+                  <div className="p-2 bg-white rounded-lg border border-zinc-200 shadow-xs my-1 relative flex items-center justify-center">
+                    {/* Decorative Corner Guides */}
+                    <div className="absolute top-1 left-1 w-1.5 h-1.5 border-t border-l border-zinc-400" />
+                    <div className="absolute top-1 right-1 w-1.5 h-1.5 border-t border-r border-zinc-400" />
+                    <div className="absolute bottom-1 left-1 w-1.5 h-1.5 border-b border-l border-zinc-400" />
+                    <div className="absolute bottom-1 right-1 w-1.5 h-1.5 border-b border-r border-zinc-400" />
+
                     <QRCodeSVG
                       value={item.qr_code}
-                      size={labelSize === "compact" ? 90 : labelSize === "large" ? 140 : 110}
+                      size={qrPixelSize}
                       fgColor="#000000"
                       bgColor="#ffffff"
                     />
                   </div>
 
-                  {/* Style Code Underneath QR Code (CRITICAL REQUIREMENT) */}
-                  <div className="my-2 w-full">
-                    <span className="block font-mono font-bold text-xs tracking-wider text-zinc-950 px-1 py-0.5 bg-zinc-50 border border-zinc-200 rounded">
+                  {/* Style Code Underneath QR Code (Authoritative Monospace Badge) */}
+                  <div className="my-1.5 w-full">
+                    <span className="block font-mono font-bold text-[11px] sm:text-[12px] tracking-wider text-zinc-950 px-2 py-0.5 bg-zinc-100 border border-zinc-300 rounded shadow-2xs truncate">
                       {item.style_code}
                     </span>
                   </div>
 
-                  {/* Product Details & Price */}
-                  <div className="w-full pt-1.5 border-t border-zinc-100 space-y-0.5">
-                    <p className="font-semibold text-xs text-zinc-900 truncate leading-tight">
+                  {/* Garment Title */}
+                  <div className="w-full pt-1">
+                    <p className="font-bold text-[11px] sm:text-[12px] text-zinc-900 truncate leading-tight">
                       {item.name}
                     </p>
-                    <p className="text-[11px] font-bold text-zinc-900">
-                      {item.price ? `₹${Number(item.price).toLocaleString("en-IN")}` : ""}
-                    </p>
                   </div>
+
+                  {/* Showroom Price & Verification Footer */}
+                  {showPrice && (
+                    <div className="w-full pt-1.5 mt-1 border-t border-zinc-200/80 flex items-center justify-between">
+                      <span className="text-[9px] font-semibold text-zinc-500 uppercase tracking-tight">
+                        SHOWROOM MRP
+                      </span>
+                      <span className="font-bold text-[12px] sm:text-[13px] text-zinc-950 font-mono">
+                        {item.price ? `₹${Number(item.price).toLocaleString("en-IN")}` : "SCAN IN-STORE"}
+                      </span>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -316,12 +433,14 @@ export default function AdminQRPrintPage() {
         )}
       </div>
 
-      {/* Print-specific style rules */}
-      <style jsx global>{`
+      {/* Clean Global Print Style Directives */}
+      <style>{`
         @media print {
           body {
             background: white !important;
             color: black !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           nav,
           aside,
