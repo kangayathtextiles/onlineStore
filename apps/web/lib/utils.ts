@@ -57,10 +57,10 @@ export function resolveImageUrl(url?: string | null): string {
   let apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
-    if (host.includes("-staging.onrender.com") || host.includes("staging")) {
-      apiBase = "https://kangayath-api-staging.onrender.com";
-    } else if (host.endsWith(".onrender.com")) {
+    if (host.endsWith(".onrender.com")) {
       apiBase = "https://kangayath-api.onrender.com";
+    } else if (host.includes("kangayath.in")) {
+      apiBase = "https://api.kangayath.in";
     }
   }
   if (url.startsWith("/media/")) {

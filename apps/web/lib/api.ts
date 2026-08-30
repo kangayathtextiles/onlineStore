@@ -46,9 +46,6 @@ export function getApiBaseUrl(): string {
   // If running in browser, determine correct environment dynamically
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
-    if (host.includes("-staging.onrender.com") || host.includes("staging")) {
-      return "https://kangayath-api-staging.onrender.com";
-    }
     if (host.endsWith(".onrender.com")) {
       return "https://kangayath-api.onrender.com";
     }
