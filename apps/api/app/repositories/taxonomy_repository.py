@@ -27,7 +27,11 @@ class TaxonomyRepository(BaseRepository[Category]):
     async def list_categories(self, active_only: bool = False) -> Sequence[Category]:
         from sqlalchemy.orm import selectinload
 
-        stmt = select(Category).order_by(Category.display_order).options(selectinload(Category.subcategories))
+        stmt = (
+            select(Category)
+            .order_by(Category.display_order)
+            .options(selectinload(Category.subcategories))
+        )
         if active_only:
             stmt = stmt.where(Category.is_active.is_(True))
         result = await self.session.execute(stmt)
