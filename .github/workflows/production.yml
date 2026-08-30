@@ -93,17 +93,18 @@ jobs:
     steps:
       - name: Trigger Render Blueprint Sync / Deploy Hooks
         env:
-          SYNC_HOOK: ${{ secrets.RENDER_SYNC_HOOK || secrets.RENDER_BLUEPRINT_SYNC_HOOK }}
-          API_HOOK: ${{ secrets.RENDER_PRODUCTION_API_DEPLOY_HOOK }}
-          WEB_HOOK: ${{ secrets.RENDER_PRODUCTION_WEB_DEPLOY_HOOK }}
+          RENDER_SYNC_HOOK: ${{ secrets.RENDER_SYNC_HOOK }}
+          RENDER_BLUEPRINT_SYNC_HOOK: ${{ secrets.RENDER_BLUEPRINT_SYNC_HOOK }}
+          RENDER_API_HOOK: ${{ secrets.RENDER_PRODUCTION_API_DEPLOY_HOOK }}
+          RENDER_WEB_HOOK: ${{ secrets.RENDER_PRODUCTION_WEB_DEPLOY_HOOK }}
         run: |
+          SYNC_URL="${RENDER_SYNC_HOOK:-$RENDER_BLUEPRINT_SYNC_HOOK}"
           DEPLOYED=false
 
           # 1. Blueprint Sync Hook (Master Sync)
-          if [ -n "${SYNC_HOOK}" ]; then
+          if [ -n "${SYNC_URL}" ]; then
             echo "[DEPLOY] Triggering Render Blueprint Sync Hook..."
-            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${SYNC_HOOK}")
-            STATUS=$(echo "${RESPONSE}" | tail -n1)
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${SYNC_URL}" || echo "000")
             echo "Render Sync response status: ${STATUS}"
             if [ "${STATUS}" -ge 200 ] && [ "${STATUS}" -lt 300 ]; then
               echo "  ✓ Render Blueprint Sync successfully triggered."
@@ -114,10 +115,9 @@ jobs:
           fi
 
           # 2. Individual Production API Deploy Hook
-          if [ -n "${API_HOOK}" ]; then
+          if [ -n "${RENDER_API_HOOK}" ]; then
             echo "[DEPLOY] Triggering Render Production API Deploy Hook..."
-            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${API_HOOK}")
-            STATUS=$(echo "${RESPONSE}" | tail -n1)
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${RENDER_API_HOOK}" || echo "000")
             echo "Render API response status: ${STATUS}"
             if [ "${STATUS}" -ge 200 ] && [ "${STATUS}" -lt 300 ]; then
               echo "  ✓ Production API deployment successfully triggered."
@@ -126,10 +126,9 @@ jobs:
           fi
 
           # 3. Individual Production Web Deploy Hook
-          if [ -n "${WEB_HOOK}" ]; then
+          if [ -n "${RENDER_WEB_HOOK}" ]; then
             echo "[DEPLOY] Triggering Render Production Web Deploy Hook..."
-            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${WEB_HOOK}")
-            STATUS=$(echo "${RESPONSE}" | tail -n1)
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${RENDER_WEB_HOOK}" || echo "000")
             echo "Render Web response status: ${STATUS}"
             if [ "${STATUS}" -ge 200 ] && [ "${STATUS}" -lt 300 ]; then
               echo "  ✓ Production Web deployment successfully triggered."
@@ -156,20 +155,22 @@ jobs:
 
       - name: Run Production Smoke Verification
         env:
-          PRODUCTION_API_URL: ${{ secrets.PRODUCTION_API_URL || 'https://kangayath-api.onrender.com' }}
-          PRODUCTION_WEB_URL: ${{ secrets.PRODUCTION_WEB_URL || 'https://kangayath-web.onrender.com' }}
+          CUSTOM_API_URL: ${{ secrets.PRODUCTION_API_URL }}
+          CUSTOM_WEB_URL: ${{ secrets.PRODUCTION_WEB_URL }}
         run: |
+          API_URL="${CUSTOM_API_URL:-https://kangayath-api.onrender.com}"
+          WEB_URL="${CUSTOM_WEB_URL:-https://kangayath-web.onrender.com}"
           chmod +x scripts/smoke-test.sh
           echo "============================================"
           echo "  Running Production Smoke Tests against:"
-          echo "  API: ${PRODUCTION_API_URL}"
-          echo "  Web: ${PRODUCTION_WEB_URL}"
+          echo "  API: ${API_URL}"
+          echo "  Web: ${WEB_URL}"
           echo "============================================"
           
           MAX_RETRIES=3
           for i in $(seq 1 $MAX_RETRIES); do
             echo "Attempt $i of $MAX_RETRIES..."
-            if ./scripts/smoke-test.sh "${PRODUCTION_API_URL}" "${PRODUCTION_WEB_URL}"; then
+            if ./scripts/smoke-test.sh "${API_URL}" "${WEB_URL}"; then
               echo "  ✓ Production verification succeeded on attempt $i."
               exit 0
             else
