@@ -27,18 +27,15 @@ import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api";
 import type { QRScanResponse, QRActionType } from "@/types/api";
 
-// ─── Canvas-based QR Decoder Hook ───────────────────────────────────────────
+// ─── Native ZXing Stream Decoder Hook ─────────────────────────────────────────
 //
-// ZXing's decodeFromStream is unreliable on mobile. Instead we poll the video
-// element ourselves: every 200 ms we draw a frame to a hidden canvas and call
-// ZXing's BrowserMultiFormatReader.decodeFromCanvas() which is rock-solid.
+// Uses ZXing's built-in decodeFromVideoDevice which is highly optimized for
+// continuously streaming and decoding video feeds across both PC and mobile.
 //
 function useQRScanner(onDetected: (text: string) => void) {
   const videoRef = React.useRef<HTMLVideoElement>(null);
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const streamRef = React.useRef<MediaStream | null>(null);
-  const rafRef = React.useRef<number | null>(null);
-  const readerRef = React.useRef<import("@zxing/browser").BrowserMultiFormatReader | null>(null);
+  // Store the controls returned by ZXing to properly stop the scanner later
+  const controlsRef = React.useRef<{ stop: () => void } | null>(null);
   const lastCodeRef = React.useRef<string | null>(null);
   const lockRef = React.useRef(false);
 
@@ -47,12 +44,10 @@ function useQRScanner(onDetected: (text: string) => void) {
   const [flashGreen, setFlashGreen] = React.useState(false);
 
   const stop = React.useCallback(() => {
-    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
+    if (controlsRef.current) {
+      controlsRef.current.stop();
+      controlsRef.current = null;
     }
-    if (videoRef.current) videoRef.current.srcObject = null;
     lastCodeRef.current = null;
     lockRef.current = false;
     setActive(false);
@@ -69,73 +64,36 @@ function useQRScanner(onDetected: (text: string) => void) {
     }
 
     try {
-      // Lazy-load ZXing only in browser
       const { BrowserMultiFormatReader } = await import("@zxing/browser");
-      readerRef.current = new BrowserMultiFormatReader();
+      const reader = new BrowserMultiFormatReader();
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      });
-
-      streamRef.current = stream;
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.setAttribute("playsinline", "true");
-        await videoRef.current.play();
-      }
+        // Use the native ZXing video device stream and decoder loop
+        controlsRef.current = await reader.decodeFromVideoDevice(
+          undefined, // undefined deviceId defaults to environment camera
+          videoRef.current,
+          (result, err) => {
+            if (result) {
+              const text = result.getText();
+              // Prevent firing multiple times for the same QR code rapidly
+              if (text && text !== lastCodeRef.current && !lockRef.current) {
+                lockRef.current = true;
+                lastCodeRef.current = text;
 
-      setActive(true);
+                // Visual success flash
+                setFlashGreen(true);
+                setTimeout(() => setFlashGreen(false), 600);
 
-      // Poll every 200ms — draw video frame to canvas, decode it
-      const tick = () => {
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-        const reader = readerRef.current;
+                onDetected(text);
 
-        if (!video || !canvas || !reader || video.readyState < 2) {
-          rafRef.current = requestAnimationFrame(tick);
-          return;
-        }
-
-        const ctx = canvas.getContext("2d", { willReadFrequently: true });
-        if (!ctx) { rafRef.current = requestAnimationFrame(tick); return; }
-
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        try {
-          const result = reader.decodeFromCanvas(canvas);
-          const text = result.getText();
-
-          // Skip if same code still being processed
-          if (text && text !== lastCodeRef.current && !lockRef.current) {
-            lockRef.current = true;
-            lastCodeRef.current = text;
-
-            // Visual flash
-            setFlashGreen(true);
-            setTimeout(() => setFlashGreen(false), 600);
-
-            onDetected(text);
-            // Unlock after 2s to allow re-scanning same code
-            setTimeout(() => { lockRef.current = false; }, 2000);
+                // Unlock after 2s to allow scanning the exact same code again if needed
+                setTimeout(() => { lockRef.current = false; }, 2000);
+              }
+            }
           }
-        } catch {
-          // NotFoundException = no QR in this frame — expected, ignore
-        }
-
-        // Schedule next frame after 200ms
-        rafRef.current = window.setTimeout(() => {
-          rafRef.current = requestAnimationFrame(tick);
-        }, 200) as unknown as number;
-      };
-
-      rafRef.current = requestAnimationFrame(tick);
+        );
+        setActive(true);
+      }
     } catch (err: unknown) {
       const msg = (err as Error).message || "Could not access device camera.";
       setError(msg);
@@ -145,6 +103,10 @@ function useQRScanner(onDetected: (text: string) => void) {
 
   // Cleanup on unmount
   React.useEffect(() => () => stop(), [stop]);
+
+  // Expose an empty canvasRef to keep TS happy with the previous page structure,
+  // although we no longer use it in the DOM.
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   return { videoRef, canvasRef, active, error, flashGreen, start, stop };
 }
