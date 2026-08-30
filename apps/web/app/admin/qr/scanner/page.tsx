@@ -34,8 +34,8 @@ import type { QRScanResponse, QRActionType } from "@/types/api";
 //
 function useQRScanner(onDetected: (text: string) => void) {
   const videoRef = React.useRef<HTMLVideoElement>(null);
-  // Store the controls returned by ZXing to properly stop the scanner later
   const controlsRef = React.useRef<{ stop: () => void } | null>(null);
+  const videoTrackRef = React.useRef<MediaStreamTrack | null>(null);
   const lastCodeRef = React.useRef<string | null>(null);
   const lockRef = React.useRef(false);
 
@@ -43,20 +43,38 @@ function useQRScanner(onDetected: (text: string) => void) {
   const [error, setError] = React.useState<string | null>(null);
   const [flashGreen, setFlashGreen] = React.useState(false);
 
+  // Zoom state
+  const [zoom, setZoom] = React.useState(1);
+  const [zoomCap, setZoomCap] = React.useState<{ min: number; max: number; step: number } | null>(null);
+
   const stop = React.useCallback(() => {
     if (controlsRef.current) {
       controlsRef.current.stop();
       controlsRef.current = null;
     }
+    videoTrackRef.current = null;
     lastCodeRef.current = null;
     lockRef.current = false;
     setActive(false);
+    setZoomCap(null);
+    setZoom(1);
+  }, []);
+
+  const handleZoom = React.useCallback((val: number) => {
+    setZoom(val);
+    if (videoTrackRef.current) {
+      videoTrackRef.current.applyConstraints({
+        advanced: [{ zoom: val } as any],
+      }).catch((e) => console.warn("Zoom not supported", e));
+    }
   }, []);
 
   const start = React.useCallback(async () => {
     setError(null);
     lastCodeRef.current = null;
     lockRef.current = false;
+    setZoomCap(null);
+    setZoom(1);
 
     if (!navigator.mediaDevices?.getUserMedia) {
       setError("Camera not supported in this browser.");
@@ -65,19 +83,14 @@ function useQRScanner(onDetected: (text: string) => void) {
 
     try {
       const { BrowserQRCodeReader } = await import("@zxing/browser");
-      // Use the dedicated QR reader which is significantly faster and more accurate
-      // than the MultiFormatReader because it doesn't try to run 1D barcode decoders.
       const reader = new BrowserQRCodeReader();
 
       if (videoRef.current) {
-        // Use constraints to explicitly request the environment camera without
-        // forcing a specific resolution, allowing the phone to provide its native stream.
         controlsRef.current = await reader.decodeFromConstraints(
           {
             audio: false,
             video: {
               facingMode: "environment",
-              // Providing ideal constraints helps some iOS devices pick a better frame rate/resolution
               width: { ideal: 1280 },
               height: { ideal: 720 },
             },
@@ -86,24 +99,41 @@ function useQRScanner(onDetected: (text: string) => void) {
           (result, err) => {
             if (result) {
               const text = result.getText();
-              // Prevent firing multiple times for the same QR code rapidly
               if (text && text !== lastCodeRef.current && !lockRef.current) {
                 lockRef.current = true;
                 lastCodeRef.current = text;
 
-                // Visual success flash
                 setFlashGreen(true);
                 setTimeout(() => setFlashGreen(false), 600);
-
                 onDetected(text);
-
-                // Unlock after 2s to allow scanning the exact same code again if needed
                 setTimeout(() => { lockRef.current = false; }, 2000);
               }
             }
           }
         );
+        
         setActive(true);
+
+        // After stream starts, try to grab the track for zoom controls
+        setTimeout(() => {
+          if (videoRef.current?.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            const track = stream.getVideoTracks()[0];
+            if (track) {
+              videoTrackRef.current = track;
+              // Check for zoom capabilities
+              const caps = track.getCapabilities ? track.getCapabilities() : {};
+              if ("zoom" in caps) {
+                const z = (caps as any).zoom;
+                setZoomCap({ min: z.min || 1, max: z.max || 3, step: z.step || 0.1 });
+              }
+              // Also try to enable continuous autofocus if supported
+              if ("focusMode" in caps && (caps as any).focusMode.includes("continuous")) {
+                track.applyConstraints({ advanced: [{ focusMode: "continuous" } as any] }).catch(() => {});
+              }
+            }
+          }
+        }, 500); // short delay to ensure stream is fully attached
       }
     } catch (err: unknown) {
       const msg = (err as Error).message || "Could not access device camera.";
@@ -112,14 +142,10 @@ function useQRScanner(onDetected: (text: string) => void) {
     }
   }, [onDetected]);
 
-  // Cleanup on unmount
   React.useEffect(() => () => stop(), [stop]);
-
-  // Expose an empty canvasRef to keep TS happy with the previous page structure,
-  // although we no longer use it in the DOM.
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
-  return { videoRef, canvasRef, active, error, flashGreen, start, stop };
+  return { videoRef, canvasRef, active, error, flashGreen, zoom, zoomCap, handleZoom, start, stop };
 }
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
@@ -368,6 +394,26 @@ export default function AdminQRScannerPage() {
                           <ScanLine className="w-3 h-3 text-emerald-400" />
                           Align QR code in the frame
                         </span>
+                      </div>
+                    )}
+
+                    {/* Zoom Slider */}
+                    {scanner.zoomCap && !scanner.flashGreen && (
+                      <div className="absolute bottom-14 left-0 right-0 flex justify-center pointer-events-auto">
+                        <div className="flex items-center gap-3 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-lg">
+                          <span className="text-[10px] text-white/80 font-mono w-6 text-right">
+                            {scanner.zoom.toFixed(1)}x
+                          </span>
+                          <input
+                            type="range"
+                            min={scanner.zoomCap.min}
+                            max={scanner.zoomCap.max}
+                            step={scanner.zoomCap.step}
+                            value={scanner.zoom}
+                            onChange={(e) => scanner.handleZoom(parseFloat(e.target.value))}
+                            className="w-28 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md"
+                          />
+                        </div>
                       </div>
                     )}
 
