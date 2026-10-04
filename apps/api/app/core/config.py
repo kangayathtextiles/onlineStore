@@ -79,6 +79,11 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE_MB: int = 10
     ALLOWED_IMAGE_EXTENSIONS: str = ".jpg,.jpeg,.png,.webp,.gif"
 
+    # Supabase Storage (object storage backend for media files)
+    SUPABASE_URL: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
+    SUPABASE_STORAGE_BUCKET: str = "product-media"
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def RESOLVED_MEDIA_ROOT(self) -> str:

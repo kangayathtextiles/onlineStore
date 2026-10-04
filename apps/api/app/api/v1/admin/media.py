@@ -1,15 +1,13 @@
-import os
 import uuid
 
 from fastapi import APIRouter, Depends, File, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.core.dependencies import AdminUserContext, get_async_session, get_current_admin_user
 from app.core.exceptions import ValidationException
 from app.core.security import validate_upload_file
-from app.models.stored_media import StoredMedia
+from app.services import storage_service
 
 router = APIRouter(prefix="/media", tags=["Admin Media"])
 
@@ -25,7 +23,7 @@ class MediaUploadResponse(BaseModel):
     "/upload",
     response_model=MediaUploadResponse,
     status_code=201,
-    summary="Upload image file from device",
+    summary="Upload image file to Supabase Storage",
 )
 async def upload_media_file(
     file: UploadFile = File(...),
@@ -37,31 +35,14 @@ async def upload_media_file(
         raise ValidationException(err_msg)
 
     file_size = len(content)
+    ext = (file.filename or "file.jpg").rsplit(".", 1)[-1].lower()
+    unique_filename = f"{uuid.uuid4().hex}.{ext}"
+    object_path = f"uploads/{unique_filename}"
 
-    # Generate unique collision-free filename
-    _, ext = os.path.splitext(file.filename) # type: ignore
-    unique_filename = f"{uuid.uuid4().hex}{ext.lower()}"
-
-    target_dir = os.path.join(settings.RESOLVED_MEDIA_ROOT, "uploads")
-    os.makedirs(target_dir, exist_ok=True)
-    target_path = os.path.join(target_dir, unique_filename)
-
-    with open(target_path, "wb") as f:
-        f.write(content)
-
-    # Persist in PostgreSQL StoredMedia for zero-loss container restarts
-    stored_media = StoredMedia(
-        filename=unique_filename,
-        category="uploads",
-        content_type=mime_type,
-        data=content,
-        size_bytes=file_size,
-    )
-    session.add(stored_media)
-    await session.commit()
+    public_url = await storage_service.upload_file(object_path, content, mime_type)
 
     return MediaUploadResponse(
-        url=f"/media/uploads/{unique_filename}",
+        url=public_url,
         filename=unique_filename,
         content_type=mime_type,
         size_bytes=file_size,

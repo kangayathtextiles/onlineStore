@@ -1,9 +1,7 @@
-import os
 import uuid
 from datetime import UTC, datetime, timedelta
 
 from fastapi import UploadFile
-from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -18,8 +16,8 @@ from app.core.security import validate_upload_file
 from app.models.enums import LifecycleEventType, LifecycleState
 from app.models.lifecycle_log import ProductLifecycleLog
 from app.models.product import Product, ProductImage
-from app.models.stored_media import StoredMedia
 from app.models.variant import ProductVariant
+from app.services import storage_service
 from app.repositories.attribute_repository import AttributeRepository
 from app.repositories.product_repository import ProductRepository
 from app.repositories.store_repository import StoreRepository
@@ -814,27 +812,12 @@ class ProductService:
 
         file_size = len(content)
 
-        _, ext = os.path.splitext(file.filename) # type: ignore
-        unique_filename = f"{uuid.uuid4().hex}{ext.lower()}"
+        ext = (file.filename or "image.jpg").rsplit(".", 1)[-1].lower()  # type: ignore
+        unique_filename = f"{uuid.uuid4().hex}.{ext}"
+        object_path = f"products/{unique_filename}"
 
-        target_dir = os.path.join(settings.RESOLVED_MEDIA_ROOT, "products")
-        os.makedirs(target_dir, exist_ok=True)
-        target_path = os.path.join(target_dir, unique_filename)
+        image_url = await storage_service.upload_file(object_path, content, mime_type)
 
-        with open(target_path, "wb") as f:
-            f.write(content)
-
-        # Persist binary data into PostgreSQL database for 100% durability across restarts
-        stored_media = StoredMedia(
-            filename=unique_filename,
-            category="products",
-            content_type=mime_type,
-            data=content,
-            size_bytes=file_size,
-        )
-        self.session.add(stored_media)
-
-        image_url = f"/media/products/{unique_filename}"
         image_data = ProductImageCreate(
             url=image_url,
             alt_text=alt_text or product.name,
@@ -864,25 +847,21 @@ class ProductService:
             if remaining:
                 remaining[0].is_primary = True
 
-        # Clean up database StoredMedia entry if local media
-        if deleted_url.startswith("/media/products/"):
-            filename = deleted_url.replace("/media/products/", "")
-            stmt = delete(StoredMedia).where(
-                StoredMedia.filename == filename, StoredMedia.category == "products"
-            )
-            await self.session.execute(stmt)
-
         await self.session.commit()
 
-        # Clean up local physical file if it was a local media file
-        if deleted_url.startswith("/media/products/"):
-            filename = deleted_url.replace("/media/products/", "")
-            file_path = os.path.join(settings.RESOLVED_MEDIA_ROOT, "products", filename)
-            if os.path.exists(file_path):
-                try:
-                    os.remove(file_path)
-                except OSError:
-                    pass
+        # Delete from Supabase Storage (best-effort; logs warning on failure)
+        if "/storage/v1/object/public/" in deleted_url:
+            # Extract object path from the full Supabase public URL
+            try:
+                bucket = settings.SUPABASE_STORAGE_BUCKET
+                marker = f"/object/public/{bucket}/"
+                idx = deleted_url.find(marker)
+                if idx != -1:
+                    object_path = deleted_url[idx + len(marker):]
+                    await storage_service.delete_file(object_path)
+            except Exception as del_err:
+                import logging
+                logging.getLogger(__name__).warning("Storage delete warning: %s", del_err)
 
         return await self.get_admin_product_by_id(product_id)
 
