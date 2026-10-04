@@ -114,7 +114,11 @@ async def test_admin_category_endpoint_live_db(live_pg_session) -> None:
 
     try:
         transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://testserver",
+            headers={"X-Admin-Api-Key": settings.ADMIN_API_KEY},
+        ) as client:
             response = await client.get("/api/v1/admin/categories")
             assert response.status_code == 200
             data = response.json()

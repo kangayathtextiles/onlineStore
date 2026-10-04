@@ -11,7 +11,11 @@ from app.core.config import settings
 
 # Determine specific connect_args based on environment
 connect_args: dict[str, object] = {}
-if settings.USE_CONNECTION_POOLER:
+if (
+    settings.USE_CONNECTION_POOLER
+    or ":6543" in str(settings.SQLALCHEMY_DATABASE_URI)
+    or "pooler.supabase.com" in str(settings.SQLALCHEMY_DATABASE_URI)
+):
     connect_args["prepared_statement_cache_size"] = 0
 
 

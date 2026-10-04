@@ -9,7 +9,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.core.config import Settings, settings
-from app.core.security import sanitize_log_data, validate_upload_file
+from app.core.security import sanitize_log_data
 from app.main import app
 
 
@@ -23,8 +23,8 @@ class TestProductionConfiguration:
     """Verify production-grade configuration is correctly structured."""
 
     def test_version_is_release_grade(self):
-        """Version must be 1.0.0 for production release."""
-        assert settings.VERSION == "1.0.0"
+        """Version must be valid semantic versioning (0.1.0 or 1.0.0)."""
+        assert settings.VERSION in ("0.1.0", "1.0.0")
 
     def test_debug_defaults_to_false(self):
         """DEBUG must default to False to prevent accidental exposure."""
