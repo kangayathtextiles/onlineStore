@@ -9,7 +9,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.api import api_router
 from app.core.config import settings
@@ -77,7 +76,7 @@ if settings.BACKEND_CORS_ORIGINS:
         if isinstance(settings.BACKEND_CORS_ORIGINS, list)
         else [settings.BACKEND_CORS_ORIGINS.rstrip("/")]
     )
-    
+
     middleware_kwargs: dict[str, Any] = {
         "allow_origins": origins,
         "allow_credentials": True,
@@ -85,10 +84,10 @@ if settings.BACKEND_CORS_ORIGINS:
         "allow_headers": ["*"],
         "expose_headers": ["*"],
     }
-    
+
     if not settings.is_production:
         middleware_kwargs["allow_origin_regex"] = r"^https?://(localhost|127\.0\.0\.1|\[::1\]|.*\.onrender\.com|kangayath\.in|.*\.kangayath\.in)(:[0-9]+)?$"
-        
+
     app.add_middleware(CORSMiddleware, **middleware_kwargs)
 
 

@@ -17,7 +17,6 @@ from app.models.enums import LifecycleEventType, LifecycleState
 from app.models.lifecycle_log import ProductLifecycleLog
 from app.models.product import Product, ProductImage
 from app.models.variant import ProductVariant
-from app.services import storage_service
 from app.repositories.attribute_repository import AttributeRepository
 from app.repositories.product_repository import ProductRepository
 from app.repositories.store_repository import StoreRepository
@@ -45,6 +44,7 @@ from app.schemas.product import (
     VariantMatrixGenerateRequest,
 )
 from app.schemas.taxonomy import SubcategorySummaryDTO
+from app.services import storage_service
 from app.services.qr_service import generate_qr_code, generate_style_code
 from app.services.taxonomy_service import slugify
 
@@ -809,8 +809,6 @@ class ProductService:
         is_valid, err_msg, content, mime_type = await validate_upload_file(file)
         if not is_valid:
             raise ValidationException(err_msg)
-
-        file_size = len(content)
 
         ext = (file.filename or "image.jpg").rsplit(".", 1)[-1].lower()  # type: ignore
         unique_filename = f"{uuid.uuid4().hex}.{ext}"

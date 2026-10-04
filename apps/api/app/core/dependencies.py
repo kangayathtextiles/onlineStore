@@ -1,17 +1,15 @@
 from collections.abc import AsyncGenerator
 from typing import Any
 
+from fastapi import Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.db.session import get_async_session
 
 __all__ = ["get_async_session", "get_current_admin_user", "AdminUserContext"]
 
 AdminUserContext = dict[str, Any]
-
-
-from fastapi import Header, HTTPException
-from app.core.config import settings
 
 async def get_current_admin_user(
     x_admin_api_key: str | None = Header(None, alias="X-Admin-Api-Key")

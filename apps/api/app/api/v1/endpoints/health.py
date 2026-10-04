@@ -2,6 +2,7 @@ import logging
 from typing import Literal
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,9 +13,6 @@ from app.schemas.health import HealthResponse, SubsystemHealth
 logger = logging.getLogger("kangayath.api.health")
 
 router = APIRouter()
-
-
-from fastapi.responses import JSONResponse
 
 @router.get("", response_model=HealthResponse, summary="Detailed Health Check")
 async def get_health(
