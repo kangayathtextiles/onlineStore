@@ -13,6 +13,7 @@
 *.crt
 secrets/
 AGENT_INSTRUCTIONS.md
+docs/PROJECT_DRAWBACKS.md
 
 # Database
 *.db

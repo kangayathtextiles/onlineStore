@@ -8,7 +8,6 @@ Digital showroom and product-discovery platform for Kangayath Clothing Store —
 
 ## 🏛️ Project Governance & Architecture
 
-- **Current Drawbacks Review**: [docs/PROJECT_DRAWBACKS.md](docs/PROJECT_DRAWBACKS.md)
 - **Engineering Constitution**: [docs/GOVERNANCE.md](docs/GOVERNANCE.md)
 - **Architecture Reference**: [docs/operations/ARCHITECTURE_REFERENCE.md](docs/operations/ARCHITECTURE_REFERENCE.md)
 - **Architecture Decision Records**: [docs/decisions/](docs/decisions/)
@@ -172,7 +171,6 @@ All operational and maintenance scripts reside in `scripts/`:
 
 | Document | Path | Description |
 |---|---|---|
-| Drawbacks Review | [docs/PROJECT_DRAWBACKS.md](docs/PROJECT_DRAWBACKS.md) | Release blockers and technical debt audit |
 | Engineering Constitution | [docs/GOVERNANCE.md](docs/GOVERNANCE.md) | Core architectural invariants and domain rules |
 | Deployment & Staging Guide | [docs/deployment.md](docs/deployment.md) | Multi-environment deployment manual |
 | Automated Testing Manual | [docs/testing.md](docs/testing.md) | Test suites, coverage requirements and gates |
