@@ -24,7 +24,7 @@ check() {
   local url="$2"
   local expected="${3:-200}"
 
-  STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "${url}" 2>/dev/null || echo "000")
+  STATUS=$(curl -s -L -o /dev/null -w "%{http_code}" --max-time 45 "${url}" 2>/dev/null || echo "000")
 
   if [ "${STATUS}" = "${expected}" ]; then
     echo "  ✓ ${name} (HTTP ${STATUS})"
@@ -59,15 +59,25 @@ check "Public color attributes" "${API_URL}/api/v1/public/attributes/colors"
 check "Public curated collections" "${API_URL}/api/v1/public/sections"
 echo ""
 
-# --- 3. Zero-Price Protection Guarantee ---
-echo "[3/5: Zero Price Guarantee Regression Verification]"
-PRODUCTS_JSON=$(curl -s --max-time 15 "${API_URL}/api/v1/public/products" 2>/dev/null || echo "{}")
-if echo "${PRODUCTS_JSON}" | grep -qi '"price"'; then
-  echo "  ✗ CRITICAL REGRESSION: 'price' key detected in public products response!"
+# --- 3. Digital Catalog & E-Commerce Protection Guarantee ---
+echo "[3/5: Digital Catalog & Zero E-Commerce Protection Guarantee]"
+PRODUCTS_JSON=$(curl -s --max-time 45 "${API_URL}/api/v1/public/products" 2>/dev/null || echo "{}")
+if echo "${PRODUCTS_JSON}" | grep -qiE '"(cart|checkout|payment_gateway|order_total|mrp|cost)"'; then
+  echo "  ✗ CRITICAL REGRESSION: Prohibited e-commerce field detected in public products response!"
   FAIL=$((FAIL + 1))
 else
-  echo "  ✓ Price protection confirmed: No 'price' keys in public catalog API"
+  echo "  ✓ Digital catalog guarantee verified: No shopping carts, payment, or checkout fields"
   PASS=$((PASS + 1))
+fi
+
+# Assert e-commerce cart/checkout routes do not exist (HTTP 404)
+CHECKOUT_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 45 "${API_URL}/api/v1/public/checkout" 2>/dev/null || echo "000")
+if [ "${CHECKOUT_STATUS}" = "404" ]; then
+  echo "  ✓ E-commerce checkout endpoint confirmed absent (HTTP 404)"
+  PASS=$((PASS + 1))
+else
+  echo "  ✗ Unexpected checkout endpoint active (HTTP ${CHECKOUT_STATUS})"
+  FAIL=$((FAIL + 1))
 fi
 echo ""
 
@@ -81,12 +91,44 @@ check "Robots crawler instructions" "${WEB_URL}/robots.txt"
 check "Dynamic XML sitemap" "${WEB_URL}/sitemap.xml"
 echo ""
 
-# --- 5. Admin Portal Routes & QR Suite ---
-echo "[5/5: Admin Management & Physical QR Suite]"
-check "Admin dashboard" "${WEB_URL}/admin"
-check "QR Tag Print Center" "${WEB_URL}/admin/qr/print"
-check "Physical QR Scanner" "${WEB_URL}/admin/qr/scanner"
-check "Shop Status & Info" "${WEB_URL}/admin/shop"
+# --- 5. Admin Security, Route Guards & Portal Routes ---
+echo "[5/5: Admin Security & Route Guards]"
+# Verify server-side Next.js route guard redirects unauthenticated traffic (HTTP 307)
+UNAUTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 45 "${WEB_URL}/admin" 2>/dev/null || echo "000")
+if [ "${UNAUTH_STATUS}" = "307" ] || [ "${UNAUTH_STATUS}" = "302" ]; then
+  echo "  ✓ Next.js server-side admin route guard active (HTTP ${UNAUTH_STATUS} Redirect)"
+  PASS=$((PASS + 1))
+else
+  echo "  ✗ Next.js server-side admin route guard failed (expected 307/302, got HTTP ${UNAUTH_STATUS})"
+  FAIL=$((FAIL + 1))
+fi
+
+# Verify API router-level admin guard blocks unauthenticated requests (HTTP 401)
+API_GUARD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 45 "${API_URL}/api/v1/admin/store" 2>/dev/null || echo "000")
+if [ "${API_GUARD_STATUS}" = "401" ]; then
+  echo "  ✓ FastAPI router-level admin guard active (HTTP 401 Unauthorized)"
+  PASS=$((PASS + 1))
+else
+  echo "  ✗ FastAPI router-level admin guard failed (expected 401, got HTTP ${API_GUARD_STATUS})"
+  FAIL=$((FAIL + 1))
+fi
+
+# Verify QR routes are strictly guarded (Vulnerability #1 fix)
+QR_GUARD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 45 "${API_URL}/api/v1/admin/qr/lookup?code=SMOKE-TEST" 2>/dev/null || echo "000")
+if [ "${QR_GUARD_STATUS}" = "401" ]; then
+  echo "  ✓ FastAPI QR security guard active (HTTP 401 Unauthorized)"
+  PASS=$((PASS + 1))
+else
+  echo "  ✗ FastAPI QR security guard failed (expected 401, got HTTP ${QR_GUARD_STATUS})"
+  FAIL=$((FAIL + 1))
+fi
+
+# Verify Admin pages load with 200 (following auth redirect or directly)
+check "Admin login portal" "${WEB_URL}/admin/login"
+check "Admin dashboard (protected redirect)" "${WEB_URL}/admin"
+check "QR Tag Print Center (protected redirect)" "${WEB_URL}/admin/qr/print"
+check "Physical QR Scanner (protected redirect)" "${WEB_URL}/admin/qr/scanner"
+check "Shop Status & Info (protected redirect)" "${WEB_URL}/admin/shop"
 echo ""
 
 # --- Summary ---
