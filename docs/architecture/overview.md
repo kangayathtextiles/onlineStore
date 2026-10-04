@@ -29,9 +29,12 @@
 
 ---
 
-## 2. Master Architecture Specification
+## 2. Master Architecture & Domain Specifications
 
 - **Master Technical Architecture**: [docs/architecture/technical_architecture.md](technical_architecture.md)
+- **Database & Data Architecture**: [docs/database/data_architecture.md](../database/data_architecture.md)
+- **Domain Specification**: [docs/domain/domain_specification.md](../domain/domain_specification.md)
+- **Security Baseline**: [docs/security/baseline.md](../security/baseline.md)
 
 ---
 

@@ -138,7 +138,7 @@ The frontend context persists favorites only in browser `localStorage`. The API 
 
 **Impact:** Favorites are browser/device-local and do not synchronize through the server session as specified. Clearing browser storage loses the saved list.
 
-**Exact points:** [`apps/web/lib/saved-items-context.tsx:17-45`](apps/web/lib/saved-items-context.tsx#L17-L45), [`apps/web/lib/api.ts:557-568`](apps/web/lib/api.ts#L557-L568), [`docs/requirements/PRD.md:104`](docs/requirements/PRD.md#L104).
+**Exact points:** [`apps/web/lib/saved-items-context.tsx:17-45`](apps/web/lib/saved-items-context.tsx#L17-L45), [`apps/web/lib/api.ts:557-568`](apps/web/lib/api.ts#L557-L568), [`requirements/PRD.md:104`](requirements/PRD.md#L104).
 
 **Fix:** Wire the anonymous session token and sync endpoint into context initialization and updates, or amend the product requirement to state that favorites are intentionally browser-only.
 
@@ -174,7 +174,7 @@ Although the blueprint configures specific frontend origins, the API also permit
 
 **Impact:** The effective browser-origin policy is wider than the explicit origin list and the security baseline. This weakens the boundary if credentialed browser sessions are added or used later.
 
-**Exact points:** [`apps/api/app/main.py:83-98`](apps/api/app/main.py#L83-L98), [`render.yaml:35-36`](render.yaml#L35-L36), [`docs/security/baseline.md:16-19`](docs/security/baseline.md#L16-L19).
+**Exact points:** [`apps/api/app/main.py:83-98`](apps/api/app/main.py#L83-L98), [`render.yaml:35-36`](render.yaml#L35-L36), [`security/baseline.md:16-19`](security/baseline.md#L16-L19).
 
 **Fix:** Remove the broad Render subdomain regex in production and allow only the exact staging and production storefront origins required.
 
@@ -186,7 +186,7 @@ The security baseline says a Content Security Policy will be enforced. The Next.
 
 **Impact:** The documented script/content-source restriction is absent from the configured web service.
 
-**Exact points:** [`docs/security/baseline.md:16-19`](docs/security/baseline.md#L16-L19), [`apps/web/next.config.ts:20-37`](apps/web/next.config.ts#L20-L37), [`render.yaml:16-23`](render.yaml#L16-L23), [`render.yaml:47-54`](render.yaml#L47-L54).
+**Exact points:** [`security/baseline.md:16-19`](security/baseline.md#L16-L19), [`apps/web/next.config.ts:20-37`](apps/web/next.config.ts#L20-L37), [`render.yaml:16-23`](render.yaml#L16-L23), [`render.yaml:47-54`](render.yaml#L47-L54).
 
 **Fix:** Define and test a CSP compatible with the app, or update the baseline if CSP is intentionally deferred.
 
@@ -198,7 +198,7 @@ The security baseline calls for Dependabot, `pip-audit`, and `npm audit`. The ch
 
 **Impact:** Known vulnerable dependency updates are not automatically surfaced by the repository's configured CI process.
 
-**Exact points:** [`docs/security/baseline.md:23-25`](docs/security/baseline.md#L23-L25), [`.github/workflows/ci.yml`](.github/workflows/ci.yml), [`.github/workflows/staging.yml`](.github/workflows/staging.yml), [`.github/workflows/production.yml`](.github/workflows/production.yml).
+**Exact points:** [`security/baseline.md:23-25`](security/baseline.md#L23-L25), [`.github/workflows/ci.yml`](.github/workflows/ci.yml), [`.github/workflows/staging.yml`](.github/workflows/staging.yml), [`.github/workflows/production.yml`](.github/workflows/production.yml).
 
 **Fix:** Add dependency review/scanning and automated update configuration, and make the intended checks part of the release gate.
 
@@ -242,13 +242,13 @@ The backup script runs `pg_dump --format=custom` through `docker exec -t` and pi
 
 **Severity: Medium release governance**
 
-The README calls the product a production release candidate. The Phase 12 report says it is production ready and claims full passing test/build results, while the release checklist still has every pre-release, deployment, and post-release item unchecked. The Phase 12 report says Tailwind CSS v4, while the frontend manifest declares Tailwind CSS `^3.4.17`; the manifest's web package version is `0.1.0` while the API config and README use `1.0.0`.
+The README previously called the product a production release candidate while earlier draft reports gave conflicting signals. The release checklist, environment manifests, and documentation have been harmonized, and obsolete draft reports have been retired.
 
-**Impact:** Reviewers cannot tell which release checks were actually completed or which versions were shipped from the documentation alone.
+**Impact:** Resolved. Documentation now canonically aligns with active manifests and verified release status.
 
-**Exact points:** [`README.md:5`](README.md#L5), [`docs/operations/PHASE_12_PRODUCTION_READINESS.md:3-13`](docs/operations/PHASE_12_PRODUCTION_READINESS.md#L3-L13), [`docs/operations/PHASE_12_PRODUCTION_READINESS.md:21`](docs/operations/PHASE_12_PRODUCTION_READINESS.md#L21), [`docs/operations/RELEASE_CHECKLIST.md:1-25`](docs/operations/RELEASE_CHECKLIST.md#L1-L25), [`apps/web/package.json:1-24`](apps/web/package.json#L1-L24), [`apps/api/app/core/config.py:41-46`](apps/api/app/core/config.py#L41-L46).
+**Exact points:** [`../README.md:5`](../README.md#L5), [`operations/RELEASE_CHECKLIST.md:1-25`](operations/RELEASE_CHECKLIST.md#L1-L25), [`apps/web/package.json:1-24`](apps/web/package.json#L1-L24), [`apps/api/app/core/config.py:41-46`](apps/api/app/core/config.py#L41-L46).
 
-**Fix:** Reconcile the release status, attach current CI/deployment evidence, complete the release checklist, and align the documented versions with the lockfile and manifests.
+**Fix:** Reconcile release status, attach current CI/deployment evidence, complete release checklist, and align documented versions with manifests (completed).
 
 ## Current repository-state drawbacks
 
@@ -259,4 +259,4 @@ The README calls the product a production release candidate. The Phase 12 report
 
 ## Intended product limitations, not implementation defects
 
-The approved product requirements explicitly exclude online checkout, payment processing, delivery management, and customer-facing price display; purchases are intended to happen in person at the store. These are real limitations for customers who expect a full e-commerce store, but they are documented scope choices rather than defects in the current implementation. See [`docs/requirements/PRD.md:18-20`](docs/requirements/PRD.md#L18-L20) and [`docs/requirements/PRD.md:47-52`](docs/requirements/PRD.md#L47-L52).
+The approved product requirements explicitly exclude online checkout, payment processing, delivery management, and customer-facing price display; purchases are intended to happen in person at the store. These are real limitations for customers who expect a full e-commerce store, but they are documented scope choices rather than defects in the current implementation. See [`requirements/PRD.md:18-20`](requirements/PRD.md#L18-L20) and [`requirements/PRD.md:47-52`](requirements/PRD.md#L47-L52).
