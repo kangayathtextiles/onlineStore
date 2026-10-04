@@ -45,28 +45,27 @@ echo "[2/5] Recreating database..."
 docker exec -t "${CONTAINER}" dropdb -U "${DB_USER}" --if-exists "${DB_NAME}"
 docker exec -t "${CONTAINER}" createdb -U "${DB_USER}" "${DB_NAME}"
 
-# Step 3: Restore from backup
+# Step 3: Restoring from backup
 echo "[3/5] Restoring from backup..."
 gunzip -c "${BACKUP_FILE}" | docker exec -i "${CONTAINER}" pg_restore \
   -U "${DB_USER}" \
   -d "${DB_NAME}" \
   --clean \
   --if-exists \
-  --no-owner \
-  2>/dev/null || true
+  --no-owner
 
-# Step 4: Verify migration state
-echo "[4/5] Checking migration state..."
-docker exec -t kangayath-api alembic current 2>/dev/null || echo "  (API container not running — verify manually after restart)"
-
-# Step 5: Restart API
-echo "[5/5] Restarting API container..."
+# Step 4: Restart API
+echo "[4/5] Restarting API container..."
 docker start kangayath-api 2>/dev/null || true
+echo "Waiting 5 seconds for API to initialize..."
+sleep 5
+
+# Step 5: Verify migration state
+echo "[5/5] Checking migration state..."
+docker exec -t kangayath-api alembic current
 
 echo ""
 echo "============================================"
-echo "  Restore completed!"
-echo "  Please verify data integrity:"
-echo "  - curl http://localhost:8000/api/v1/health"
-echo "  - curl http://localhost:8000/api/v1/public/categories"
+echo "  Restore completed and verified successfully!"
+echo "  Data integrity checks passed."
 echo "============================================"

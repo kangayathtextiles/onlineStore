@@ -5,6 +5,7 @@ import os
 import uuid as uuid_lib
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -87,15 +88,19 @@ if settings.BACKEND_CORS_ORIGINS:
         if isinstance(settings.BACKEND_CORS_ORIGINS, list)
         else [settings.BACKEND_CORS_ORIGINS.rstrip("/")]
     )
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=origins,
-        allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|\[::1\]|.*\.onrender\.com|kangayath\.in|.*\.kangayath\.in)(:[0-9]+)?$",
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-        expose_headers=["*"],
-    )
+    
+    middleware_kwargs: dict[str, Any] = {
+        "allow_origins": origins,
+        "allow_credentials": True,
+        "allow_methods": ["*"],
+        "allow_headers": ["*"],
+        "expose_headers": ["*"],
+    }
+    
+    if not settings.is_production:
+        middleware_kwargs["allow_origin_regex"] = r"^https?://(localhost|127\.0\.0\.1|\[::1\]|.*\.onrender\.com|kangayath\.in|.*\.kangayath\.in)(:[0-9]+)?$"
+        
+    app.add_middleware(CORSMiddleware, **middleware_kwargs)
 
 
 # X-Request-ID middleware for request tracing
@@ -237,6 +242,8 @@ async def get_media_asset(
     headers = {
         "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
         "ETag": etag,
+        "X-Content-Type-Options": "nosniff",
+        "Content-Disposition": "inline",
     }
 
     if client_etag and client_etag.strip('"') == etag.strip('"'):

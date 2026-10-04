@@ -14,10 +14,12 @@ logger = logging.getLogger("kangayath.api.health")
 router = APIRouter()
 
 
+from fastapi.responses import JSONResponse
+
 @router.get("", response_model=HealthResponse, summary="Detailed Health Check")
 async def get_health(
     session: AsyncSession = Depends(get_async_session),
-) -> HealthResponse:
+) -> HealthResponse | JSONResponse:
     """
     Returns detailed system health, environment metadata, and subsystem readiness.
     Includes actual database connectivity verification.
@@ -62,9 +64,17 @@ async def get_health(
         "healthy" if db_status == "healthy" else "degraded"
     )
 
-    return HealthResponse(
+    payload = HealthResponse(
         status=overall_status,
         environment=settings.ENVIRONMENT,
         version=settings.VERSION,
         subsystems=subsystems,
     )
+
+    if overall_status != "healthy":
+        return JSONResponse(
+            status_code=503,
+            content=payload.model_dump(mode="json"),
+        )
+
+    return payload

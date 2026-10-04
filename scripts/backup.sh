@@ -28,8 +28,8 @@ echo ""
 mkdir -p "${BACKUP_DIR}"
 
 # Execute backup
-echo "[1/3] Creating compressed database dump..."
-docker exec -t "${CONTAINER}" pg_dump \
+echo "[1/4] Creating compressed database dump..."
+docker exec -i "${CONTAINER}" pg_dump \
   -U "${DB_USER}" \
   -d "${DB_NAME}" \
   --format=custom \
@@ -38,10 +38,15 @@ docker exec -t "${CONTAINER}" pg_dump \
   | gzip > "${BACKUP_FILE}"
 
 FILESIZE=$(du -h "${BACKUP_FILE}" | cut -f1)
-echo "[2/3] Backup created: ${BACKUP_FILE} (${FILESIZE})"
+echo "[2/4] Backup created: ${BACKUP_FILE} (${FILESIZE})"
+
+# Integrity check
+echo "[3/4] Verifying archive integrity..."
+gunzip -c "${BACKUP_FILE}" | docker exec -i "${CONTAINER}" pg_restore --list > /dev/null
+echo "  ✓ Archive integrity verified."
 
 # Cleanup old backups (retain last 30 days)
-echo "[3/3] Cleaning up backups older than 30 days..."
+echo "[4/4] Cleaning up backups older than 30 days..."
 find "${BACKUP_DIR}" -name "kangayath_backup_*.sql.gz" -mtime +30 -delete 2>/dev/null || true
 
 echo ""

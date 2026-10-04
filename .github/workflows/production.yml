@@ -157,9 +157,31 @@ jobs:
         env:
           CUSTOM_API_URL: ${{ secrets.PRODUCTION_API_URL }}
           CUSTOM_WEB_URL: ${{ secrets.PRODUCTION_WEB_URL }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_API_HOOK: ${{ secrets.RENDER_PRODUCTION_API_DEPLOY_HOOK }}
+          RENDER_WEB_HOOK: ${{ secrets.RENDER_PRODUCTION_WEB_DEPLOY_HOOK }}
         run: |
           API_URL="${CUSTOM_API_URL:-https://kangayath-api.onrender.com}"
           WEB_URL="${CUSTOM_WEB_URL:-https://kangayath-web.onrender.com}"
+          chmod +x scripts/wait-for-render-deploy.sh
+          
+          echo "============================================"
+          echo "  Waiting for Render deployments..."
+          echo "============================================"
+          if [ -n "$RENDER_API_KEY" ]; then
+            API_SERVICE_ID=$(echo "$RENDER_API_HOOK" | grep -oP 'srv-[a-zA-Z0-9]+' || echo "")
+            WEB_SERVICE_ID=$(echo "$RENDER_WEB_HOOK" | grep -oP 'srv-[a-zA-Z0-9]+' || echo "")
+            
+            if [ -n "$API_SERVICE_ID" ]; then
+              ./scripts/wait-for-render-deploy.sh "$RENDER_API_KEY" "$API_SERVICE_ID" "${{ github.sha }}"
+            fi
+            if [ -n "$WEB_SERVICE_ID" ]; then
+              ./scripts/wait-for-render-deploy.sh "$RENDER_API_KEY" "$WEB_SERVICE_ID" "${{ github.sha }}"
+            fi
+          else
+            echo "RENDER_API_KEY not found, skipping explicit deploy wait. Hoping it deploys soon..."
+          fi
+          
           chmod +x scripts/smoke-test.sh
           echo "============================================"
           echo "  Running Production Smoke Tests against:"
@@ -181,5 +203,5 @@ jobs:
             fi
           done
           
-          echo "[NOTICE] Remote production services may be provisioning or waiting for DNS."
-          echo "Local smoke tests logic and code gates are fully satisfied."
+          echo "[ERROR] Smoke tests failed after $MAX_RETRIES attempts."
+          exit 1

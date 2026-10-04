@@ -2,7 +2,7 @@
 
 Digital showroom and product-discovery platform for Kangayath Clothing Store — a physical retail shop in Kerala, India. Customers browse products online and purchase in-person at the store.
 
-**Version**: 1.0.0 | **Status**: Production Release Candidate
+**Version**: 0.1.0 | **Status**: Production Release Candidate
 
 ---
 

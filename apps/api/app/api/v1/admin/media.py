@@ -32,19 +32,14 @@ async def upload_media_file(
     session: AsyncSession = Depends(get_async_session),
     _admin: AdminUserContext = Depends(get_current_admin_user),
 ) -> MediaUploadResponse:
-    if not file.filename:
-        raise ValidationException("File must have a valid filename.")
-
-    # Read content to check size and validate
-    content = await file.read()
-    file_size = len(content)
-
-    is_valid, err_msg = validate_upload_file(file.filename, file_size)
+    is_valid, err_msg, content, mime_type = await validate_upload_file(file)
     if not is_valid:
         raise ValidationException(err_msg)
 
+    file_size = len(content)
+
     # Generate unique collision-free filename
-    _, ext = os.path.splitext(file.filename)
+    _, ext = os.path.splitext(file.filename) # type: ignore
     unique_filename = f"{uuid.uuid4().hex}{ext.lower()}"
 
     target_dir = os.path.join(settings.RESOLVED_MEDIA_ROOT, "uploads")
@@ -58,7 +53,7 @@ async def upload_media_file(
     stored_media = StoredMedia(
         filename=unique_filename,
         category="uploads",
-        content_type=file.content_type or "image/jpeg",
+        content_type=mime_type,
         data=content,
         size_bytes=file_size,
     )
@@ -68,6 +63,6 @@ async def upload_media_file(
     return MediaUploadResponse(
         url=f"/media/uploads/{unique_filename}",
         filename=unique_filename,
-        content_type=file.content_type,
+        content_type=mime_type,
         size_bytes=file_size,
     )

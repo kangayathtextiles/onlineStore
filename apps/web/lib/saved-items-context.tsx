@@ -34,11 +34,30 @@ export function SavedItemsProvider({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  // Save to localStorage on change
+  // Save to localStorage on change and sync with server
   React.useEffect(() => {
     if (!isHydrated) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(savedItems));
+      
+      // Implement Server Sync
+      const tokenKey = "kangayath_saved_session_v1";
+      let sessionToken = localStorage.getItem(tokenKey);
+      if (!sessionToken) {
+        sessionToken = crypto.randomUUID();
+        localStorage.setItem(tokenKey, sessionToken);
+      }
+      
+      const productIds = savedItems.map(item => item.id);
+      
+      // Debounce the server sync to prevent spamming on rapid toggles
+      const timeoutId = setTimeout(() => {
+        import("@/lib/api").then(({ publicApi }) => {
+          publicApi.savedItems.sync(sessionToken as string, productIds).catch(console.error);
+        });
+      }, 1000);
+      
+      return () => clearTimeout(timeoutId);
     } catch {
       // Ignored
     }

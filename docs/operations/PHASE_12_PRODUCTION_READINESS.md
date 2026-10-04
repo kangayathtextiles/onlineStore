@@ -1,7 +1,7 @@
 # KANGAYATH WEB — Phase 12 Production Readiness & Verification Report
 
 **Date**: August 21, 2026  
-**Status**: RELEASE CANDIDATE VERIFIED & PRODUCTION READY (v1.0.0)  
+**Status**: RELEASE CANDIDATE VERIFIED & PRODUCTION READY (v0.1.0)  
 **Target System**: Decoupled FastAPI Backend + Next.js 15 Standalone Web + PostgreSQL 16 Alpine + Nginx Ingress
 
 ---
@@ -18,7 +18,7 @@ All 12 phases from initial project governance through technical architecture, da
 
 | Component | Target Stack | Container Image | Production Configuration |
 |---|---|---|---|
-| **Customer & Admin Web** | Next.js 15.5.23 (React 19, TypeScript, TailwindCSS v4) | `node:20-alpine` (multi-stage standalone) | `output: standalone`, security headers, caching, zero telemetry |
+| **Customer & Admin Web** | Next.js 15.1.7 (React 19, TypeScript, TailwindCSS ^3.4.17) | `node:20-alpine` (multi-stage standalone) | `output: standalone`, security headers, caching, zero telemetry |
 | **Backend API Gateway** | FastAPI 0.115+, Python 3.12, SQLAlchemy 2.0 async, Pydantic v2 | `python:3.12-slim` (multi-stage non-root) | Uvicorn, DB pool sizing, structured logging, X-Request-ID, docs disabled |
 | **Relational Database** | PostgreSQL 16 Alpine | `postgres:16-alpine` | UUID & Pgcrypto extensions, UTC timezone, healthcheck, volume persistence |
 | **Reverse Proxy / Ingress** | Nginx Alpine | `nginx:alpine` | Route proxying, gzip compression, rate limiting, security headers, SSL-ready |

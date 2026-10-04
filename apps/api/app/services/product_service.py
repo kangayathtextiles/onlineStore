@@ -808,17 +808,13 @@ class ProductService:
         if count >= 6:
             raise ImageLimitExceededException(current_count=count, limit=6)
 
-        if not file.filename:
-            raise ValidationException("File must have a valid filename.")
-
-        content = await file.read()
-        file_size = len(content)
-
-        is_valid, err_msg = validate_upload_file(file.filename, file_size)
+        is_valid, err_msg, content, mime_type = await validate_upload_file(file)
         if not is_valid:
             raise ValidationException(err_msg)
 
-        _, ext = os.path.splitext(file.filename)
+        file_size = len(content)
+
+        _, ext = os.path.splitext(file.filename) # type: ignore
         unique_filename = f"{uuid.uuid4().hex}{ext.lower()}"
 
         target_dir = os.path.join(settings.RESOLVED_MEDIA_ROOT, "products")
@@ -832,7 +828,7 @@ class ProductService:
         stored_media = StoredMedia(
             filename=unique_filename,
             category="products",
-            content_type=file.content_type or "image/jpeg",
+            content_type=mime_type,
             data=content,
             size_bytes=file_size,
         )

@@ -11,7 +11,9 @@ from app.core.config import settings
 
 # Determine specific connect_args based on environment
 connect_args: dict[str, object] = {}
-# No schema override needed since Staging uses its own dedicated database project.
+if settings.USE_CONNECTION_POOLER:
+    connect_args["prepared_statement_cache_size"] = 0
+
 
 engine: AsyncEngine = create_async_engine(
     settings.SQLALCHEMY_DATABASE_URI,

@@ -5,6 +5,7 @@ from pydantic import (
     BeforeValidator,
     PostgresDsn,
     computed_field,
+    model_validator,
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -42,7 +43,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: Literal["development", "test", "staging", "production"] = "development"
     DEBUG: bool = False
     PROJECT_NAME: str = "Kangayath Web API"
-    VERSION: str = "1.0.0"
+    VERSION: str = "0.1.0"
     API_V1_STR: str = "/api/v1"
     LOG_LEVEL: str = "INFO"
 
@@ -71,6 +72,7 @@ class Settings(BaseSettings):
     DB_POOL_SIZE: int = 5
     DB_MAX_OVERFLOW: int = 10
     DB_POOL_TIMEOUT: int = 30
+    USE_CONNECTION_POOLER: bool = False  # Set to True when using PgBouncer/Supavisor
 
     # Media / uploads
     MEDIA_ROOT: str = "./media"
@@ -122,6 +124,17 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT == "production"
+
+    @model_validator(mode="after")
+    def validate_production_secrets(self) -> "Settings":
+        if self.ENVIRONMENT in ("staging", "production"):
+            if self.SECRET_KEY == "CHANGEME-dev-only-insecure-key":
+                raise ValueError(f"Default SECRET_KEY is not allowed in {self.ENVIRONMENT} environment.")
+            if not self.DATABASE_URL and (
+                self.POSTGRES_USER == "kangayath_user" and self.POSTGRES_PASSWORD == "kangayath_dev_password"
+            ):
+                raise ValueError(f"Default database credentials are not allowed in {self.ENVIRONMENT} environment.")
+        return self
 
 
 settings = Settings()

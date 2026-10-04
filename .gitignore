@@ -1,85 +1,60 @@
-# Root .gitignore for KANGAYATH WEB
-
-# Environment and Secrets (CRITICAL: NEVER COMMIT)
-.env
-.env.*
-!.env.example
-!.env.development.example
-!.env.test.example
-!.env.production.example
-*.pem
-*.key
-*.cert
-*.crt
-secrets/
-
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-# Python build artifacts (scoped — must NOT ignore apps/web/lib/)
-apps/api/lib/
-apps/api/lib64/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
 *.egg-info/
-.installed.cfg
+dist/
 *.egg
-MANIFEST
-
-# Explicitly keep Next.js source lib directory
-!apps/web/lib/
 .venv/
 venv/
-ENV/
 env/
-.pytest_cache/
-.coverage
-htmlcov/
-.mypy_cache/
-.ruff_cache/
 
-# Node & Next.js
+# Environment
+.env
+.env.local
+.env.production
+
+# Database
+*.db
+*.sqlite3
+
+# Uploads
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Node
 node_modules/
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-.pnpm-store/
-.next/
-out/
-.vercel
-*.tsbuildinfo
-next-env.d.ts
 
-# IDE & OS
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
+# Build
+customer/dist/
+admin/dist/
+
+# IDE
+.vscode/
 .idea/
 *.swp
 *.swo
-*~
+
+# OS
 .DS_Store
 Thumbs.db
-Desktop.ini
 
-# Docker / Logs / Media
-*.log
-docker-data/
-postgres-data/
-redis-data/
+# Alembic
+alembic/versions/__pycache__/
+
+# Next.js
+apps/web/.next/
+apps/web/next-env.d.ts
+apps/web/tsconfig.tsbuildinfo
+
+# Build and old backend outputs
+build/
+backend/
+daily_report/
+
+# User Media
 apps/api/media/
+
+# Junk / Logs
 tree.txt
+-ABIN_KR.gitignore
