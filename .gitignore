@@ -12,6 +12,7 @@
 *.cert
 *.crt
 secrets/
+AGENT_INSTRUCTIONS.md
 
 # Database
 *.db

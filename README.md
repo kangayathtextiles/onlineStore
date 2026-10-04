@@ -8,7 +8,6 @@ Digital showroom and product-discovery platform for Kangayath Clothing Store —
 
 ## 🏛️ Project Governance & Architecture
 
-- **Agent Operating Instructions**: [AGENT_INSTRUCTIONS.md](AGENT_INSTRUCTIONS.md)
 - **Current Drawbacks Review**: [docs/PROJECT_DRAWBACKS.md](docs/PROJECT_DRAWBACKS.md)
 - **Engineering Constitution**: [docs/GOVERNANCE.md](docs/GOVERNANCE.md)
 - **Architecture Reference**: [docs/operations/ARCHITECTURE_REFERENCE.md](docs/operations/ARCHITECTURE_REFERENCE.md)
