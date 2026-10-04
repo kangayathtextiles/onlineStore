@@ -1,61 +1,90 @@
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-dist/
-*.egg
-.venv/
-venv/
-env/
+# Root .gitignore for KANGAYATH WEB
 
-# Environment
+# Environment and Secrets (CRITICAL: NEVER COMMIT)
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
+!.env.development.example
+!.env.test.example
+!.env.production.example
+*.pem
+*.key
+*.cert
+*.crt
+secrets/
 
 # Database
 *.db
 *.sqlite3
 
-# Uploads
-backend/uploads/*
-!backend/uploads/.gitkeep
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+apps/api/lib/
+apps/api/lib64/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Node
+# Virtual Environments & Testing / Linting Caches
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Node & Next.js
 node_modules/
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.next/
+out/
+.vercel
+*.tsbuildinfo
+next-env.d.ts
 
-# Build
-customer/dist/
-admin/dist/
+# Explicitly preserve Next.js source lib directory
+!apps/web/lib/
 
-# IDE
-.vscode/
+# Local User Uploads & Temporary Media (tracked seed media in media/ is preserved)
+apps/api/media/
+
+# IDE & OS
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 .idea/
 *.swp
 *.swo
-
-# OS
+*~
 .DS_Store
 Thumbs.db
+Desktop.ini
 
-# Alembic
-alembic/versions/__pycache__/
-
-# Next.js
-apps/web/.next/
-apps/web/next-env.d.ts
-apps/web/tsconfig.tsbuildinfo
-
-# Build and old backend outputs
-build/
-backend/
-daily_report/
-
-# User Media
-apps/api/media/
-
-# Junk / Logs
-tree.txt
--ABIN_KR.gitignore
+# Scratch / Local Diagnostic Tools
 scratch/
+*.log
+docker-data/
+postgres-data/

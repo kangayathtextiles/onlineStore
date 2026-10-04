@@ -12,12 +12,12 @@ your production database and import it into your staging database.
 3. Scroll down to "Connections" and copy the "External Database URL". Paste it into $PROD_DB_URL below.
 4. Go back and click on your Staging PostgreSQL database ("kangayath-db-staging").
 5. Copy its "External Database URL" and paste it into $STAGING_DB_URL below.
-6. Run this script in your PowerShell terminal: .\clone_db.ps1
+6. Run this script in your PowerShell terminal: .\scripts\clone_db.ps1
 #>
 
-# 🔴 Replace these with your actual External Database URLs from Render
-$PROD_DB_URL = "postgresql://kangayath_user:fEFf3szktNHScCeTnhjlp6ApQEi08oMa@dpg-da4lk6c9v7es738ijm50-a.oregon-postgres.render.com/kangayath_db"
-$STAGING_DB_URL = "postgresql://postgres.gdojzkljtarbnwrmimes:%40Abinabi9947@aws-0-ap-south-1.pooler.supabase.com:5432/postgres"
+# Read from environment variables if set, or fall back to script variables
+$PROD_DB_URL = if ($env:PROD_DB_URL) { $env:PROD_DB_URL } else { "postgresql://kangayath_user:fEFf3szktNHScCeTnhjlp6ApQEi08oMa@dpg-da4lk6c9v7es738ijm50-a.oregon-postgres.render.com/kangayath_db" }
+$STAGING_DB_URL = if ($env:STAGING_DB_URL) { $env:STAGING_DB_URL } else { "postgresql://postgres.gdojzkljtarbnwrmimes:%40Abinabi9947@aws-0-ap-south-1.pooler.supabase.com:5432/postgres" }
 
 $BACKUP_FILE = "production_backup.sql"
 

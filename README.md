@@ -22,6 +22,7 @@ kangayath-web/
 ├── apps/
 │   ├── api/            # Python 3.12, FastAPI, SQLAlchemy 2.0, Pydantic v2
 │   └── web/            # Next.js 15, TypeScript, React 19, TailwindCSS
+├── packages/           # Shared libraries & cross-cutting contracts boundary
 ├── infrastructure/
 │   ├── docker/         # PostgreSQL init scripts
 │   └── nginx/          # Reverse proxy configuration
