@@ -76,7 +76,7 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
     """Async test client fixture for invoking FastAPI endpoints."""
     transport = ASGITransport(app=app)
     async with AsyncClient(
-        transport=transport, 
+        transport=transport,
         base_url="http://test",
         headers={"X-Admin-Api-Key": "kangayath_admin_secret_key"}
     ) as ac:
