@@ -86,7 +86,7 @@ A comprehensive multi-phase audit and system verification was executed across th
 | **Price Protection** | Zero Price Guarantee enforced on all public outputs | **PASS** | Validated via [test_price_protection.py](file:///c:/Users/akr26/OneDrive/Documents/kangayath%20Web/apps/api/tests/test_price_protection.py) |
 | **Local SEO** | JSON-LD `ClothingStore`, `Product`, `BreadcrumbList` schemas | **PASS** | Validated via [structured-data.test.tsx](file:///c:/Users/akr26/OneDrive/Documents/kangayath%20Web/apps/web/tests/customer/structured-data.test.tsx) |
 | **Performance** | Next.js production bundle size $\le$ 127 kB per route | **PASS** | Verified via `next build` trace |
-| **DevOps** | Containerization & Operational Runbooks ready | **PASS** | [docker-compose.yml](file:///c:/Users/akr26/OneDrive/Documents/kangayath%20Web/docker-compose.yml), [DEPLOYMENT_GUIDE.md](file:///c:/Users/akr26/OneDrive/Documents/kangayath%20Web/docs/operations/DEPLOYMENT_GUIDE.md) |
+| **DevOps** | Containerization & Operational Runbooks ready | **PASS** | [docker-compose.yml](file:///c:/Users/akr26/OneDrive/Documents/kangayath%20Web/docker-compose.yml), [deployment.md](file:///c:/Users/akr26/OneDrive/Documents/kangayath%20Web/docs/deployment.md) |
 | **Admin Auth** | Protected at network reverse-proxy ingress | **PASS (LIMITATION)** | Intentionally unconfigured pending client approval |
 
 ---
