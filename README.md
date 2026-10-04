@@ -24,7 +24,6 @@ kangayath-web/
 ├── apps/
 │   ├── api/            # Python 3.12, FastAPI, SQLAlchemy 2.0, Pydantic v2
 │   └── web/            # Next.js 15, TypeScript, React 19, TailwindCSS v3
-├── packages/           # Shared libraries & cross-cutting contracts boundary
 ├── infrastructure/
 │   ├── docker/         # PostgreSQL initialization scripts
 │   └── nginx/          # Reverse proxy configuration
@@ -121,7 +120,7 @@ Complete documentation:
 
 ## 🚢 Production Deployment
 
-See [docs/deployment.md](docs/deployment.md) and [docs/operations/PRODUCTION_DEPLOYMENT.md](docs/operations/PRODUCTION_DEPLOYMENT.md) for complete deployment instructions.
+See [docs/deployment.md](docs/deployment.md) for complete deployment instructions.
 
 ```bash
 # Quick production deploy via Docker Compose:
@@ -185,4 +184,3 @@ All operational and maintenance scripts reside in `scripts/`:
 | Backup & Restore | [docs/operations/BACKUP_RESTORE_RUNBOOK.md](docs/operations/BACKUP_RESTORE_RUNBOOK.md) | Disaster recovery and database cloning |
 | Release Checklist | [docs/operations/RELEASE_CHECKLIST.md](docs/operations/RELEASE_CHECKLIST.md) | Pre-flight and post-deployment validation steps |
 | Troubleshooting | [docs/operations/TROUBLESHOOTING.md](docs/operations/TROUBLESHOOTING.md) | Common errors and remediation steps |
-| Handover Package | [docs/operations/HANDOVER.md](docs/operations/HANDOVER.md) | Client handover checklist and operations |
