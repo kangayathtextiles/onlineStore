@@ -97,6 +97,44 @@ export function warmupApiBackend(): void {
   });
 }
 
+export function getAdminAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (typeof window === "undefined") return headers;
+
+  const sessionToken = sessionStorage.getItem("admin_session_token");
+  if (sessionToken) {
+    headers["Authorization"] = `Bearer ${sessionToken}`;
+    return headers;
+  }
+
+  const match = document.cookie.match(/(?:^|;\s*)admin_session=([^;]+)/);
+  if (match && match[1]) {
+    headers["Authorization"] = `Bearer ${decodeURIComponent(match[1])}`;
+    return headers;
+  }
+
+  const legacyKey = localStorage.getItem("ADMIN_API_KEY");
+  if (legacyKey) {
+    headers["X-Admin-Api-Key"] = legacyKey;
+  }
+  return headers;
+}
+
+export function clearAdminSession(): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem("admin_session_token");
+  localStorage.removeItem("ADMIN_API_KEY");
+  document.cookie = "admin_session=; Path=/; Max-Age=0; SameSite=Lax";
+}
+
+export function setAdminSession(token: string, maxAgeSeconds = 604800): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem("admin_session_token", token);
+  localStorage.removeItem("ADMIN_API_KEY");
+  const isHttps = window.location.protocol === "https:";
+  document.cookie = `admin_session=${encodeURIComponent(token)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${isHttps ? "; Secure" : ""}`;
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -126,25 +164,20 @@ async function request<T>(
     return inFlightRequests.get(cacheKey) as Promise<T>;
   }
 
-    const execute = async (): Promise<T> => {
-      // For Admin API calls, attach the API key if present
-      let adminKey = null;
-      if (typeof window !== "undefined" && url.includes("/admin/")) {
-        adminKey = localStorage.getItem("ADMIN_API_KEY");
-      }
+  const execute = async (): Promise<T> => {
+    const authHeaders =
+      url.includes("/admin/") || url.includes("/auth/") ? getAdminAuthHeaders() : {};
 
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        ...(options.headers as Record<string, string>),
-      };
-      
-      if (adminKey) {
-        headers["X-Admin-Api-Key"] = adminKey;
-      }
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...authHeaders,
+      ...(options.headers as Record<string, string>),
+    };
 
     try {
       const res = await fetch(url, {
         ...options,
+        credentials: "include",
         headers,
         cache: "no-store",
       });
@@ -161,8 +194,13 @@ async function request<T>(
         const message = errPayload?.error?.message || `Request failed with status ${res.status}`;
         const details = errPayload?.error?.details || {};
 
-        if (res.status === 401 && typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) {
-          localStorage.removeItem("ADMIN_API_KEY");
+        if (
+          res.status === 401 &&
+          typeof window !== "undefined" &&
+          window.location.pathname.startsWith("/admin") &&
+          window.location.pathname !== "/admin/login"
+        ) {
+          clearAdminSession();
           window.location.href = "/admin/login";
         }
 
@@ -215,21 +253,17 @@ async function upload<T>(
   retries = 1
 ): Promise<T> {
   const url = `${getApiBaseUrl()}/api/v1${endpoint}`;
+  const authHeaders = url.includes("/admin/") ? getAdminAuthHeaders() : {};
   const headers: Record<string, string> = {
+    ...authHeaders,
     ...(options.headers as Record<string, string>),
   };
-  
-  if (typeof window !== "undefined" && url.includes("/admin/")) {
-    const adminKey = localStorage.getItem("ADMIN_API_KEY");
-    if (adminKey) {
-      headers["X-Admin-Api-Key"] = adminKey;
-    }
-  }
 
   try {
     const res = await fetch(url, {
       ...options,
       method: "POST",
+      credentials: "include",
       body: formData,
       headers,
       cache: "no-store",
@@ -244,9 +278,14 @@ async function upload<T>(
       }
       const code = errPayload?.error?.code || `HTTP_${res.status}`;
       const message = errPayload?.error?.message || `Upload failed with status ${res.status}`;
-      
-      if (res.status === 401 && typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) {
-        localStorage.removeItem("ADMIN_API_KEY");
+
+      if (
+        res.status === 401 &&
+        typeof window !== "undefined" &&
+        window.location.pathname.startsWith("/admin") &&
+        window.location.pathname !== "/admin/login"
+      ) {
+        clearAdminSession();
         window.location.href = "/admin/login";
       }
 
@@ -269,6 +308,23 @@ async function upload<T>(
 }
 
 export const adminApi = {
+  // --- Admin Authentication ---
+  auth: {
+    login: (apiKey: string) =>
+      request<{ status: string; access_token: string; token_type: string; expires_in: number }>(
+        "/auth/login",
+        {
+          method: "POST",
+          body: JSON.stringify({ api_key: apiKey }),
+        }
+      ),
+    logout: () =>
+      request<{ status: string; message: string }>("/auth/logout", {
+        method: "POST",
+      }),
+    getMe: () =>
+      request<{ status: string; role: string; mode: string }>("/auth/me"),
+  },
   // --- Media Uploads ---
   media: {
     upload: (file: File) => {

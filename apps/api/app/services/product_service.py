@@ -810,7 +810,7 @@ class ProductService:
         if not is_valid:
             raise ValidationException(err_msg)
 
-        ext = (file.filename or "image.jpg").rsplit(".", 1)[-1].lower()  # type: ignore
+        ext = (file.filename or "image.jpg").rsplit(".", 1)[-1].lower()
         unique_filename = f"{uuid.uuid4().hex}.{ext}"
         object_path = f"products/{unique_filename}"
 

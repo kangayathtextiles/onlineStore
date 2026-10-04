@@ -3,7 +3,11 @@ import uuid
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import get_async_session
+from app.core.dependencies import (
+    AdminUserContext,
+    get_async_session,
+    get_current_admin_user,
+)
 from app.schemas.product import (
     QRActionRequest,
     QRCleanupResponse,
@@ -19,6 +23,7 @@ router = APIRouter(prefix="/qr", tags=["admin-qr"])
 async def lookup_by_qr(
     code: str = Query(..., min_length=1, description="QR code identifier or style code"),
     session: AsyncSession = Depends(get_async_session),
+    _admin: AdminUserContext = Depends(get_current_admin_user),
 ) -> QRScanResponse:
     """
     Look up and resolve a physical product/item by its scanned QR identity token or Style Code.
@@ -31,6 +36,7 @@ async def lookup_by_qr(
 async def execute_qr_action(
     payload: QRActionRequest,
     session: AsyncSession = Depends(get_async_session),
+    _admin: AdminUserContext = Depends(get_current_admin_user),
 ) -> QRScanResponse:
     """
     Execute one of the three authoritative lifecycle actions on a physical product:
@@ -49,6 +55,7 @@ async def get_qr_print_data(
     operational_status: str | None = Query(default=None),
     search: str | None = Query(default=None),
     session: AsyncSession = Depends(get_async_session),
+    _admin: AdminUserContext = Depends(get_current_admin_user),
 ) -> list[QRPrintItemDTO]:
     """
     Retrieve product items formatted for batch QR and Style Code label tag printing.
@@ -68,6 +75,7 @@ async def trigger_retention_cleanup(
         default=2, ge=1, description="Retention duration threshold in years"
     ),
     session: AsyncSession = Depends(get_async_session),
+    _admin: AdminUserContext = Depends(get_current_admin_user),
 ) -> QRCleanupResponse:
     """
     Trigger server-side two-year automatic cleanup for sold out and damaged garments,

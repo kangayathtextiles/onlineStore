@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from app.api.v1.admin import (
     attributes as admin_attributes,
@@ -21,7 +21,7 @@ from app.api.v1.admin import (
 from app.api.v1.admin import (
     store as admin_store,
 )
-from app.api.v1.endpoints import health
+from app.api.v1.endpoints import auth, health
 from app.api.v1.public import (
     attributes as public_attributes,
 )
@@ -40,11 +40,15 @@ from app.api.v1.public import (
 from app.api.v1.public import (
     store as public_store,
 )
+from app.core.dependencies import get_current_admin_user
 
 api_router = APIRouter()
 
 # Health probe
 api_router.include_router(health.router, prefix="/health", tags=["health"])
+
+# Authentication endpoints (/api/v1/auth/*)
+api_router.include_router(auth.router)
 
 # Public Routers (/api/v1/public/*)
 public_router = APIRouter(prefix="/public")
@@ -56,8 +60,8 @@ public_router.include_router(public_sections.router)
 public_router.include_router(public_saved_items.router)
 api_router.include_router(public_router)
 
-# Admin Routers (/api/v1/admin/*)
-admin_router = APIRouter(prefix="/admin")
+# Admin Routers (/api/v1/admin/*) — Protected at router level
+admin_router = APIRouter(prefix="/admin", dependencies=[Depends(get_current_admin_user)])
 admin_router.include_router(admin_store.router)
 admin_router.include_router(admin_categories.router)
 admin_router.include_router(admin_attributes.router)

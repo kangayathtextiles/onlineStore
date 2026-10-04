@@ -22,7 +22,7 @@ import { useToast } from "@/components/ui/toast";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
-import { adminApi, warmupApiBackend } from "@/lib/api";
+import { adminApi, warmupApiBackend, clearAdminSession } from "@/lib/api";
 import type { StoreStatusResponse, OverrideMode } from "@/types/api";
 
 const NAV_ITEMS = [
@@ -47,6 +47,17 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
   const toast = useToast();
 
+  const handleLogout = React.useCallback(async () => {
+    try {
+      await adminApi.auth.logout();
+    } catch {
+      // Continue client cleanup even if network fails
+    } finally {
+      clearAdminSession();
+      window.location.href = "/admin/login";
+    }
+  }, []);
+
   const fetchStatus = React.useCallback(async (isMountedRef?: { current: boolean }) => {
     try {
       const data = await adminApi.store.getStatus();
@@ -62,7 +73,11 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
-      if (!localStorage.getItem("ADMIN_API_KEY") && pathname !== "/admin/login") {
+      const hasSessionToken = !!sessionStorage.getItem("admin_session_token");
+      const hasCookie = document.cookie.includes("admin_session=");
+      const hasLegacyKey = !!localStorage.getItem("ADMIN_API_KEY");
+      if (!hasSessionToken && !hasCookie && !hasLegacyKey && pathname !== "/admin/login") {
+        clearAdminSession();
         window.location.href = "/admin/login";
         return;
       }
@@ -209,11 +224,8 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
             </Link>
             
             <button
-              onClick={() => {
-                localStorage.removeItem("ADMIN_API_KEY");
-                window.location.href = "/admin/login";
-              }}
-              className="hidden sm:inline-flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-700 transition-colors border border-rose-200 bg-rose-50 px-3 py-1.5 rounded-lg shadow-xs"
+              onClick={handleLogout}
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-700 transition-colors border border-rose-200 bg-rose-50 px-3 py-1.5 rounded-lg shadow-xs cursor-pointer"
             >
               <span>Logout</span>
             </button>
@@ -241,6 +253,12 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+            >
+              <span>Logout</span>
+            </button>
           </div>
         )}
 

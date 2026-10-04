@@ -58,3 +58,4 @@ apps/api/media/
 # Junk / Logs
 tree.txt
 -ABIN_KR.gitignore
+scratch/

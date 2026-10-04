@@ -50,6 +50,8 @@ class Settings(BaseSettings):
     # Security
     SECRET_KEY: str = "CHANGEME-dev-only-insecure-key"
     ADMIN_API_KEY: str = "kangayath_admin_secret_key"
+    ADMIN_SESSION_COOKIE_NAME: str = "admin_session"
+    ADMIN_SESSION_EXPIRE_SECONDS: int = 60 * 60 * 24 * 7  # 7 days
 
     # Server binding
     API_HOST: str = "0.0.0.0"
