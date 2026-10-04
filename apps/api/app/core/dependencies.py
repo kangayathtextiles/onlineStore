@@ -14,7 +14,7 @@ from fastapi import Header, HTTPException
 from app.core.config import settings
 
 async def get_current_admin_user(
-    x_admin_api_key: str = Header(None, alias="X-Admin-Api-Key")
+    x_admin_api_key: str | None = Header(None, alias="X-Admin-Api-Key")
 ) -> AdminUserContext:
     """
     Validates the X-Admin-Api-Key header against the configured ADMIN_API_KEY.
