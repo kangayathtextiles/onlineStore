@@ -33,9 +33,10 @@
 | Namespace | Purpose | Auth Required |
 |---|---|---|
 | `/api/v1/public/*` | Customer-facing read endpoints | None |
-| `/api/v1/admin/*` | Store owner management | Network-level (pending app-level auth) |
+| `/api/v1/admin/*` | Store owner management | App-level session auth (Signed HMAC Cookie / Bearer token) |
+| `/api/v1/auth/*` | Admin authentication & session lifecycle | None (Login endpoint is IP rate-limited) |
 | `/health` | Liveness probe | None |
-| `/api/v1/health` | Detailed health + DB check | None |
+| `/api/v1/health` | Detailed health + DB connection check | None |
 
 ## 3. Data Flow
 
