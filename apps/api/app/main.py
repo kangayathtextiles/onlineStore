@@ -25,16 +25,12 @@ logging.basicConfig(
 logger = logging.getLogger("kangayath.api")
 
 
-
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifecycle management."""
     logger.info("Initializing %s (v%s)...", settings.PROJECT_NAME, settings.VERSION)
     logger.info("Active environment: %s", settings.ENVIRONMENT)
     logger.info("Debug mode: %s", settings.DEBUG)
-
 
     # Verify database connectivity at startup
     try:
@@ -86,7 +82,9 @@ if settings.BACKEND_CORS_ORIGINS:
     }
 
     if not settings.is_production:
-        middleware_kwargs["allow_origin_regex"] = r"^https?://(localhost|127\.0\.0\.1|\[::1\]|.*\.onrender\.com|kangayath\.in|.*\.kangayath\.in)(:[0-9]+)?$"
+        middleware_kwargs["allow_origin_regex"] = (
+            r"^https?://(localhost|127\.0\.0\.1|\[::1\]|.*\.onrender\.com|kangayath\.in|.*\.kangayath\.in)(:[0-9]+)?$"
+        )
 
     app.add_middleware(CORSMiddleware, **middleware_kwargs)
 
@@ -151,7 +149,6 @@ async def root_health() -> dict[str, str]:
         "app": settings.PROJECT_NAME,
         "version": settings.VERSION,
     }
-
 
 
 # Media CDN redirect endpoint

@@ -50,7 +50,9 @@ async def login(
     # Enforce brute-force rate limiting
     if login_rate_limiter.is_rate_limited(client_ip):
         retry_after = login_rate_limiter.get_retry_after(client_ip)
-        logger.warning("Admin login rate-limited for IP: %s (retry after %ss)", client_ip, retry_after)
+        logger.warning(
+            "Admin login rate-limited for IP: %s (retry after %ss)", client_ip, retry_after
+        )
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=f"Too many failed login attempts. Please wait {retry_after} seconds before retrying.",

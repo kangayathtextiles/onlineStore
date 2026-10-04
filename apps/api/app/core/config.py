@@ -137,11 +137,16 @@ class Settings(BaseSettings):
     def validate_production_secrets(self) -> "Settings":
         if self.ENVIRONMENT in ("staging", "production"):
             if self.SECRET_KEY == "CHANGEME-dev-only-insecure-key":
-                raise ValueError(f"Default SECRET_KEY is not allowed in {self.ENVIRONMENT} environment.")
+                raise ValueError(
+                    f"Default SECRET_KEY is not allowed in {self.ENVIRONMENT} environment."
+                )
             if not self.DATABASE_URL and (
-                self.POSTGRES_USER == "kangayath_user" and self.POSTGRES_PASSWORD == "kangayath_dev_password"
+                self.POSTGRES_USER == "kangayath_user"
+                and self.POSTGRES_PASSWORD == "kangayath_dev_password"
             ):
-                raise ValueError(f"Default database credentials are not allowed in {self.ENVIRONMENT} environment.")
+                raise ValueError(
+                    f"Default database credentials are not allowed in {self.ENVIRONMENT} environment."
+                )
         return self
 
 

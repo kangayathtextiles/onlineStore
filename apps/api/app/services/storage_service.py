@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 # Public URL helpers
 # ---------------------------------------------------------------------------
 
+
 def _storage_base() -> str:
     """Return the Supabase Storage REST base URL."""
     return f"{settings.SUPABASE_URL}/storage/v1"
@@ -47,6 +48,7 @@ def public_url(path: str) -> str:
 # ---------------------------------------------------------------------------
 # Core operations
 # ---------------------------------------------------------------------------
+
 
 def is_configured() -> bool:
     """Return True when Supabase Storage credentials are present."""
@@ -67,8 +69,7 @@ async def upload_file(
     """
     if not is_configured():
         raise RuntimeError(
-            "Supabase Storage is not configured. "
-            "Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
+            "Supabase Storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
         )
 
     bucket = settings.SUPABASE_STORAGE_BUCKET
@@ -88,9 +89,7 @@ async def upload_file(
             response.status_code,
             response.text[:300],
         )
-        raise RuntimeError(
-            f"Supabase Storage upload failed with status {response.status_code}"
-        )
+        raise RuntimeError(f"Supabase Storage upload failed with status {response.status_code}")
 
     logger.info("Uploaded %s to bucket %s", object_path, bucket)
     return public_url(object_path)

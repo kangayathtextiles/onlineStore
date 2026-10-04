@@ -855,10 +855,11 @@ class ProductService:
                 marker = f"/object/public/{bucket}/"
                 idx = deleted_url.find(marker)
                 if idx != -1:
-                    object_path = deleted_url[idx + len(marker):]
+                    object_path = deleted_url[idx + len(marker) :]
                     await storage_service.delete_file(object_path)
             except Exception as del_err:
                 import logging
+
                 logging.getLogger(__name__).warning("Storage delete warning: %s", del_err)
 
         return await self.get_admin_product_by_id(product_id)

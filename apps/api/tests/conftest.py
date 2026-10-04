@@ -78,6 +78,6 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(
         transport=transport,
         base_url="http://test",
-        headers={"X-Admin-Api-Key": "kangayath_admin_secret_key"}
+        headers={"X-Admin-Api-Key": "kangayath_admin_secret_key"},
     ) as ac:
         yield ac

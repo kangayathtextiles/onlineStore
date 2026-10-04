@@ -4,7 +4,6 @@ Full authentication and authorization implementations are reserved for Phase 06.
 """
 
 import base64
-from collections import defaultdict
 import hashlib
 import hmac
 import json
@@ -12,6 +11,7 @@ import os
 import secrets
 import threading
 import time
+from collections import defaultdict
 from typing import Any
 
 from fastapi import UploadFile
@@ -179,7 +179,7 @@ async def validate_upload_file(
             False,
             f"File extension '{ext}' is not allowed. Allowed: {', '.join(allowed_extensions)}",
             b"",
-            ""
+            "",
         )
 
     content = bytearray()
@@ -203,6 +203,11 @@ async def validate_upload_file(
     elif header.startswith(b"RIFF") and header[8:12] == b"WEBP":
         mime_type = "image/webp"
     else:
-        return False, "Invalid image content. File signature does not match an allowed image format.", b"", ""
+        return (
+            False,
+            "Invalid image content. File signature does not match an allowed image format.",
+            b"",
+            "",
+        )
 
     return True, "", bytes(content), mime_type

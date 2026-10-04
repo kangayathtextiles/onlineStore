@@ -41,8 +41,11 @@ class TestProductionConfiguration:
     def test_production_detection_works(self):
         """Verify is_production is True when ENVIRONMENT=production."""
         from pydantic import ValidationError
+
         try:
-            prod_settings = Settings(ENVIRONMENT="production", SECRET_KEY="secure", DATABASE_URL="postgresql://test")
+            prod_settings = Settings(
+                ENVIRONMENT="production", SECRET_KEY="secure", DATABASE_URL="postgresql://test"
+            )
             assert prod_settings.is_production is True
         except ValidationError:
             pass

@@ -14,6 +14,7 @@ logger = logging.getLogger("kangayath.api.health")
 
 router = APIRouter()
 
+
 @router.get("", response_model=HealthResponse, summary="Detailed Health Check")
 async def get_health(
     session: AsyncSession = Depends(get_async_session),

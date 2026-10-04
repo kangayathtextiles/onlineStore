@@ -84,18 +84,14 @@ async def test_auth_login_success_and_logout():
         token = data["access_token"]
 
         # Validate /api/v1/auth/me using Authorization Bearer header
-        me_resp = await ac.get(
-            "/api/v1/auth/me",
-            headers={"Authorization": f"Bearer {token}"}
-        )
+        me_resp = await ac.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
         assert me_resp.status_code == 200
         assert me_resp.json()["role"] == "admin"
         assert me_resp.json()["mode"] == "session"
 
         # Validate /api/v1/auth/me using Cookie
         me_cookie_resp = await ac.get(
-            "/api/v1/auth/me",
-            cookies={settings.ADMIN_SESSION_COOKIE_NAME: token}
+            "/api/v1/auth/me", cookies={settings.ADMIN_SESSION_COOKIE_NAME: token}
         )
         assert me_cookie_resp.status_code == 200
         assert me_cookie_resp.json()["role"] == "admin"
@@ -133,8 +129,7 @@ async def test_unauthenticated_admin_endpoints_rejected():
 
         # 4. Admin QR action route rejected without credentials
         resp_qr_action = await unauth_client.post(
-            "/api/v1/admin/qr/action",
-            json={"action": "SOLD_OUT", "qr_code": "KGY-TEST-1234"}
+            "/api/v1/admin/qr/action", json={"action": "SOLD_OUT", "qr_code": "KGY-TEST-1234"}
         )
         assert resp_qr_action.status_code == 401
 
