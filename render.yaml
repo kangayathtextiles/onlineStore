@@ -1,14 +1,3 @@
-databases:
-  # ──────────────────────────────────────────────
-  # 1. Production PostgreSQL Database (Existing)
-  # ──────────────────────────────────────────────
-  - name: kangayath-db
-    plan: free
-    databaseName: kangayath_db
-    user: kangayath_user
-
-
-
 services:
   # ──────────────────────────────────────────────
   # 1. Production FastAPI Backend API (Branch: main)
@@ -29,9 +18,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        fromDatabase:
-          name: kangayath-db
-          property: connectionString
+        sync: false
       - key: BACKEND_CORS_ORIGINS
         value: "https://kangayath-web.onrender.com"
       - key: MEDIA_ROOT
