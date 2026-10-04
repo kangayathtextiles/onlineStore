@@ -49,6 +49,7 @@ class Settings(BaseSettings):
 
     # Security
     SECRET_KEY: str = "CHANGEME-dev-only-insecure-key"
+    ADMIN_API_KEY: str = "kangayath_admin_secret_key"
 
     # Server binding
     API_HOST: str = "0.0.0.0"

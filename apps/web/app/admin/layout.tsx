@@ -61,6 +61,13 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   }, []);
 
   React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (!localStorage.getItem("ADMIN_API_KEY") && pathname !== "/admin/login") {
+        window.location.href = "/admin/login";
+        return;
+      }
+    }
+
     const isMounted = { current: true };
     warmupApiBackend();
     fetchStatus(isMounted);
@@ -71,7 +78,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
       isMounted.current = false;
       clearInterval(interval);
     };
-  }, [fetchStatus, storeStatus]);
+  }, [fetchStatus, storeStatus, pathname]);
 
   const handleApplyOverride = async () => {
     setIsUpdatingStatus(true);
@@ -89,6 +96,10 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
       setIsUpdatingStatus(false);
     }
   };
+
+  if (pathname === "/admin/login") {
+    return <>{children}</>;
+  }
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 flex flex-col md:flex-row">
@@ -196,6 +207,16 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
               <span>Customer Preview</span>
               <ExternalLink className="w-3 h-3" />
             </Link>
+            
+            <button
+              onClick={() => {
+                localStorage.removeItem("ADMIN_API_KEY");
+                window.location.href = "/admin/login";
+              }}
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-700 transition-colors border border-rose-200 bg-rose-50 px-3 py-1.5 rounded-lg shadow-xs"
+            >
+              <span>Logout</span>
+            </button>
           </div>
         </header>
 

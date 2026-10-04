@@ -126,11 +126,21 @@ async function request<T>(
     return inFlightRequests.get(cacheKey) as Promise<T>;
   }
 
-  const execute = async (): Promise<T> => {
-    const headers = {
-      "Content-Type": "application/json",
-      ...options.headers,
-    };
+    const execute = async (): Promise<T> => {
+      // For Admin API calls, attach the API key if present
+      let adminKey = null;
+      if (typeof window !== "undefined" && url.includes("/admin/")) {
+        adminKey = localStorage.getItem("ADMIN_API_KEY");
+      }
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(options.headers as Record<string, string>),
+      };
+      
+      if (adminKey) {
+        headers["X-Admin-Api-Key"] = adminKey;
+      }
 
     try {
       const res = await fetch(url, {
@@ -150,6 +160,11 @@ async function request<T>(
         const code = errPayload?.error?.code || `HTTP_${res.status}`;
         const message = errPayload?.error?.message || `Request failed with status ${res.status}`;
         const details = errPayload?.error?.details || {};
+
+        if (res.status === 401 && typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) {
+          localStorage.removeItem("ADMIN_API_KEY");
+          window.location.href = "/admin/login";
+        }
 
         throw new ApiError(res.status, code, message, details);
       }
@@ -200,9 +215,16 @@ async function upload<T>(
   retries = 1
 ): Promise<T> {
   const url = `${getApiBaseUrl()}/api/v1${endpoint}`;
-  const headers = {
-    ...options.headers,
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string>),
   };
+  
+  if (typeof window !== "undefined" && url.includes("/admin/")) {
+    const adminKey = localStorage.getItem("ADMIN_API_KEY");
+    if (adminKey) {
+      headers["X-Admin-Api-Key"] = adminKey;
+    }
+  }
 
   try {
     const res = await fetch(url, {
@@ -222,6 +244,12 @@ async function upload<T>(
       }
       const code = errPayload?.error?.code || `HTTP_${res.status}`;
       const message = errPayload?.error?.message || `Upload failed with status ${res.status}`;
+      
+      if (res.status === 401 && typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) {
+        localStorage.removeItem("ADMIN_API_KEY");
+        window.location.href = "/admin/login";
+      }
+
       throw new ApiError(res.status, code, message, errPayload?.error?.details || {});
     }
 

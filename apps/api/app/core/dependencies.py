@@ -10,19 +10,28 @@ __all__ = ["get_async_session", "get_current_admin_user", "AdminUserContext"]
 AdminUserContext = dict[str, Any]
 
 
-async def get_current_admin_user() -> AdminUserContext:
-    """
-    Pluggable dependency injection placeholder for Owner / Admin identity.
+from fastapi import Header, HTTPException
+from app.core.config import settings
 
-    In Phase 05, this operates in unauthenticated MVP mode per explicit client mandate.
-    In Phase 06, this dependency will be swapped to validate JWT Bearer tokens or
-    secure session cookies without altering route handler logic or signatures.
+async def get_current_admin_user(
+    x_admin_api_key: str = Header(None, alias="X-Admin-Api-Key")
+) -> AdminUserContext:
     """
+    Validates the X-Admin-Api-Key header against the configured ADMIN_API_KEY.
+    Provides simple, dependency-free admin protection for the deployed MVP.
+    """
+    if not x_admin_api_key or x_admin_api_key != settings.ADMIN_API_KEY:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing Admin API Key",
+            headers={"WWW-Authenticate": "ApiKey"},
+        )
+
     return {
         "role": "admin",
-        "authenticated": False,
-        "mode": "unauthenticated_mvp",
-        "description": "Pre-authentication boundary placeholder for Phase 06 JWT integration",
+        "authenticated": True,
+        "mode": "api_key",
+        "description": "Authenticated via simple API key",
     }
 
 
