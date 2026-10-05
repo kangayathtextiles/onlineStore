@@ -52,6 +52,9 @@ export function getApiBaseUrl(): string {
     if (host.endsWith(".onrender.com")) {
       return "https://kangayath-api.onrender.com";
     }
+    if (host.includes("kangayath.site")) {
+      return "https://api.kangayath.site";
+    }
     if (host.includes("kangayath.in")) {
       return "https://api.kangayath.in";
     }

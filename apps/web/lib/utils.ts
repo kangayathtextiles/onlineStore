@@ -59,6 +59,8 @@ export function resolveImageUrl(url?: string | null): string {
     const host = window.location.hostname;
     if (host.endsWith(".onrender.com")) {
       apiBase = "https://kangayath-api.onrender.com";
+    } else if (host.includes("kangayath.site")) {
+      apiBase = "https://api.kangayath.site";
     } else if (host.includes("kangayath.in")) {
       apiBase = "https://api.kangayath.in";
     }
