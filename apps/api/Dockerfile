@@ -1,7 +1,7 @@
 # ==============================================================================
 # Multi-stage Dockerfile for KANGAYATH WEB API (FastAPI)
 # ==============================================================================
-FROM python:3.12-slim AS builder
+FROM python:3.12.9-slim AS builder
 
 WORKDIR /app
 
@@ -10,13 +10,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml .
-COPY app ./app
+COPY requirements.lock pyproject.toml ./
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir .
+    pip install --no-cache-dir -r requirements.lock
+
+COPY app ./app
+RUN pip install --no-cache-dir --no-deps .
 
 # Production Runner Stage
-FROM python:3.12-slim AS runner
+FROM python:3.12.9-slim AS runner
 
 WORKDIR /app
 
