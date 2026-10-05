@@ -22,11 +22,11 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: BACKEND_CORS_ORIGINS
-        value: "https://kangayath-web.onrender.com"
+        value: "https://kangayath.site,https://www.kangayath.site,https://kangayath-web.onrender.com"
       - key: MEDIA_ROOT
         value: /app/media
       - key: SITE_URL
-        value: https://kangayath-web.onrender.com
+        value: https://kangayath.site
       - key: LOG_LEVEL
         value: INFO
       - key: STORAGE_BACKEND
@@ -53,9 +53,9 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_API_URL
-        value: https://kangayath-api.onrender.com
+        value: https://api.kangayath.site
       - key: NEXT_PUBLIC_SITE_URL
-        value: https://kangayath-web.onrender.com
+        value: https://kangayath.site
 
   # ──────────────────────────────────────────────
   # 3. Staging FastAPI Backend API (Branch: staging)

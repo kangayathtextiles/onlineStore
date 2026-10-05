@@ -1,6 +1,8 @@
 import { MetadataRoute } from "next";
 import { siteConfig } from "@/lib/site-config";
 
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = siteConfig.url;
   const apiUrl = siteConfig.apiUrl;
@@ -38,6 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       try {
         const res = await fetch(`${apiUrl}/api/v1/public/products?page=${page}&page_size=100`, {
           next: { revalidate: 3600 },
+          signal: AbortSignal.timeout(4000),
         });
 
         if (!res.ok) break;
@@ -67,6 +70,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // 2. Fetch public categories
     const catRes = await fetch(`${apiUrl}/api/v1/public/categories`, {
       next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(4000),
     });
     if (catRes.ok) {
       const catData = await catRes.json();

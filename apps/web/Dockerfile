@@ -15,8 +15,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Accept NEXT_PUBLIC_ vars as build args so they are baked into the Next.js bundle
-ARG NEXT_PUBLIC_API_URL=https://kangayath-api.onrender.com
-ARG NEXT_PUBLIC_SITE_URL=https://kangayath-web.onrender.com
+ARG NEXT_PUBLIC_API_URL=https://api.kangayath.site
+ARG NEXT_PUBLIC_SITE_URL=https://kangayath.site
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV NEXT_TELEMETRY_DISABLED=1
