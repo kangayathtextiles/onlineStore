@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Annotated, Any, Literal
 
 from pydantic import (
@@ -95,7 +96,6 @@ class Settings(BaseSettings):
         If MEDIA_ROOT is an absolute path (e.g. /app/media in production), returns as-is.
         If relative, resolves relative to the apps/api application root.
         """
-        import os
         from pathlib import Path
 
         if os.path.isabs(self.MEDIA_ROOT):

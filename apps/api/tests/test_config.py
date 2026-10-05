@@ -9,3 +9,13 @@ def test_settings_initialization() -> None:
     assert settings.API_V1_STR == "/api/v1"
     assert settings.API_PORT == 8000
     assert "postgresql" in settings.SQLALCHEMY_DATABASE_URI
+
+
+def test_app_and_settings_smoke_import() -> None:
+    """Smoke test ensuring settings and main FastAPI app import without NameError or startup crashes."""
+    from app.core.config import settings as app_settings
+    from app.main import app
+
+    assert app_settings is not None
+    assert app.title == "Kangayath Web API"
+
