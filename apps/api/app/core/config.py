@@ -83,6 +83,9 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE_MB: int = 10
     ALLOWED_IMAGE_EXTENSIONS: str = ".jpg,.jpeg,.png,.webp,.gif"
 
+    # Storage backend: "local" for development/test, "supabase" for staging/production
+    STORAGE_BACKEND: Literal["supabase", "local"] = "local"
+
     # Supabase Storage (object storage backend for media files)
     SUPABASE_URL: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
@@ -170,6 +173,18 @@ class Settings(BaseSettings):
             ):
                 raise ValueError(
                     f"Default or placeholder ADMIN_API_KEY is not allowed in {self.ENVIRONMENT} environment."
+                )
+
+            # Storage backend validation in production/staging
+            if self.STORAGE_BACKEND == "local":
+                raise ValueError(
+                    f"STORAGE_BACKEND cannot be 'local' in {self.ENVIRONMENT} environment. "
+                    "Render's filesystem is ephemeral and will lose uploaded media. Use 'supabase'."
+                )
+            if not self.SUPABASE_URL or not self.SUPABASE_SERVICE_ROLE_KEY or not self.SUPABASE_STORAGE_BUCKET:
+                raise ValueError(
+                    f"Supabase Storage credentials (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_STORAGE_BUCKET) "
+                    f"are required in {self.ENVIRONMENT} environment."
                 )
         return self
 

@@ -37,6 +37,7 @@ Choose one:
 |---|---|
 | `SECRET_KEY` | `python -c "import secrets; print(secrets.token_urlsafe(64))"` |
 | `ADMIN_API_KEY` | `python -c "import secrets; print(secrets.token_urlsafe(32))"` (min 32 chars) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Obtained from Supabase Project Settings > API |
 | `POSTGRES_PASSWORD` | `openssl rand -base64 32` |
 
 ---

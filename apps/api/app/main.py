@@ -7,7 +7,7 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from sqlalchemy import text
 
 from app.api.v1.api import api_router
@@ -151,18 +151,24 @@ async def root_health() -> dict[str, str]:
     }
 
 
-# Media CDN redirect endpoint
-# New uploads go to Supabase Storage and carry full CDN URLs, so /media/* is
-# only needed as a backward-compat redirect for any old relative URLs.
-@app.get("/media/{path:path}", tags=["media"], summary="Redirect to CDN-served media asset")
+# Media asset endpoint: serves local file in dev/test or redirects to CDN in production
+@app.get("/media/{path:path}", tags=["media"], summary="Retrieve media asset")
 async def get_media_asset(path: str) -> Response:
     """
-    Redirects legacy /media/<path> URLs to their Supabase Storage public URL.
-    New product images already carry full https:// CDN URLs and bypass this endpoint.
+    Serves local media in dev/test (when STORAGE_BACKEND=local) or redirects to Supabase Storage CDN URL.
     """
     clean_path = path.lstrip("/")
     if ".." in clean_path or clean_path.startswith("/"):
         return JSONResponse(status_code=400, content={"message": "Invalid path."})
+
+    if settings.STORAGE_BACKEND == "local":
+        from pathlib import Path
+
+        root = Path(settings.RESOLVED_MEDIA_ROOT).resolve()
+        target = (root / clean_path).resolve()
+        if str(target).startswith(str(root)) and target.is_file():
+            return FileResponse(str(target), media_type=storage_service.guess_mime(clean_path))
+        return JSONResponse(status_code=404, content={"message": "Media asset not found."})
 
     if not storage_service.is_configured():
         return JSONResponse(status_code=404, content={"message": "Media storage not configured."})

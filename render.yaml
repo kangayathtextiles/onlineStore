@@ -29,6 +29,14 @@ services:
         value: https://kangayath-web.onrender.com
       - key: LOG_LEVEL
         value: INFO
+      - key: STORAGE_BACKEND
+        value: supabase
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: product-media
 
   # ──────────────────────────────────────────────
   # 2. Production Next.js Frontend (Branch: main)
@@ -79,6 +87,14 @@ services:
         value: https://kangayath-web-staging.onrender.com
       - key: LOG_LEVEL
         value: INFO
+      - key: STORAGE_BACKEND
+        value: supabase
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: product-media
 
   # ──────────────────────────────────────────────
   # 4. Staging Next.js Frontend (Branch: staging)
