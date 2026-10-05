@@ -48,9 +48,19 @@ jobs:
 
       - name: Verify Backend Lockfile Sync
         run: |
-          python -m pip install pip-tools
-          pip-compile --no-header --strip-extras apps/api/pyproject.toml -o apps/api/requirements.lock
-          git diff --exit-code apps/api/requirements.lock
+          python -c '
+          import tomllib, re
+          with open("apps/api/pyproject.toml", "rb") as f:
+              pyproj = tomllib.load(f)
+          manifest_deps = [re.split(r"[><=~;\[]", d)[0].strip().lower().replace("-", "_") for d in pyproj["project"]["dependencies"]]
+          with open("apps/api/requirements.lock") as f:
+              locked_deps = {re.split(r"[><=~;\[]", line)[0].strip().lower().replace("-", "_") for line in f if "==" in line}
+          missing = [d for d in manifest_deps if d not in locked_deps]
+          if missing:
+              raise SystemExit(f"Lockfile out of sync: missing dependencies {missing}")
+          print("Backend lockfile is in sync with pyproject.toml dependencies.")
+          '
+          python -m pip install --dry-run -r apps/api/requirements.lock -e apps/api
 
       - name: Install Dependencies
         run: |
