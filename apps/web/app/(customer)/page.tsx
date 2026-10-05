@@ -10,12 +10,20 @@ import {
   Shirt,
   Layers,
   Store,
+  MapPin,
+  Clock,
+  Phone,
+  ExternalLink,
+  ShieldCheck,
+  CreditCard,
+  Car,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/customer/product-card";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { publicApi } from "@/lib/api";
 import { resolveImageUrl } from "@/lib/utils";
+import { siteConfig } from "@/lib/site-config";
 import type {
   PublicCategoryTree,
   PublicProductSummary,
@@ -84,12 +92,12 @@ export default function CustomerHomePage() {
             />
             <span className="truncate max-w-[200px] sm:max-w-none">
               {status?.is_open
-                ? `Physical Store is OPEN NOW${storeCity ? ` in ${storeCity}` : ""}`
-                : "Physical Store is Currently CLOSED"}
+                ? `Physical Store is OPEN NOW in ${storeCity || siteConfig.location.locality}`
+                : `Physical Store in ${storeCity || siteConfig.location.locality} is CLOSED`}
             </span>
             <span className="text-zinc-300 hidden sm:inline">•</span>
             <Link href="/visit" className="text-burgundy hover:text-burgundy-700 underline font-semibold hidden sm:inline">
-              View Hours & Map
+              View Hours &amp; Directions
             </Link>
           </div>
 
@@ -101,8 +109,7 @@ export default function CustomerHomePage() {
               </span>
             </h1>
             <p className="text-sm sm:text-lg text-zinc-600 max-w-2xl mx-auto leading-relaxed">
-              Welcome to the KANGAYATH digital showroom. Discover pure handloom silks, festive dhotis,
-              and everyday casuals available at our retail store.
+              Welcome to the official digital showroom for <strong>Kangayath Clothing &amp; Textiles</strong> (K G Garments), located on Main Anaikatti Road in Kalkandi, Palakkad, Kerala. Discover authentic Kerala handlooms, festive sarees, dhotis, wedding silks, and everyday apparel before visiting our retail showroom.
             </p>
           </div>
 
@@ -305,6 +312,114 @@ export default function CustomerHomePage() {
               <p className="text-xs text-zinc-600 leading-relaxed">
                 Visit our physical store to try garments on in our fitting rooms and make your purchase in person.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Physical Retail Store & Location Information */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="rounded-3xl border border-zinc-200 bg-gradient-to-b from-white to-zinc-50/70 p-6 sm:p-10 lg:p-12 space-y-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-zinc-200/80 pb-6">
+            <div className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-burgundy">
+                Local Retail Showroom
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight">
+                Visit Our Clothing Store in Kalkandi, Palakkad
+              </h2>
+              <p className="text-xs sm:text-sm text-zinc-600 max-w-2xl leading-relaxed">
+                <strong>Kangayath Clothing &amp; Textiles</strong> (also known locally as{" "}
+                <strong>K G Garments</strong>) is located on Main Anaikatti Road, Kalkandi, Kerala.
+                We proudly serve families across Kalkandi, Agali, Attappadi, Mannarkkad, and
+                Palakkad district with authentic Kerala handlooms, festive sarees, dhotis, wedding
+                silks, and everyday apparel.
+              </p>
+            </div>
+            <a
+              href={siteConfig.location.googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-burgundy hover:bg-burgundy-700 text-white font-bold text-xs shadow-xs transition-colors self-start md:self-auto flex-shrink-0"
+            >
+              <MapPin className="w-4 h-4 text-rose-200" />
+              <span>Get Directions on Google Maps</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Store Address & Contact */}
+            <div className="p-6 rounded-2xl bg-white border border-zinc-200 shadow-xs space-y-4">
+              <div className="flex items-center gap-2 text-burgundy font-bold text-sm">
+                <MapPin className="w-4 h-4" />
+                <span>Store Address &amp; Contact</span>
+              </div>
+              <address className="not-italic text-xs text-zinc-600 space-y-1 leading-relaxed">
+                <p className="font-bold text-zinc-900 text-sm">{siteConfig.legalName}</p>
+                <p>{siteConfig.location.streetAddress}</p>
+                <p>
+                  {siteConfig.location.locality}, {siteConfig.location.district},{" "}
+                  {siteConfig.location.state} - {siteConfig.location.postalCode}
+                </p>
+                <p className="text-zinc-500 pt-1">Near Kalkandi Junction</p>
+              </address>
+              <div className="pt-2 border-t border-zinc-100 flex items-center justify-between text-xs">
+                <span className="text-zinc-500 flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>Call Store:</span>
+                </span>
+                <a
+                  href={`tel:${siteConfig.contact.phone}`}
+                  className="font-bold text-zinc-900 hover:text-burgundy transition-colors"
+                >
+                  {siteConfig.contact.phone}
+                </a>
+              </div>
+            </div>
+
+            {/* Operating Hours */}
+            <div className="p-6 rounded-2xl bg-white border border-zinc-200 shadow-xs space-y-4">
+              <div className="flex items-center gap-2 text-burgundy font-bold text-sm">
+                <Clock className="w-4 h-4" />
+                <span>Weekly Hours (IST)</span>
+              </div>
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between py-1 border-b border-zinc-100">
+                  <span className="font-medium text-zinc-700">Monday – Friday</span>
+                  <span className="font-mono text-zinc-900 font-semibold">09:30 – 20:30</span>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-zinc-100">
+                  <span className="font-medium text-zinc-700">Saturday</span>
+                  <span className="font-mono text-zinc-900 font-semibold">09:30 – 20:00</span>
+                </div>
+                <div className="flex items-center justify-between py-1 text-zinc-500">
+                  <span className="font-medium">Sunday</span>
+                  <span className="text-rose-600 font-semibold uppercase text-[11px]">Closed</span>
+                </div>
+              </div>
+            </div>
+
+            {/* In-Store Amenities */}
+            <div className="p-6 rounded-2xl bg-white border border-zinc-200 shadow-xs space-y-4">
+              <div className="flex items-center gap-2 text-burgundy font-bold text-sm">
+                <ShieldCheck className="w-4 h-4" />
+                <span>Showroom Experience</span>
+              </div>
+              <ul className="space-y-2.5 text-xs text-zinc-600">
+                <li className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span>Fitting rooms available for trying garments</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Car className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                  <span>Customer parking space on premises</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-burgundy flex-shrink-0" />
+                  <span>UPI, Credit/Debit cards &amp; Cash accepted</span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>

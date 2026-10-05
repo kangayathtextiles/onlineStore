@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { publicApi } from "@/lib/api";
 import { formatISTTime } from "@/lib/utils";
+import { siteConfig } from "@/lib/site-config";
 import type { DayOfWeek, StoreProfile, StoreStatusResponse } from "@/types/api";
 
 const DAYS_ORDER: DayOfWeek[] = [
@@ -62,13 +63,21 @@ export default function VisitStorePage() {
 
   const whatsappNumber = profile?.whatsapp_number
     ? profile.whatsapp_number.replace(/[^0-9]/g, "")
-    : "919876543210";
+    : siteConfig.contact.whatsapp;
 
-  const sortedSchedules = profile?.schedules
+  const sortedSchedules = profile?.schedules && profile.schedules.length > 0
     ? [...profile.schedules].sort(
         (a, b) => DAYS_ORDER.indexOf(a.day_of_week) - DAYS_ORDER.indexOf(b.day_of_week)
       )
-    : [];
+    : [
+        { day_of_week: "MONDAY", is_closed: false, open_time: "09:30", close_time: "20:30" },
+        { day_of_week: "TUESDAY", is_closed: false, open_time: "09:30", close_time: "20:30" },
+        { day_of_week: "WEDNESDAY", is_closed: false, open_time: "09:30", close_time: "20:30" },
+        { day_of_week: "THURSDAY", is_closed: false, open_time: "09:30", close_time: "20:30" },
+        { day_of_week: "FRIDAY", is_closed: false, open_time: "09:30", close_time: "20:30" },
+        { day_of_week: "SATURDAY", is_closed: false, open_time: "09:30", close_time: "20:00" },
+        { day_of_week: "SUNDAY", is_closed: true, open_time: "00:00", close_time: "00:00" },
+      ];
 
   if (loading) {
     return (
@@ -87,7 +96,7 @@ export default function VisitStorePage() {
           Physical Retail Location
         </span>
         <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-zinc-900">
-          Visit Our Store in {profile?.city || profile?.locality || profile?.district || "Kangeyam"}
+          Visit Our Store in {profile?.city || profile?.locality || profile?.district || siteConfig.location.locality}
         </h1>
         <p className="text-sm text-zinc-600">
           Explore our complete collection in person. Try garments in our fitting rooms and get styling
@@ -140,18 +149,18 @@ export default function VisitStorePage() {
                 <span>Store Address & Contact</span>
               </CardTitle>
               <CardDescription className="text-xs">
-                Located in the main shopping district with convenient parking.
+                Located on Main Anaikatti Road with convenient customer parking.
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-4 text-xs text-zinc-600">
               <address className="not-italic space-y-1 bg-zinc-50 p-4 rounded-xl border border-zinc-200 leading-relaxed">
-                <p className="font-bold text-sm text-zinc-900">{profile?.name || "KANGAYATH"}</p>
-                <p>{profile?.address_line1}</p>
+                <p className="font-bold text-sm text-zinc-900">{profile?.name || siteConfig.legalName}</p>
+                <p>{profile?.address_line1 || siteConfig.location.streetAddress}</p>
                 {profile?.address_line2 && <p>{profile.address_line2}</p>}
                 <p>
-                  {profile?.city || profile?.locality || profile?.district || "Kangeyam"},{" "}
-                  {profile?.state || "Kerala"} - {profile?.pincode || "638701"}
+                  {profile?.city || profile?.locality || profile?.district || siteConfig.location.locality},{" "}
+                  {profile?.state || siteConfig.location.state} - {profile?.pincode || siteConfig.location.postalCode}
                 </p>
               </address>
 
@@ -162,10 +171,10 @@ export default function VisitStorePage() {
                     <span>Primary Phone:</span>
                   </div>
                   <a
-                    href={`tel:${profile?.phone_primary || profile?.primary_phone}`}
+                    href={`tel:${profile?.phone_primary || profile?.primary_phone || siteConfig.contact.phone}`}
                     className="font-bold text-zinc-900 hover:text-burgundy transition-colors"
                   >
-                    {profile?.phone_primary || profile?.primary_phone || "+91 94470 00000"}
+                    {profile?.phone_primary || profile?.primary_phone || siteConfig.contact.phone}
                   </a>
                 </div>
 
@@ -180,10 +189,10 @@ export default function VisitStorePage() {
                 )}
               </div>
 
-              {profile?.google_maps_url && (
+              {(profile?.google_maps_url || siteConfig.location.googleMapsUrl) && (
                 <div className="pt-2">
                   <a
-                    href={profile.google_maps_url}
+                    href={profile?.google_maps_url || siteConfig.location.googleMapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-burgundy hover:bg-burgundy-700 text-white font-bold transition-colors shadow-xs"

@@ -19,6 +19,7 @@ import { ProductImage } from "@/components/ui/product-image";
 import { ProductDetailSkeleton } from "@/components/ui/skeleton";
 import { useSavedItems } from "@/lib/saved-items-context";
 import { publicApi } from "@/lib/api";
+import { siteConfig } from "@/lib/site-config";
 import type {
   ColorOption,
   PublicProductDetail,
@@ -151,7 +152,7 @@ export default function ProductDetailPage() {
 
   const whatsappPhone = store?.whatsapp_number
     ? store.whatsapp_number.replace(/[^0-9]/g, "")
-    : "919876543210";
+    : siteConfig.contact.whatsapp;
 
   const whatsappMessage = encodeURIComponent(
     `Hello Kangayath! I am inquiring about "${product.name}"${
@@ -177,7 +178,7 @@ export default function ProductDetailPage() {
     material: product.material || undefined,
     brand: {
       "@type": "Brand",
-      name: "Kangayath",
+      name: siteConfig.name,
     },
     category: product.category_name,
     ...(product.price !== null && product.price !== undefined && Number(product.price) > 0
@@ -202,13 +203,13 @@ export default function ProductDetailPage() {
         "@type": "ListItem",
         position: 1,
         name: "Home",
-        item: process.env.NEXT_PUBLIC_SITE_URL || "https://kangayath.in",
+        item: siteConfig.url,
       },
       {
         "@type": "ListItem",
         position: 2,
         name: "Catalog",
-        item: `${process.env.NEXT_PUBLIC_SITE_URL || "https://kangayath.in"}/products`,
+        item: `${siteConfig.url}/products`,
       },
       ...(product.category_name
         ? [
@@ -216,7 +217,7 @@ export default function ProductDetailPage() {
               "@type": "ListItem",
               position: 3,
               name: product.category_name,
-              item: `${process.env.NEXT_PUBLIC_SITE_URL || "https://kangayath.in"}/products?category=${encodeURIComponent(
+              item: `${siteConfig.url}/products?category=${encodeURIComponent(
                 product.category_slug || ""
               )}`,
             },
@@ -224,7 +225,7 @@ export default function ProductDetailPage() {
               "@type": "ListItem",
               position: 4,
               name: product.name,
-              item: `${process.env.NEXT_PUBLIC_SITE_URL || "https://kangayath.in"}/products/${product.slug}`,
+              item: `${siteConfig.url}/products/${product.slug}`,
             },
           ]
         : [
@@ -232,7 +233,7 @@ export default function ProductDetailPage() {
               "@type": "ListItem",
               position: 3,
               name: product.name,
-              item: `${process.env.NEXT_PUBLIC_SITE_URL || "https://kangayath.in"}/products/${product.slug}`,
+              item: `${siteConfig.url}/products/${product.slug}`,
             },
           ]),
     ],
@@ -578,7 +579,7 @@ export default function ProductDetailPage() {
             <p className="text-xs text-zinc-600 leading-relaxed">
               We welcome you to visit our store in{" "}
               <strong className="text-zinc-900">
-                {store?.city || store?.locality || store?.district || "Kangeyam"}
+                {store?.city || store?.locality || store?.district || siteConfig.location.locality}
               </strong>{" "}
               to try this piece in our fitting rooms. All sales and billing are done at our retail counter.
             </p>

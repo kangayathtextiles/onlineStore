@@ -10,6 +10,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { publicApi } from "@/lib/api";
+import { siteConfig } from "@/lib/site-config";
 import type { StoreProfile } from "@/types/api";
 
 export function CustomerFooter() {
@@ -35,7 +36,15 @@ export function CustomerFooter() {
 
   const whatsappCleanNumber = store?.whatsapp_number
     ? store.whatsapp_number.replace(/[^0-9]/g, "")
-    : "919876543210";
+    : siteConfig.contact.whatsapp;
+
+  const storeAddress1 = store?.address_line1 || siteConfig.location.streetAddress;
+  const storeLocality =
+    store?.locality || store?.city || store?.district || siteConfig.location.locality;
+  const storeDistrict = store?.district || siteConfig.location.district;
+  const storeState = store?.state || siteConfig.location.state;
+  const storePincode = store?.pincode || siteConfig.location.postalCode;
+  const storeMapsUrl = store?.google_maps_url || siteConfig.location.googleMapsUrl;
 
   return (
     <footer className="border-t border-zinc-200 bg-zinc-50/80 text-zinc-600 text-sm">
@@ -54,7 +63,7 @@ export function CustomerFooter() {
             </Link>
             <p className="text-xs text-zinc-600 leading-relaxed">
               {store?.tagline ||
-                "Traditional handlooms, festive silks, and contemporary apparel curated for your family."}
+                "Traditional handlooms, festive silks, and contemporary apparel curated for your family in Kerala."}
             </p>
             <div className="pt-2">
               <a
@@ -76,19 +85,19 @@ export function CustomerFooter() {
               <span>Visit Our Retail Store</span>
             </h3>
             <address className="not-italic text-xs text-zinc-600 space-y-1 leading-relaxed">
-              <p className="font-semibold text-zinc-900">{store?.name || "Kangayath Clothing"}</p>
-              <p>{store?.address_line1 || "Main Commercial Street"}</p>
+              <p className="font-semibold text-zinc-900">{store?.name || siteConfig.legalName}</p>
+              <p>{storeAddress1}</p>
               {store?.address_line2 && <p>{store.address_line2}</p>}
               <p>
-                {store?.city || store?.locality || store?.district || "Kangeyam"},{" "}
-                {store?.state || "Kerala"} - {store?.pincode || "638701"}
+                {storeLocality}, {storeDistrict !== storeLocality ? `${storeDistrict}, ` : ""}
+                {storeState} - {storePincode}
               </p>
             </address>
 
-            {store?.google_maps_url && (
+            {storeMapsUrl && (
               <div className="pt-1">
                 <a
-                  href={store.google_maps_url}
+                  href={storeMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-xs text-burgundy hover:text-burgundy-700 transition-colors font-semibold"
@@ -118,12 +127,7 @@ export function CustomerFooter() {
               </li>
               <li>
                 <Link href="/visit" className="hover:text-burgundy transition-colors">
-                  Physical Store Hours & Map
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin" className="text-zinc-500 hover:text-zinc-800 transition-colors">
-                  Store Management Console
+                  Physical Store Hours &amp; Map
                 </Link>
               </li>
             </ul>
