@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProductImage } from "@/components/ui/product-image";
 import { useSavedItems } from "@/lib/saved-items-context";
 import { publicApi } from "@/lib/api";
+import { siteConfig } from "@/lib/site-config";
 import type { StoreProfile } from "@/types/api";
 
 export default function SavedProductsPage() {
@@ -52,7 +53,7 @@ export default function SavedProductsPage() {
 
   const whatsappPhone = store?.whatsapp_number
     ? store.whatsapp_number.replace(/[^0-9]/g, "")
-    : "919876543210";
+    : siteConfig.contact.whatsapp;
 
   const allSavedSummaryText = encodeURIComponent(
     `Hello Kangayath! I have saved the following garments in my wishlist and would like to check availability:\n\n${savedItems
