@@ -23,8 +23,6 @@ class AdminLoginRequest(BaseModel):
 
 class AdminLoginResponse(BaseModel):
     status: str = "ok"
-    access_token: str
-    token_type: str = "bearer"
     expires_in: int
 
 
@@ -43,7 +41,7 @@ async def login(
     """
     Authenticates the admin using the secure master key.
     Includes in-memory IP rate limiting to mitigate brute-force attempts.
-    Returns a signed HMAC-SHA256 session token and sets an HttpOnly cookie.
+    Sets an authoritative HttpOnly session cookie. The token is never returned in the body.
     """
     client_ip = request.client.host if request.client else "unknown"
 
@@ -75,7 +73,7 @@ async def login(
 
     is_cross_site_env = settings.ENVIRONMENT in ("staging", "production")
     samesite_setting: Literal["lax", "strict", "none"] = "none" if is_cross_site_env else "lax"
-    secure_setting = is_cross_site_env
+    secure_setting = is_cross_site_env or request.url.scheme == "https"
 
     # Set authoritative HttpOnly session cookie
     response.set_cookie(
@@ -92,20 +90,22 @@ async def login(
 
     return AdminLoginResponse(
         status="ok",
-        access_token=token,
-        token_type="bearer",
         expires_in=settings.ADMIN_SESSION_EXPIRE_SECONDS,
     )
 
 
 @router.post("/logout", summary="Admin Dashboard Logout")
-async def logout(response: Response) -> dict[str, str]:
+async def logout(
+    request: Request,
+    response: Response,
+    _admin: AdminUserContext = Depends(get_current_admin_user),
+) -> dict[str, str]:
     """
     Terminates admin session by clearing the HttpOnly cookie.
     """
     is_cross_site_env = settings.ENVIRONMENT in ("staging", "production")
     samesite_setting: Literal["lax", "strict", "none"] = "none" if is_cross_site_env else "lax"
-    secure_setting = is_cross_site_env
+    secure_setting = is_cross_site_env or request.url.scheme == "https"
 
     response.delete_cookie(
         key=settings.ADMIN_SESSION_COOKIE_NAME,

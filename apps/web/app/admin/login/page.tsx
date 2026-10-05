@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { adminApi, setAdminSession } from "@/lib/api";
+import { adminApi } from "@/lib/api";
 
 function AdminLoginForm() {
   const [password, setPassword] = useState("");
@@ -13,14 +13,17 @@ function AdminLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // If already authenticated, redirect to destination or dashboard
+  // If already authenticated on server, redirect to destination or dashboard
   useEffect(() => {
-    const sessionToken = typeof window !== "undefined" && sessionStorage.getItem("admin_session_token");
-    const hasCookie = typeof window !== "undefined" && document.cookie.includes("admin_session=");
-    if (sessionToken || hasCookie) {
-      const from = searchParams.get("from") || "/admin";
-      router.replace(from);
-    }
+    adminApi.auth
+      .getMe()
+      .then(() => {
+        const from = searchParams.get("from") || "/admin";
+        router.replace(from);
+      })
+      .catch(() => {
+        // Not authenticated
+      });
   }, [router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,12 +34,9 @@ function AdminLoginForm() {
     setError("");
 
     try {
-      const res = await adminApi.auth.login(password);
-      if (res.access_token) {
-        setAdminSession(res.access_token, res.expires_in);
-        const from = searchParams.get("from") || "/admin";
-        router.replace(from);
-      }
+      await adminApi.auth.login(password);
+      const from = searchParams.get("from") || "/admin";
+      router.replace(from);
     } catch (err: unknown) {
       const apiErr = err as { status?: number; message?: string };
       if (apiErr?.status === 429) {

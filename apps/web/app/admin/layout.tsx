@@ -72,23 +72,34 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   }, []);
 
   React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      const hasSessionToken = !!sessionStorage.getItem("admin_session_token");
-      const hasCookie = document.cookie.includes("admin_session=");
-      const hasLegacyKey = !!localStorage.getItem("ADMIN_API_KEY");
-      if (!hasSessionToken && !hasCookie && !hasLegacyKey && pathname !== "/admin/login") {
-        clearAdminSession();
-        window.location.href = "/admin/login";
-        return;
-      }
+    const isMounted = { current: true };
+
+    if (typeof window !== "undefined" && pathname !== "/admin/login") {
+      adminApi.auth
+        .getMe()
+        .then(() => {
+          if (isMounted.current) {
+            warmupApiBackend();
+            fetchStatus(isMounted);
+          }
+        })
+        .catch(() => {
+          clearAdminSession();
+          window.location.href = "/admin/login";
+        });
+    } else {
+      warmupApiBackend();
+      fetchStatus(isMounted);
     }
 
-    const isMounted = { current: true };
-    warmupApiBackend();
-    fetchStatus(isMounted);
     // Poll every 3s while connecting, and 30s once connected
     const intervalTime = storeStatus ? 30000 : 3000;
-    const interval = setInterval(() => fetchStatus(isMounted), intervalTime);
+    const interval = setInterval(() => {
+      if (pathname !== "/admin/login") {
+        fetchStatus(isMounted);
+      }
+    }, intervalTime);
+
     return () => {
       isMounted.current = false;
       clearInterval(interval);

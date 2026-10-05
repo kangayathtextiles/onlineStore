@@ -69,7 +69,7 @@ def test_login_rate_limiter():
 
 @pytest.mark.asyncio
 async def test_auth_login_success_and_logout():
-    """Test /api/v1/auth/login and /api/v1/auth/logout with cookies."""
+    """Test /api/v1/auth/login sets HttpOnly cookie with no token in JSON body, and /logout clears cookie."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         # Successful login
@@ -77,28 +77,90 @@ async def test_auth_login_success_and_logout():
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "ok"
-        assert "access_token" in data
-        assert data["token_type"] == "bearer"
-        assert settings.ADMIN_SESSION_COOKIE_NAME in resp.cookies
+        # Token must NOT be exposed in response body
+        assert "access_token" not in data
+        assert "token" not in data
 
-        token = data["access_token"]
+        # Check Set-Cookie header contains HttpOnly and admin_session
+        set_cookie = resp.headers.get("set-cookie", "").lower()
+        assert settings.ADMIN_SESSION_COOKIE_NAME.lower() in set_cookie
+        assert "httponly" in set_cookie
+        assert "path=/" in set_cookie
 
-        # Validate /api/v1/auth/me using Authorization Bearer header
-        me_resp = await ac.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
-        assert me_resp.status_code == 200
-        assert me_resp.json()["role"] == "admin"
-        assert me_resp.json()["mode"] == "session"
+        cookie_val = resp.cookies.get(settings.ADMIN_SESSION_COOKIE_NAME)
+        assert cookie_val is not None
 
         # Validate /api/v1/auth/me using Cookie
         me_cookie_resp = await ac.get(
-            "/api/v1/auth/me", cookies={settings.ADMIN_SESSION_COOKIE_NAME: token}
+            "/api/v1/auth/me", cookies={settings.ADMIN_SESSION_COOKIE_NAME: cookie_val}
         )
         assert me_cookie_resp.status_code == 200
         assert me_cookie_resp.json()["role"] == "admin"
+        assert me_cookie_resp.json()["status"] == "authenticated"
 
-        # Logout
-        logout_resp = await ac.post("/api/v1/auth/logout")
+        # Logout clears cookie
+        logout_resp = await ac.post(
+            "/api/v1/auth/logout",
+            cookies={settings.ADMIN_SESSION_COOKIE_NAME: cookie_val},
+        )
         assert logout_resp.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_admin_endpoint_cookie_lifecycle():
+    """Verify admin endpoints reject missing, invalid, or expired cookies."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        # 1. Missing cookie
+        resp_missing = await ac.get("/api/v1/auth/me")
+        assert resp_missing.status_code == 401
+
+        # 2. Invalid signature cookie
+        resp_invalid = await ac.get(
+            "/api/v1/auth/me",
+            cookies={settings.ADMIN_SESSION_COOKIE_NAME: "invalid.signature.cookie"},
+        )
+        assert resp_invalid.status_code == 401
+
+        # 3. Expired cookie
+        expired_token = create_admin_session_token(expires_in_seconds=-10)
+        resp_expired = await ac.get(
+            "/api/v1/auth/me",
+            cookies={settings.ADMIN_SESSION_COOKIE_NAME: expired_token},
+        )
+        assert resp_expired.status_code == 401
+
+        # 4. Valid cookie
+        valid_token = create_admin_session_token(expires_in_seconds=3600)
+        resp_valid = await ac.get(
+            "/api/v1/auth/me",
+            cookies={settings.ADMIN_SESSION_COOKIE_NAME: valid_token},
+        )
+        assert resp_valid.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_csrf_origin_validation_on_cookie_mutations():
+    """Verify state-changing mutations with cookie auth enforce CSRF Origin validation."""
+    valid_token = create_admin_session_token(expires_in_seconds=3600)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        # 1. Untrusted origin -> 403 Forbidden
+        bad_origin_resp = await ac.post(
+            "/api/v1/auth/logout",
+            cookies={settings.ADMIN_SESSION_COOKIE_NAME: valid_token},
+            headers={"Origin": "https://untrusted-attacker-site.com"},
+        )
+        assert bad_origin_resp.status_code == 403
+        assert "CSRF" in bad_origin_resp.json().get("detail", "")
+
+        # 2. Trusted origin -> 200 OK
+        good_origin_resp = await ac.post(
+            "/api/v1/auth/logout",
+            cookies={settings.ADMIN_SESSION_COOKIE_NAME: valid_token},
+            headers={"Origin": "http://localhost:3000"},
+        )
+        assert good_origin_resp.status_code == 200
 
 
 @pytest.mark.asyncio

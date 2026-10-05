@@ -72,7 +72,8 @@ export class ApiError extends Error {
 }
 
 // In-flight request deduplication map (prevents duplicate simultaneous network calls)
-const inFlightRequests = new Map<string, Promise<unknown>>();
+export const inFlightRequests = new Map<string, Promise<unknown>>();
+
 
 // Lightweight in-memory TTL cache for public metadata (15 seconds TTL)
 interface CacheEntry<T> {
@@ -98,44 +99,209 @@ export function warmupApiBackend(): void {
 }
 
 export function getAdminAuthHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {};
-  if (typeof window === "undefined") return headers;
-
-  const sessionToken = sessionStorage.getItem("admin_session_token");
-  if (sessionToken) {
-    headers["Authorization"] = `Bearer ${sessionToken}`;
-    return headers;
-  }
-
-  const match = document.cookie.match(/(?:^|;\s*)admin_session=([^;]+)/);
-  if (match && match[1]) {
-    headers["Authorization"] = `Bearer ${decodeURIComponent(match[1])}`;
-    return headers;
-  }
-
-  const legacyKey = localStorage.getItem("ADMIN_API_KEY");
-  if (legacyKey) {
-    headers["X-Admin-Api-Key"] = legacyKey;
-  }
-  return headers;
+  // Authentication is handled via server-managed HttpOnly cookies with credentials: "include".
+  // Tokens are never stored or accessed in page JavaScript to prevent XSS exfiltration.
+  return {};
 }
 
 export function clearAdminSession(): void {
+  // Session termination is handled server-side via /auth/logout (clears HttpOnly cookie).
+  // Clean up any residual client-side keys if present.
   if (typeof window === "undefined") return;
   sessionStorage.removeItem("admin_session_token");
   localStorage.removeItem("ADMIN_API_KEY");
-  document.cookie = "admin_session=; Path=/; Max-Age=0; SameSite=Lax";
 }
 
-export function setAdminSession(token: string, maxAgeSeconds = 604800): void {
+export function setAdminSession(): void {
+  // Server sets the HttpOnly session cookie directly in the HTTP response.
+  // No tokens are stored in sessionStorage or document.cookie.
   if (typeof window === "undefined") return;
-  sessionStorage.setItem("admin_session_token", token);
+  sessionStorage.removeItem("admin_session_token");
   localStorage.removeItem("ADMIN_API_KEY");
-  const isHttps = window.location.protocol === "https:";
-  document.cookie = `admin_session=${encodeURIComponent(token)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${isHttps ? "; Secure" : ""}`;
 }
 
-async function request<T>(
+// Write / non-idempotent HTTP methods that must NEVER be retried to prevent duplicate side effects
+const WRITE_METHODS = new Set(["POST", "PUT", "DELETE", "PATCH"]);
+
+/**
+ * Checks whether an error was caused by caller cancellation via AbortSignal.
+ */
+function isAbortError(error: unknown): boolean {
+  if (error instanceof Error && error.name === "AbortError") {
+    return true;
+  }
+  if (
+    typeof DOMException !== "undefined" &&
+    error instanceof DOMException &&
+    error.name === "AbortError"
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Checks whether an error is transient and safe to retry for read operations.
+ * Transient conditions:
+ * - Network errors (status 0 / NETWORK_ERROR or fetch network exceptions)
+ * - Server errors (HTTP 5xx status codes)
+ * - Rate limiting (HTTP 429 Too Many Requests)
+ */
+function isRetryableError(error: unknown): boolean {
+  if (error instanceof ApiError) {
+    if (error.status === 0) return true;
+    if (error.status === 429) return true;
+    if (error.status >= 500 && error.status <= 599) return true;
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Determines whether a failed attempt should be retried.
+ * Retries are disabled for:
+ * 1. Write methods (POST, PUT, DELETE, PATCH) to avoid duplicate side effects (e.g. double orders, charges, or deletions).
+ * 2. Abort signals (caller cancelled).
+ * 3. Exhausted retry attempts.
+ * 4. Non-transient client errors (e.g. 400, 401, 403, 404).
+ */
+function shouldRetry(
+  method: string,
+  error: unknown,
+  attempt: number,
+  maxRetries: number,
+  signal?: AbortSignal | null
+): boolean {
+  // Writes must never retry to prevent duplicate side effects
+  if (WRITE_METHODS.has(method)) {
+    return false;
+  }
+
+  // Caller cancelled the request; stop immediately
+  if (signal?.aborted || isAbortError(error)) {
+    return false;
+  }
+
+  // Check attempt limit
+  if (attempt >= maxRetries) {
+    return false;
+  }
+
+  return isRetryableError(error);
+}
+
+/**
+ * Abort-aware delay helper that rejects immediately if the caller's AbortSignal fires during backoff.
+ */
+function delay(ms: number, signal?: AbortSignal | null): Promise<void> {
+  if (signal?.aborted) {
+    return Promise.reject(signal.reason || new Error("The operation was aborted"));
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    const onAbort = () => {
+      clearTimeout(timer);
+      if (signal) {
+        signal.removeEventListener("abort", onAbort);
+      }
+      reject(signal?.reason || new Error("The operation was aborted"));
+    };
+
+    const timer = setTimeout(() => {
+      if (signal) {
+        signal.removeEventListener("abort", onAbort);
+      }
+      resolve();
+    }, ms);
+
+    if (signal) {
+      signal.addEventListener("abort", onAbort, { once: true });
+    }
+  });
+}
+
+/**
+ * Executes a single HTTP attempt for the request.
+ */
+async function executeAttempt<T>(
+  url: string,
+  endpoint: string,
+  isGet: boolean,
+  cacheKey: string,
+  options: RequestInit
+): Promise<T> {
+  const authHeaders =
+    url.includes("/admin/") || url.includes("/auth/") ? getAdminAuthHeaders() : {};
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...authHeaders,
+    ...(options.headers as Record<string, string>),
+  };
+
+  try {
+    const res = await fetch(url, {
+      ...options,
+      credentials: "include",
+      headers,
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      let errPayload;
+      try {
+        errPayload = await res.json();
+      } catch {
+        errPayload = {
+          error: { code: `HTTP_${res.status}`, message: res.statusText, details: {} },
+        };
+      }
+
+      const code = errPayload?.error?.code || `HTTP_${res.status}`;
+      const message =
+        errPayload?.error?.message || `Request failed with status ${res.status}`;
+      const details = errPayload?.error?.details || {};
+
+      if (
+        res.status === 401 &&
+        typeof window !== "undefined" &&
+        window.location.pathname.startsWith("/admin") &&
+        window.location.pathname !== "/admin/login"
+      ) {
+        clearAdminSession();
+        window.location.href = "/admin/login";
+      }
+
+      throw new ApiError(res.status, code, message, details);
+    }
+
+    // For 204 or empty response
+    if (res.status === 204) {
+      return {} as T;
+    }
+
+    const data = (await res.json()) as T;
+
+    // Cache successful public GET responses
+    if (isGet && endpoint.startsWith("/public/")) {
+      memoryCache.set(cacheKey, { data, timestamp: Date.now() });
+    }
+
+    return data;
+  } catch (error) {
+    if (error instanceof ApiError || isAbortError(error)) {
+      throw error;
+    }
+
+    throw new ApiError(
+      0,
+      "NETWORK_ERROR",
+      (error as Error).message || "Network request failed"
+    );
+  }
+}
+
+export async function request<T>(
   endpoint: string,
   options: RequestInit = {},
   retries = 6
@@ -164,87 +330,65 @@ async function request<T>(
     return inFlightRequests.get(cacheKey) as Promise<T>;
   }
 
-  const execute = async (): Promise<T> => {
-    const authHeaders =
-      url.includes("/admin/") || url.includes("/auth/") ? getAdminAuthHeaders() : {};
+  // Single-owner promise lifecycle:
+  // The original GET call registers its promise in inFlightRequests exactly once.
+  // Any retry attempts run strictly INSIDE this same promise chain and bypass the dedup
+  // map entirely. This prevents overwriting or leaking map entries and ensures all concurrent
+  // callers awaiting the in-flight request receive the final result (or error).
+  // The map entry is deleted exactly once in the finally block when the operation settles.
+  let resolvePromise!: (val: T) => void;
+  let rejectPromise!: (err: unknown) => void;
+  const promise = new Promise<T>((resolve, reject) => {
+    resolvePromise = resolve;
+    rejectPromise = reject;
+  });
 
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      ...authHeaders,
-      ...(options.headers as Record<string, string>),
-    };
+  if (isGet) {
+    inFlightRequests.set(cacheKey, promise);
+  }
 
+  (async () => {
     try {
-      const res = await fetch(url, {
-        ...options,
-        credentials: "include",
-        headers,
-        cache: "no-store",
-      });
+      let attempt = 0;
+      while (true) {
+        if (options.signal?.aborted) {
+          throw options.signal.reason || new Error("The operation was aborted");
+        }
 
-      if (!res.ok) {
-        let errPayload;
         try {
-          errPayload = await res.json();
-        } catch {
-          errPayload = { error: { code: `HTTP_${res.status}`, message: res.statusText, details: {} } };
+          const result = await executeAttempt<T>(
+            url,
+            endpoint,
+            isGet,
+            cacheKey,
+            options
+          );
+          resolvePromise(result);
+          return;
+        } catch (error) {
+          if (!shouldRetry(method, error, attempt, retries, options.signal)) {
+            rejectPromise(error);
+            return;
+          }
+
+          attempt++;
+          const retryDelayMs =
+            (options as { retryDelayMs?: number })?.retryDelayMs ?? 2000;
+          await delay(retryDelayMs, options.signal);
         }
-
-        const code = errPayload?.error?.code || `HTTP_${res.status}`;
-        const message = errPayload?.error?.message || `Request failed with status ${res.status}`;
-        const details = errPayload?.error?.details || {};
-
-        if (
-          res.status === 401 &&
-          typeof window !== "undefined" &&
-          window.location.pathname.startsWith("/admin") &&
-          window.location.pathname !== "/admin/login"
-        ) {
-          clearAdminSession();
-          window.location.href = "/admin/login";
-        }
-
-        throw new ApiError(res.status, code, message, details);
       }
-
-      // For 204 or empty response
-      if (res.status === 204) {
-        return {} as T;
-      }
-
-      const data = (await res.json()) as T;
-
-      // Cache successful public GET responses
-      if (isGet && endpoint.startsWith("/public/")) {
-        memoryCache.set(cacheKey, { data, timestamp: Date.now() });
-      }
-
-      return data;
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
-      }
-
-      // Retry for transient network / cold-start drops (polls every 2s up to 6 times)
-      if (retries > 0) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        return request<T>(endpoint, options, retries - 1);
-      }
-
-      throw new ApiError(0, "NETWORK_ERROR", (error as Error).message || "Network request failed");
+    } catch (unhandledError) {
+      rejectPromise(unhandledError);
     } finally {
       if (isGet) {
         inFlightRequests.delete(cacheKey);
       }
     }
-  };
+  })();
 
-  const promise = execute();
-  if (isGet) {
-    inFlightRequests.set(cacheKey, promise);
-  }
   return promise;
 }
+
 
 async function upload<T>(
   endpoint: string,
@@ -311,7 +455,7 @@ export const adminApi = {
   // --- Admin Authentication ---
   auth: {
     login: (apiKey: string) =>
-      request<{ status: string; access_token: string; token_type: string; expires_in: number }>(
+      request<{ status: string; expires_in: number }>(
         "/auth/login",
         {
           method: "POST",

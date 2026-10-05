@@ -15,36 +15,35 @@ describe("Admin Authentication & Session Security", () => {
   });
 
   describe("Session Storage & Token Utilities", () => {
-    it("returns empty auth headers when no session exists", () => {
+    it("returns empty auth headers because credentials: 'include' handles cookie transmission", () => {
       const headers = getAdminAuthHeaders();
       expect(headers).toEqual({});
     });
 
-    it("setAdminSession sets sessionStorage and clears plaintext localStorage API key", () => {
+    it("setAdminSession cleans up any legacy storage and never writes to sessionStorage or document.cookie", () => {
       localStorage.setItem("ADMIN_API_KEY", "plaintext_secret");
-      setAdminSession("mock_session_token_123", 3600);
+      sessionStorage.setItem("admin_session_token", "old_token");
 
-      expect(sessionStorage.getItem("admin_session_token")).toBe("mock_session_token_123");
+      setAdminSession();
+
+      // JS must NOT have access to tokens
+      expect(sessionStorage.getItem("admin_session_token")).toBeNull();
       expect(localStorage.getItem("ADMIN_API_KEY")).toBeNull();
-      expect(document.cookie).toContain("admin_session=mock_session_token_123");
+      expect(document.cookie).not.toContain("admin_session=");
 
       const headers = getAdminAuthHeaders();
-      expect(headers["Authorization"]).toBe("Bearer mock_session_token_123");
+      expect(headers).toEqual({});
     });
 
-    it("clearAdminSession removes session token, legacy key, and expires cookie", () => {
-      setAdminSession("mock_session_token_123", 3600);
+    it("clearAdminSession removes legacy storage artifacts", () => {
+      localStorage.setItem("ADMIN_API_KEY", "legacy_key");
+      sessionStorage.setItem("admin_session_token", "legacy_token");
+
       clearAdminSession();
 
       expect(sessionStorage.getItem("admin_session_token")).toBeNull();
       expect(localStorage.getItem("ADMIN_API_KEY")).toBeNull();
       expect(getAdminAuthHeaders()).toEqual({});
-    });
-
-    it("falls back to legacy localStorage key if present for backward compatibility", () => {
-      localStorage.setItem("ADMIN_API_KEY", "legacy_key_xyz");
-      const headers = getAdminAuthHeaders();
-      expect(headers["X-Admin-Api-Key"]).toBe("legacy_key_xyz");
     });
   });
 
