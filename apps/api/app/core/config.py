@@ -147,6 +147,30 @@ class Settings(BaseSettings):
                 raise ValueError(
                     f"Default database credentials are not allowed in {self.ENVIRONMENT} environment."
                 )
+
+            # ADMIN_API_KEY validation
+            raw_admin_key = (self.ADMIN_API_KEY or "").strip()
+            if not raw_admin_key:
+                raise ValueError(
+                    f"ADMIN_API_KEY is required and cannot be empty in {self.ENVIRONMENT} environment."
+                )
+            if len(raw_admin_key) < 32:
+                raise ValueError(
+                    f"ADMIN_API_KEY must be at least 32 characters in {self.ENVIRONMENT} environment."
+                )
+            insecure_placeholders = {
+                "changeme",
+                "admin",
+                "kangayath_admin_secret_key",
+                "secret",
+                "password",
+            }
+            if raw_admin_key.lower() in insecure_placeholders or any(
+                p in raw_admin_key.lower() for p in ("changeme", "admin_secret_key")
+            ):
+                raise ValueError(
+                    f"Default or placeholder ADMIN_API_KEY is not allowed in {self.ENVIRONMENT} environment."
+                )
         return self
 
 

@@ -36,6 +36,7 @@ Choose one:
 | Secret | Generation |
 |---|---|
 | `SECRET_KEY` | `python -c "import secrets; print(secrets.token_urlsafe(64))"` |
+| `ADMIN_API_KEY` | `python -c "import secrets; print(secrets.token_urlsafe(32))"` (min 32 chars) |
 | `POSTGRES_PASSWORD` | `openssl rand -base64 32` |
 
 ---
