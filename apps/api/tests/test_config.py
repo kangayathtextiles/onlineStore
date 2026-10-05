@@ -62,5 +62,3 @@ def test_production_admin_api_key_validation() -> None:
         ADMIN_API_KEY=valid_key,
     )
     assert prod_settings.ADMIN_API_KEY == valid_key
-
-

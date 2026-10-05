@@ -181,7 +181,11 @@ class Settings(BaseSettings):
                     f"STORAGE_BACKEND cannot be 'local' in {self.ENVIRONMENT} environment. "
                     "Render's filesystem is ephemeral and will lose uploaded media. Use 'supabase'."
                 )
-            if not self.SUPABASE_URL or not self.SUPABASE_SERVICE_ROLE_KEY or not self.SUPABASE_STORAGE_BUCKET:
+            if (
+                not self.SUPABASE_URL
+                or not self.SUPABASE_SERVICE_ROLE_KEY
+                or not self.SUPABASE_STORAGE_BUCKET
+            ):
                 raise ValueError(
                     f"Supabase Storage credentials (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_STORAGE_BUCKET) "
                     f"are required in {self.ENVIRONMENT} environment."
