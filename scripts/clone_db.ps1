@@ -16,8 +16,8 @@ your production database and import it into your staging database.
 #>
 
 # Read from environment variables if set, or fall back to script variables
-$PROD_DB_URL = if ($env:PROD_DB_URL) { $env:PROD_DB_URL } else { "postgresql://kangayath_user:fEFf3szktNHScCeTnhjlp6ApQEi08oMa@dpg-da4lk6c9v7es738ijm50-a.oregon-postgres.render.com/kangayath_db" }
-$STAGING_DB_URL = if ($env:STAGING_DB_URL) { $env:STAGING_DB_URL } else { "postgresql://postgres.gdojzkljtarbnwrmimes:%40Abinabi9947@aws-0-ap-south-1.pooler.supabase.com:5432/postgres" }
+$PROD_DB_URL = if ($env:PROD_DB_URL) { $env:PROD_DB_URL } else { "postgresql://kangayath_user:your-prod-password@your-prod-host.render.com/kangayath_db" }
+$STAGING_DB_URL = if ($env:STAGING_DB_URL) { $env:STAGING_DB_URL } else { "postgresql://postgres.your-project:your-staging-password@aws-0-ap-south-1.pooler.supabase.com:5432/postgres" }
 
 $BACKUP_FILE = "production_backup.sql"
 
