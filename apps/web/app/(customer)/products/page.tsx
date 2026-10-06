@@ -49,6 +49,16 @@ function ProductsContent() {
   const [availableOnly, setAvailableOnly] = React.useState(initialAvailableOnly);
   const [page, setPage] = React.useState(initialPage);
 
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Auto-focus search input if navigated with ?focus=search (e.g. from bottom mobile nav)
+  React.useEffect(() => {
+    if (searchParams.get("focus") === "search") {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [searchParams]);
+
   // Debounce search keystrokes (300ms) to prevent excessive backend queries
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -170,12 +180,13 @@ function ProductsContent() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-zinc-200 pb-5 sm:pb-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-amber-950/10 pb-5 sm:pb-6">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-burgundy">
+          <span className="text-xs font-bold uppercase tracking-wider text-burgundy flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-gold" />
             Digital Showroom Catalog
           </span>
-          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-zinc-900 mt-1">
+          <h1 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-zinc-900 mt-1">
             All Garments
           </h1>
           <p className="hidden sm:block text-xs sm:text-sm text-zinc-600 mt-1">
@@ -186,8 +197,9 @@ function ProductsContent() {
         {/* Search Input & Mobile Filter Toggle */}
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-72">
-            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
+              ref={searchInputRef}
               type="text"
               placeholder="Search title, fabric, code..."
               value={search}
@@ -195,7 +207,7 @@ function ProductsContent() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              className="w-full h-10 pl-9 pr-4 rounded-xl border border-zinc-200 bg-zinc-50 text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-burgundy focus:bg-white"
+              className="w-full h-10 pl-9 pr-4 rounded-xl border border-zinc-200 bg-white/90 text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-burgundy focus:border-transparent transition-all shadow-xs"
             />
           </div>
 

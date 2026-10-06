@@ -9,6 +9,7 @@ import { publicApi } from "@/lib/api";
 vi.mock("next/navigation", () => ({
   useParams: () => ({ slug: "kasavu-festive-saree" }),
   usePathname: () => "/products/kasavu-festive-saree",
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock("@/lib/api", () => ({

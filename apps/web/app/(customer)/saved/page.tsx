@@ -67,15 +67,16 @@ export default function SavedProductsPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 space-y-8 sm:space-y-10">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200 pb-5 sm:pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-950/10 pb-5 sm:pb-6">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-burgundy">
+          <span className="text-xs font-bold uppercase tracking-wider text-burgundy flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-gold" />
             Personal Wishlist
           </span>
-          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-zinc-900 mt-1">
+          <h1 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-zinc-900 mt-1">
             Saved Garments ({savedItems.length})
             {loadingAvailability && (
-              <span className="text-[10px] text-amber-600 animate-pulse font-mono ml-2 font-normal">
+              <span className="text-[10px] text-amber-700 animate-pulse font-mono ml-2 font-normal">
                 (Checking live stock...)
               </span>
             )}
@@ -91,7 +92,7 @@ export default function SavedProductsPage() {
               href={`https://wa.me/${whatsappPhone}?text=${allSavedSummaryText}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-all"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-all active:scale-95"
             >
               <MessageCircle className="w-4 h-4" />
               <span>Inquire All on WhatsApp</span>
@@ -106,12 +107,12 @@ export default function SavedProductsPage() {
       </div>
 
       {savedItems.length === 0 ? (
-        <div className="py-24 text-center bg-zinc-50 rounded-3xl border border-zinc-200 p-8 space-y-6 max-w-lg mx-auto">
-          <div className="w-16 h-16 rounded-2xl bg-white border border-zinc-200 flex items-center justify-center mx-auto text-zinc-400 shadow-xs">
-            <Heart className="w-8 h-8 stroke-1" />
+        <div className="py-24 text-center bg-white/80 rounded-3xl border border-amber-950/10 p-8 space-y-6 max-w-lg mx-auto shadow-xs">
+          <div className="w-16 h-16 rounded-2xl bg-sand border border-amber-950/10 flex items-center justify-center mx-auto text-zinc-400 shadow-xs">
+            <Heart className="w-8 h-8 stroke-1 text-burgundy/60" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-xl font-bold text-zinc-800">Your saved list is empty</h2>
+            <h2 className="text-xl font-serif font-bold text-zinc-800">Your saved list is empty</h2>
             <p className="text-xs text-zinc-500 leading-relaxed">
               Explore our collections and click the heart icon on any garment to save styles for your
               store visit.
@@ -141,13 +142,13 @@ export default function SavedProductsPage() {
             return (
               <div
                 key={item.id}
-                className="rounded-2xl border border-zinc-200 bg-white shadow-xs overflow-hidden flex flex-col justify-between hover:border-burgundy/30 hover:shadow-md transition-all p-4 space-y-4"
+                className="rounded-2xl border border-amber-950/10 bg-white shadow-xs overflow-hidden flex flex-col justify-between hover:border-burgundy/40 hover:shadow-[0_8px_24px_rgba(42,13,11,0.08)] transition-all p-4 space-y-4"
               >
                 <div className="flex gap-4">
                   {/* Thumbnail */}
                   <Link
                     href={`/products/${item.slug}`}
-                    className="w-20 sm:w-24 aspect-square rounded-xl overflow-hidden bg-[#F0EFED] border border-zinc-200 flex-shrink-0 relative group"
+                    className="w-20 sm:w-24 aspect-square rounded-xl overflow-hidden bg-[#F7F4EF] border border-amber-950/10 flex-shrink-0 relative group"
                   >
                     <ProductImage
                       src={item.primary_image_url}
@@ -166,7 +167,7 @@ export default function SavedProductsPage() {
                     </span>
                     <Link
                       href={`/products/${item.slug}`}
-                      className="block font-bold text-sm text-zinc-900 hover:text-burgundy transition-colors line-clamp-2"
+                      className="block font-serif font-bold text-sm text-zinc-900 hover:text-burgundy transition-colors line-clamp-2"
                     >
                       {item.name}
                     </Link>

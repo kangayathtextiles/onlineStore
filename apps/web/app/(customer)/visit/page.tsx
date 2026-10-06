@@ -92,10 +92,11 @@ export default function VisitStorePage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-12 pb-20">
       {/* Header */}
       <div className="text-center space-y-3 max-w-2xl mx-auto">
-        <span className="text-xs font-bold uppercase tracking-wider text-burgundy">
+        <span className="text-xs font-bold uppercase tracking-wider text-burgundy flex items-center justify-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-gold" />
           Physical Retail Location
         </span>
-        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-zinc-900">
+        <h1 className="text-3xl sm:text-5xl font-serif font-bold tracking-tight text-zinc-900">
           Visit Our Store in {profile?.city || profile?.locality || profile?.district || siteConfig.location.locality}
         </h1>
         <p className="text-sm text-zinc-600">
@@ -105,12 +106,12 @@ export default function VisitStorePage() {
       </div>
 
       {/* Real-Time Operating Status Card */}
-      <div className="p-6 sm:p-8 rounded-3xl border border-rose-100 bg-gradient-to-r from-rose-50/70 via-rose-50/40 to-amber-50/30 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-rose-200/60 pb-4">
+      <div className="p-6 sm:p-8 rounded-3xl border border-amber-950/10 bg-gradient-to-r from-rose-50/70 via-sand to-amber-50/30 space-y-4 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-950/10 pb-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2.5">
-              <h2 className="text-lg font-bold text-zinc-900">Physical Store Status</h2>
-              <Badge variant={status?.is_open ? "success" : "danger"} className="text-xs shadow-xs">
+              <h2 className="text-lg font-serif font-bold text-zinc-900">Physical Store Status</h2>
+              <Badge variant={status?.is_open ? "success" : "danger"} className="text-xs shadow-xs border border-amber-950/10">
                 {status?.is_open ? "OPEN NOW" : "CURRENTLY CLOSED"}
               </Badge>
             </div>
@@ -124,7 +125,7 @@ export default function VisitStorePage() {
             href={`https://wa.me/${whatsappNumber}?text=Hi%20Kangayath%2C%20I%20am%20planning%20to%20visit%20your%20store.`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-all self-start sm:self-auto"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-all self-start sm:self-auto active:scale-95"
           >
             <MessageCircle className="w-4 h-4" />
             <span>Chat on WhatsApp</span>
@@ -132,8 +133,8 @@ export default function VisitStorePage() {
         </div>
 
         {status?.banner_message && (
-          <div className="p-3 rounded-xl bg-burgundy text-white text-xs flex items-center gap-2 shadow-xs">
-            <Sparkles className="w-4 h-4 text-amber-200 flex-shrink-0" />
+          <div className="p-3 rounded-xl bg-burgundy text-white text-xs flex items-center gap-2 shadow-xs border border-amber-950/20">
+            <Sparkles className="w-4 h-4 text-gold flex-shrink-0" />
             <span>{status.banner_message}</span>
           </div>
         )}

@@ -79,12 +79,12 @@ export default function CustomerHomePage() {
   return (
     <div className="space-y-12 sm:space-y-24 pb-16">
       {/* 1. Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-rose-50/50 via-white to-white border-b border-zinc-200/80 pt-8 pb-14 sm:pt-20 sm:pb-28">
+      <section className="relative overflow-hidden bg-gradient-to-b from-rose-50/50 via-canvas to-canvas border-b border-amber-950/10 pt-8 pb-14 sm:pt-20 sm:pb-28">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(101,23,20,0.06),rgba(255,255,255,0))]" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6 sm:space-y-8">
           {/* Status Capsule */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white border border-zinc-200 text-zinc-700 shadow-xs backdrop-blur-md">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white/95 border border-amber-950/10 text-zinc-700 shadow-xs backdrop-blur-md">
             <span
               className={`w-2.5 h-2.5 rounded-full ${
                 status?.is_open ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
@@ -102,9 +102,9 @@ export default function CustomerHomePage() {
           </div>
 
           <div className="space-y-3 sm:space-y-4 max-w-3xl mx-auto">
-            <h1 className="text-3xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-zinc-900 leading-tight">
+            <h1 className="text-3xl sm:text-6xl lg:text-7xl font-serif font-bold tracking-tight text-zinc-900 leading-[1.15]">
               Traditional Craft, <br />
-              <span className="bg-gradient-to-r from-burgundy via-rose-700 to-amber-700 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-burgundy via-rose-800 to-amber-700 bg-clip-text text-transparent italic font-normal">
                 Contemporary Grace.
               </span>
             </h1>
@@ -142,10 +142,11 @@ export default function CustomerHomePage() {
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between mb-8">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-burgundy">
+              <span className="text-xs font-bold uppercase tracking-wider text-burgundy flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-gold" />
                 Departments
               </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 mt-1">
+              <h2 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight text-zinc-900 mt-1">
                 Browse By Category
               </h2>
             </div>
@@ -163,17 +164,17 @@ export default function CustomerHomePage() {
               <Link
                 key={cat.id}
                 href={`/products?category=${encodeURIComponent(cat.slug)}`}
-                className="group relative rounded-2xl border border-zinc-200 bg-white p-5 hover:border-burgundy/30 hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col justify-between"
+                className="group relative rounded-2xl border border-amber-950/10 bg-white p-5 hover:border-burgundy/40 hover:shadow-[0_8px_24px_rgba(42,13,11,0.08)] transition-all duration-300 overflow-hidden flex flex-col justify-between"
               >
                 <div className="space-y-2">
-                  <div className="w-12 h-12 relative rounded-xl bg-zinc-100 border border-zinc-200 flex items-center justify-center overflow-hidden mb-4 group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 relative rounded-xl bg-sand border border-amber-950/10 flex items-center justify-center overflow-hidden mb-4 group-hover:scale-105 transition-transform">
                     {cat.thumbnail_url ? (
                       <Image src={resolveImageUrl(cat.thumbnail_url)} alt={cat.name} fill unoptimized className="object-cover" />
                     ) : (
                       <Layers className="w-6 h-6 text-burgundy" />
                     )}
                   </div>
-                  <h3 className="font-bold text-base text-zinc-900 group-hover:text-burgundy transition-colors">
+                  <h3 className="font-serif font-bold text-base text-zinc-900 group-hover:text-burgundy transition-colors">
                     {cat.name}
                   </h3>
                   <p className="text-xs text-zinc-600 line-clamp-2">

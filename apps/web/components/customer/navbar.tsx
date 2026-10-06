@@ -50,11 +50,11 @@ export function CustomerNavbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-zinc-200/90 bg-white/95 backdrop-blur-md shadow-xs">
+    <header className="sticky top-0 z-40 w-full border-b border-amber-950/10 bg-white/95 backdrop-blur-md shadow-xs">
       {/* Top Notification Bar (If override banner or open notice) */}
       {status?.banner_message && (
-        <div className="bg-burgundy px-4 py-1.5 text-center text-xs font-medium text-white flex items-center justify-center gap-2">
-          <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
+        <div className="bg-burgundy px-4 py-1.5 text-center text-xs font-medium text-white flex items-center justify-center gap-2 border-b border-amber-950/20">
+          <Sparkles className="w-3.5 h-3.5 flex-shrink-0 text-gold" />
           <span>{status.banner_message}</span>
         </div>
       )}
@@ -68,22 +68,23 @@ export function CustomerNavbar() {
               alt="KANGAYATH"
               width={200}
               height={60}
+              priority
               className="h-10 sm:h-12 w-auto object-contain transition-transform group-hover:scale-105"
             />
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-1.5">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                  className={`px-4 py-2 rounded-xl text-sm transition-all ${
                     isActive
-                      ? "bg-zinc-100 text-zinc-900 font-bold"
-                      : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50"
+                      ? "bg-sand text-zinc-900 font-bold border border-amber-950/10 shadow-xs"
+                      : "text-zinc-600 hover:text-zinc-900 hover:bg-sand/60 font-medium"
                   }`}
                 >
                   {link.label}
@@ -98,7 +99,7 @@ export function CustomerNavbar() {
             <Link href="/visit" className="hidden sm:flex items-center" title="Click to view shop location & hours">
               <Badge
                 variant={status?.is_open ? "success" : "danger"}
-                className="py-1 px-3 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs hover:opacity-90"
+                className="py-1 px-3 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs border border-amber-950/10 hover:opacity-90 transition-all"
               >
                 <span
                   className={`w-2 h-2 rounded-full ${

@@ -12,7 +12,14 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
-        canvas: "#F0EFED",
+        canvas: "#FAF8F5",
+        sand: "#F4EFEA",
+        gold: {
+          DEFAULT: "#C59B27",
+          light: "#E0BD53",
+          dark: "#997316",
+          muted: "rgba(197, 155, 39, 0.15)",
+        },
         burgundy: {
           DEFAULT: "#651714",
           50: "#fbf3f3",

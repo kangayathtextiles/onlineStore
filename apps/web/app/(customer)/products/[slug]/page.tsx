@@ -12,6 +12,9 @@ import {
   ChevronRight,
   Store,
   Share2,
+  ZoomIn,
+  X,
+  ChevronLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +43,27 @@ export default function ProductDetailPage() {
   const [selectedColorId, setSelectedColorId] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [copiedLink, setCopiedLink] = React.useState(false);
+  const [lightboxOpen, setLightboxOpen] = React.useState(false);
+  const [zoomScale, setZoomScale] = React.useState(1);
+
+  // Keyboard navigation & accessibility for lightbox zoom modal
+  React.useEffect(() => {
+    if (!lightboxOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setLightboxOpen(false);
+        setZoomScale(1);
+      } else if (e.key === "ArrowLeft") {
+        setSelectedImageIndex((prev) => (prev > 0 ? prev - 1 : (product?.images.length || 1) - 1));
+        setZoomScale(1);
+      } else if (e.key === "ArrowRight") {
+        setSelectedImageIndex((prev) => (prev < (product?.images.length || 1) - 1 ? prev + 1 : 0));
+        setZoomScale(1);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxOpen, product?.images.length]);
 
   React.useEffect(() => {
     let isMounted = true;
@@ -278,8 +302,20 @@ export default function ProductDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
         {/* Left Column: Image Gallery (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
-          {/* Main Photo Container */}
-          <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden bg-[#F0EFED] border border-zinc-200/90 aspect-[4/5] flex items-center justify-center">
+          {/* Main Photo Container (Click to Zoom) */}
+          <div
+            onClick={() => setLightboxOpen(true)}
+            className="group relative cursor-zoom-in rounded-2xl sm:rounded-3xl overflow-hidden bg-[#F7F4EF] border border-amber-950/10 aspect-[4/5] flex items-center justify-center transition-all hover:border-burgundy/40 shadow-xs"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setLightboxOpen(true);
+              }
+            }}
+            aria-label="Click to inspect garment fabric in full screen zoom"
+          >
             <ProductImage
               src={currentImage?.url}
               alt={currentImage?.alt_text || product.name}
@@ -287,14 +323,14 @@ export default function ProductDetailPage() {
               fit="cover"
               zoomOnHover={false}
               priority={true}
-              containerClassName="w-full h-full"
+              containerClassName="w-full h-full transition-transform duration-300 group-hover:scale-105"
             />
 
             {/* In-Stock / Sold-Out Badge */}
             <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10">
               <Badge
                 variant={product.is_available ? "success" : "danger"}
-                className="text-xs shadow-xs backdrop-blur-md bg-white/95 border border-zinc-200/60 font-semibold"
+                className="text-xs shadow-xs backdrop-blur-md bg-white/95 border border-amber-950/10 font-semibold"
               >
                 {product.is_available ? (
                   <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
@@ -303,6 +339,14 @@ export default function ProductDetailPage() {
                 )}
                 <span>{product.is_available ? "In Stock at Store" : "Currently Sold Out"}</span>
               </Badge>
+            </div>
+
+            {/* Fabric Zoom Hint Overlay */}
+            <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 z-10 pointer-events-none">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/95 backdrop-blur-md border border-amber-950/10 text-zinc-800 shadow-xs group-hover:bg-burgundy group-hover:text-white transition-colors">
+                <ZoomIn className="w-3.5 h-3.5" />
+                <span>Zoom Weave</span>
+              </span>
             </div>
           </div>
 
@@ -397,7 +441,7 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight">
+            <h1 className="text-2xl sm:text-4xl font-serif font-bold text-zinc-900 tracking-tight">
               {product.name}
             </h1>
 
@@ -594,8 +638,119 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
+      {/* Lightbox / Zoom Modal for Fabric & Weave Inspection */}
+      {lightboxOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Garment image zoom viewer"
+          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-3 sm:p-6 animate-fade-in"
+        >
+          {/* Top Bar */}
+          <div className="flex items-center justify-between text-white border-b border-zinc-800 pb-3">
+            <div className="flex items-center gap-3">
+              <span className="font-serif text-sm sm:text-base font-semibold truncate max-w-[200px] sm:max-w-md">
+                {product.name}
+              </span>
+              <span className="text-xs text-zinc-400">
+                {selectedImageIndex + 1} / {product.images.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setZoomScale((prev) => (prev === 1 ? 2 : 1))}
+                className="px-3 py-1 rounded-lg text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors"
+                aria-label={zoomScale === 1 ? "Zoom 2x" : "Reset Zoom"}
+              >
+                {zoomScale === 1 ? "Zoom 2x" : "Reset (1x)"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLightboxOpen(false);
+                  setZoomScale(1);
+                }}
+                className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors"
+                aria-label="Close zoom viewer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Center Stage with Prev/Next Controls */}
+          <div className="relative flex-1 flex items-center justify-center overflow-hidden my-3">
+            {product.images.length > 1 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedImageIndex((prev) => (prev > 0 ? prev - 1 : product.images.length - 1));
+                  setZoomScale(1);
+                }}
+                className="absolute left-2 sm:left-4 z-10 p-2 sm:p-3 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-white border border-zinc-700 transition-all"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+              </button>
+            )}
+
+            <div
+              className={`max-w-full max-h-full flex items-center justify-center transition-transform duration-200 ${
+                zoomScale === 2 ? "scale-150 cursor-zoom-out" : "cursor-zoom-in"
+              }`}
+              onClick={() => setZoomScale((prev) => (prev === 1 ? 2 : 1))}
+            >
+              {/* Image in lightbox */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={currentImage?.url}
+                alt={currentImage?.alt_text || product.name}
+                className="max-h-[70vh] sm:max-h-[78vh] w-auto max-w-full object-contain rounded-xl select-none"
+              />
+            </div>
+
+            {product.images.length > 1 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedImageIndex((prev) => (prev < product.images.length - 1 ? prev + 1 : 0));
+                  setZoomScale(1);
+                }}
+                className="absolute right-2 sm:right-4 z-10 p-2 sm:p-3 rounded-full bg-zinc-900/80 hover:bg-zinc-800 text-white border border-zinc-700 transition-all"
+                aria-label="Next image"
+              >
+                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+              </button>
+            )}
+          </div>
+
+          {/* Bottom Thumbnails Strip */}
+          {product.images.length > 1 && (
+            <div className="flex items-center justify-center gap-2 overflow-x-auto pt-2 pb-1">
+              {product.images.map((img, idx) => (
+                <button
+                  key={img.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedImageIndex(idx);
+                    setZoomScale(1);
+                  }}
+                  className={`w-12 h-14 sm:w-14 sm:h-16 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 bg-zinc-900 ${
+                    selectedImageIndex === idx ? "border-gold ring-1 ring-gold" : "border-zinc-700 opacity-60 hover:opacity-100"
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img.url} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Mobile Sticky Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-zinc-200 p-3 sm:hidden shadow-lg flex items-center gap-2">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-amber-950/10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:hidden shadow-[0_-4px_20px_rgba(42,13,11,0.08)] flex items-center gap-2">
         <Button
           variant={saved ? "danger" : "outline"}
           size="sm"

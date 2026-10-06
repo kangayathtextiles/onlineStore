@@ -1,8 +1,21 @@
 import type { Metadata, Viewport } from "next";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/toast";
 import { SavedItemsProvider } from "@/lib/saved-items-context";
 import { siteConfig } from "@/lib/site-config";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-playfair",
+});
 
 export const viewport: Viewport = {
   themeColor: "#651714",
@@ -82,8 +95,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="antialiased min-h-screen bg-white text-zinc-900 font-sans" suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${inter.variable} ${playfair.variable}`}
+      suppressHydrationWarning
+    >
+      <body
+        className="antialiased min-h-screen bg-canvas text-zinc-900 font-sans"
+        suppressHydrationWarning
+      >
         <ToastProvider>
           <SavedItemsProvider>{children}</SavedItemsProvider>
         </ToastProvider>
