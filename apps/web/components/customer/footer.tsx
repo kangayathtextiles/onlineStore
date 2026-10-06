@@ -48,7 +48,7 @@ export function CustomerFooter() {
 
   return (
     <footer className="border-t border-amber-950/10 bg-sand/80 text-zinc-600 text-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-28 sm:pb-32 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Col 1: Brand & Philosophy */}
           <div className="space-y-4">
@@ -146,7 +146,7 @@ export function CustomerFooter() {
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
+        <div className="mt-12 pt-8 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500 text-center sm:text-left">
           <p>© {new Date().getFullYear()} KANGAYATH. All rights reserved.</p>
           <p className="flex items-center gap-1">
             <span>Physical Store Product Discovery Platform</span>

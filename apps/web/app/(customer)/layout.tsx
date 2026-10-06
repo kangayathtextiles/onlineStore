@@ -18,7 +18,7 @@ export default function CustomerLayout({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(storeSchema) }}
       />
       <CustomerNavbar />
-      <main className="flex-1 pb-16 md:pb-0">{children}</main>
+      <main className="flex-1">{children}</main>
       <CustomerFooter />
       <React.Suspense fallback={null}>
         <CustomerMobileNav />

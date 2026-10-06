@@ -35,8 +35,9 @@ export function CustomerMobileNav() {
     };
   }, []);
 
-  // Do not show the bottom nav on admin routes
-  if (pathname.startsWith("/admin")) {
+  // Do not show the bottom nav on admin routes or product detail pages (which have a dedicated sticky inquiry bar)
+  const isProductDetailPage = pathname.startsWith("/products/") && pathname !== "/products";
+  if (pathname.startsWith("/admin") || isProductDetailPage) {
     return null;
   }
 
