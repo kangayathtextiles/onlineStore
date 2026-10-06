@@ -33,7 +33,7 @@ export function middleware(request: NextRequest) {
         if (hasPreviewParam) {
           response.cookies.set("admin_preview_mode", "true", {
             path: "/",
-            httpOnly: true,
+            httpOnly: false,
             sameSite: "lax",
             maxAge: 3600, // 1 hour
           });

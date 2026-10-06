@@ -29,8 +29,10 @@ class CustomSectionService:
     # --- Public APIs ---
     async def list_public_sections(self) -> list[PublicSectionResponse]:
         sections = await self.repo.list_sections(active_only=True)
-        global_show_prices = await self.product_service.get_global_show_prices()
-        global_show_style_codes = await self.product_service.get_global_show_style_codes()
+        (
+            global_show_prices,
+            global_show_style_codes,
+        ) = await self.product_service.get_global_visibility_settings()
         results: list[PublicSectionResponse] = []
 
         for sec in sections:
@@ -67,8 +69,10 @@ class CustomSectionService:
         if not sec or not sec.is_active:
             raise EntityNotFoundException("CustomSection", slug)
 
-        global_show_prices = await self.product_service.get_global_show_prices()
-        global_show_style_codes = await self.product_service.get_global_show_style_codes()
+        (
+            global_show_prices,
+            global_show_style_codes,
+        ) = await self.product_service.get_global_visibility_settings()
         published_products = [
             self.product_service.map_to_public_summary(
                 item.product,

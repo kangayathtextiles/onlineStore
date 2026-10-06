@@ -57,6 +57,14 @@ class ProductService:
         self.attr_repo = AttributeRepository(session)
         self.store_repo = StoreRepository(session)
 
+    async def get_global_visibility_settings(self) -> tuple[bool, bool]:
+        """Fetch store profile once and return (show_prices, show_style_codes)."""
+        store = await self.store_repo.get_singleton_profile()
+        return (
+            store.show_prices if store else True,
+            store.show_style_codes if store else True,
+        )
+
     async def get_global_show_prices(self) -> bool:
         store = await self.store_repo.get_singleton_profile()
         return store.show_prices if store else True
@@ -343,8 +351,7 @@ class ProductService:
         page: int = 1,
         page_size: int = 20,
     ) -> PaginatedResponse[PublicProductSummaryResponse]:
-        global_show_prices = await self.get_global_show_prices()
-        global_show_style_codes = await self.get_global_show_style_codes()
+        global_show_prices, global_show_style_codes = await self.get_global_visibility_settings()
         items, total = await self.repo.list_public_products(
             category_slug=category_slug,
             subcategory_slug=subcategory_slug,
@@ -366,8 +373,7 @@ class ProductService:
         return PaginatedResponse.create(mapped, total, page, page_size)
 
     async def get_public_product_by_slug(self, slug: str) -> PublicProductDetailResponse:
-        global_show_prices = await self.get_global_show_prices()
-        global_show_style_codes = await self.get_global_show_style_codes()
+        global_show_prices, global_show_style_codes = await self.get_global_visibility_settings()
         product = await self.repo.get_published_by_slug(slug)
         if not product:
             raise EntityNotFoundException("Product", slug)

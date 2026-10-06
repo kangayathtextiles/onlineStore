@@ -28,8 +28,17 @@ import useSWR from "swr";
 export default function AdminProductsPage() {
   const [page, setPage] = React.useState(1);
   const [search, setSearch] = React.useState("");
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState<string>("");
   const [selectedLifecycle, setSelectedLifecycle] = React.useState<string>("");
+
+  // Debounce search keystrokes (300ms) to prevent SWR request flooding
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [search]);
 
   const [productToDelete, setProductToDelete] = React.useState<AdminProduct | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -41,11 +50,11 @@ export default function AdminProductsPage() {
   );
 
   const { data: prodRes, mutate: mutateProducts, isLoading: isProductsLoading } = useSWR(
-    ["admin-products", page, search, selectedCategory, selectedLifecycle],
+    ["admin-products", page, debouncedSearch, selectedCategory, selectedLifecycle],
     () => adminApi.products.list({
       page,
       page_size: 15,
-      search: search || undefined,
+      search: debouncedSearch || undefined,
       category_id: selectedCategory || undefined,
       lifecycle_state: (selectedLifecycle as LifecycleState) || undefined,
     }).catch(() => ({ 
@@ -106,6 +115,7 @@ export default function AdminProductsPage() {
 
   const resetFilters = () => {
     setSearch("");
+    setDebouncedSearch("");
     setSelectedCategory("");
     setSelectedLifecycle("");
     setPage(1);

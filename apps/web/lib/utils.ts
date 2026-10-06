@@ -75,20 +75,12 @@ export function resolveImageUrl(url?: string | null): string {
   ) {
     return url;
   }
-  let apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  // In the browser, route through same-origin Next.js rewrites to eliminate cross-environment CORS issues
   if (typeof window !== "undefined") {
-    const host = window.location.hostname;
-    if (host.endsWith(".onrender.com")) {
-      apiBase = "https://kangayath-api.onrender.com";
-    } else if (host.includes("kangayath.site")) {
-      apiBase = "https://api.kangayath.site";
-    } else if (host.includes("kangayath.in")) {
-      apiBase = "https://api.kangayath.in";
-    }
+    return url.startsWith("/") ? url : `/${url}`;
   }
-  if (url.startsWith("/media/")) {
-    return `${apiBase.replace(/\/+$/, "")}${url}`;
-  }
-  return url;
+  // During server-side execution, prefix with active API URL
+  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
+  return url.startsWith("/") ? `${apiBase}${url}` : `${apiBase}/${url}`;
 }
 

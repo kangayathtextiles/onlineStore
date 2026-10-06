@@ -116,7 +116,10 @@ class LoginRateLimiter:
         with self._lock:
             timestamps = self._attempts.get(ip, [])
             valid_timestamps = [t for t in timestamps if now - t < self.window_seconds]
-            self._attempts[ip] = valid_timestamps
+            if valid_timestamps:
+                self._attempts[ip] = valid_timestamps
+            else:
+                self._attempts.pop(ip, None)
             return len(valid_timestamps) >= self.max_attempts
 
     def record_failed_attempt(self, ip: str) -> None:
@@ -132,9 +135,10 @@ class LoginRateLimiter:
         now = time.time()
         with self._lock:
             timestamps = self._attempts.get(ip, [])
-            if not timestamps:
+            valid = [t for t in timestamps if now - t < self.window_seconds]
+            if not valid:
                 return 0
-            oldest_relevant = min(t for t in timestamps if now - t < self.window_seconds)
+            oldest_relevant = min(valid)
             return max(1, int(self.window_seconds - (now - oldest_relevant)))
 
 

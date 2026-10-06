@@ -43,10 +43,19 @@ function ProductsContent() {
   const [categorySlug, setCategorySlug] = React.useState(initialCategory);
   const [subcategorySlug, setSubcategorySlug] = React.useState(initialSubcategory);
   const [search, setSearch] = React.useState(initialSearch);
+  const [debouncedSearch, setDebouncedSearch] = React.useState(initialSearch);
   const [selectedSizeId, setSelectedSizeId] = React.useState(initialSizeId);
   const [selectedColorId, setSelectedColorId] = React.useState(initialColorId);
   const [availableOnly, setAvailableOnly] = React.useState(initialAvailableOnly);
   const [page, setPage] = React.useState(initialPage);
+
+  // Debounce search keystrokes (300ms) to prevent excessive backend queries
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [search]);
 
   // Data state
   const [products, setProducts] = React.useState<PublicProductSummary[]>([]);
@@ -95,7 +104,7 @@ function ProductsContent() {
         size_id: selectedSizeId || undefined,
         color_id: selectedColorId || undefined,
         available_only: availableOnly ? true : undefined,
-        search: search.trim() || undefined,
+        search: debouncedSearch.trim() || undefined,
         page,
         page_size: 16,
       });
@@ -116,7 +125,7 @@ function ProductsContent() {
         setLoading(false);
       }
     }
-  }, [categorySlug, subcategorySlug, selectedSizeId, selectedColorId, availableOnly, search, page]);
+  }, [categorySlug, subcategorySlug, selectedSizeId, selectedColorId, availableOnly, debouncedSearch, page]);
 
   React.useEffect(() => {
     const isMounted = { current: true };

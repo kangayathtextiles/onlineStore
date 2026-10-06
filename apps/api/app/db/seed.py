@@ -83,17 +83,17 @@ async def seed_development_data(session: AsyncSession) -> None:
     if not store:
         store = StoreProfile(
             name="Kangayath Clothing & Textiles",
-            tagline="Quality Everyday & Festive Garments",
-            description="Leading clothing store in the panchayat specializing in traditional sarees, dhotis, daily wear, and festive collections.",
-            primary_phone="+91 94470 00000",
-            whatsapp_number="919447000000",
-            address_line1="Main Road, Near Panchayat Junction",
-            locality="Kangayath Town",
-            panchayat="Kangayath Grama Panchayat",
-            district="District Centre",
+            tagline="Clothing & Textiles Digital Showroom in Kerala",
+            description="Kangayath is a physical clothing and textiles retail store and digital showroom in Kalkandi, Palakkad, Kerala. Discover authentic Kerala handlooms, festive sarees, dhotis, wedding silks, and everyday apparel before visiting our showroom.",
+            primary_phone="+91 99479 23223",
+            whatsapp_number="919947923223",
+            address_line1="Main Anaikatti Road",
+            locality="Kalkandi",
+            panchayat="Agali Grama Panchayat",
+            district="Palakkad",
             state="Kerala",
-            pincode="680001",
-            google_maps_url="https://maps.google.com/?q=10.0000,76.0000",
+            pincode="678582",
+            google_maps_url="https://www.google.com/maps/place/K+G+GARMENTS/@11.0633752,76.5541389,857m/data=!3m2!1e3!4b1!4m6!3m5!1s0x3ba887c92634822f:0x95b49b8fadd6d879!8m2!3d11.0633752!4d76.5567138!16s%2Fg%2F11sd9j885v",
         )
         session.add(store)
         await session.flush()
@@ -255,7 +255,6 @@ async def run_all_seeds() -> None:
     async with async_session_maker() as session:
         await seed_master_data(session)
         await seed_development_data(session)
-        await backfill_media_assets(session)
 
 
 if __name__ == "__main__":

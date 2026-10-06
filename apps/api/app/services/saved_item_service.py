@@ -24,8 +24,10 @@ class SavedItemService:
 
         # Query products
         products = await self.repo.get_products_by_ids(req.product_ids)
-        global_show_prices = await self.product_service.get_global_show_prices()
-        global_show_style_codes = await self.product_service.get_global_show_style_codes()
+        (
+            global_show_prices,
+            global_show_style_codes,
+        ) = await self.product_service.get_global_visibility_settings()
         public_products = [
             self.product_service.map_to_public_summary(
                 p,
