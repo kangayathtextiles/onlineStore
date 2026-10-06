@@ -12,9 +12,36 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get("admin_session")?.value;
 
-  // 1. Authenticated Admin: Cannot browse the customer storefront or login page without logging out first
+  const hasPreviewParam = request.nextUrl.searchParams.get("preview") === "true";
+  const hasPreviewCookie = request.cookies.get("admin_preview_mode")?.value === "true";
+  const isPreview = hasPreviewParam || hasPreviewCookie;
+
+  // 1. Authenticated Admin: Cannot browse the customer storefront or login page without logging out first,
+  // unless explicitly previewing via ?preview=true or an active preview session.
   if (sessionCookie) {
-    if (!pathname.startsWith("/admin") || pathname === "/admin/login") {
+    if (pathname === "/admin/login") {
+      const redirectResponse = NextResponse.redirect(new URL("/admin", request.url));
+      for (const [key, value] of Object.entries(NO_CACHE_HEADERS)) {
+        redirectResponse.headers.set(key, value);
+      }
+      return redirectResponse;
+    }
+
+    if (!pathname.startsWith("/admin")) {
+      if (isPreview) {
+        const response = NextResponse.next();
+        if (hasPreviewParam) {
+          response.cookies.set("admin_preview_mode", "true", {
+            path: "/",
+            httpOnly: true,
+            sameSite: "lax",
+            maxAge: 3600, // 1 hour
+          });
+        }
+        return response;
+      }
+
+      // Not previewing: redirect back to /admin
       const redirectResponse = NextResponse.redirect(new URL("/admin", request.url));
       for (const [key, value] of Object.entries(NO_CACHE_HEADERS)) {
         redirectResponse.headers.set(key, value);

@@ -136,5 +136,27 @@ describe("Admin Authentication & Session Security", () => {
       expect(redirectUrl.pathname).toBe("/admin");
       expect(response.headers.get("Cache-Control")).toContain("no-store");
     });
+
+    it("allows authenticated admins to view customer storefront when preview mode is active", () => {
+      // 1. Initial preview request with query parameter
+      const previewRequest = new NextRequest("http://localhost:3000/?preview=true", {
+        headers: {
+          cookie: "admin_session=valid_signed_session_token",
+        },
+      });
+      const previewResponse = middleware(previewRequest);
+      expect(previewResponse.status).toBe(200);
+      expect(previewResponse.cookies.get("admin_preview_mode")?.value).toBe("true");
+
+      // 2. Subsequent navigation inside preview session with preview cookie
+      const navigatedRequest = new NextRequest("http://localhost:3000/products", {
+        headers: {
+          cookie: "admin_session=valid_signed_session_token; admin_preview_mode=true",
+        },
+      });
+      const navigatedResponse = middleware(navigatedRequest);
+      expect(navigatedResponse.status).toBe(200);
+    });
   });
 });
+

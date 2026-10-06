@@ -57,6 +57,9 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
       // Continue client cleanup even if network fails
     } finally {
       clearAdminSession();
+      if (typeof document !== "undefined") {
+        document.cookie = "admin_preview_mode=; path=/; max-age=0";
+      }
       window.location.replace("/admin/login");
     }
   }, []);
@@ -279,7 +282,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
             )}
 
             <Link
-              href="/"
+              href="/?preview=true"
               target="_blank"
               className="hidden sm:inline-flex items-center gap-1.5 text-xs text-zinc-600 hover:text-zinc-900 transition-colors border border-zinc-200 bg-white px-3 py-1.5 rounded-lg shadow-xs"
             >
