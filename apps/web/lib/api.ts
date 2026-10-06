@@ -139,12 +139,12 @@ function isAbortError(error: unknown): boolean {
  * Transient conditions:
  * - Network errors (status 0 / NETWORK_ERROR or fetch network exceptions)
  * - Server errors (HTTP 5xx status codes)
- * - Rate limiting (HTTP 429 Too Many Requests)
+ * Note: HTTP 429 (Too Many Requests / rate-limited) is intentionally NOT retried
+ * automatically to avoid aggravating edge gateway rate-limit throttles.
  */
 function isRetryableError(error: unknown): boolean {
   if (error instanceof ApiError) {
     if (error.status === 0) return true;
-    if (error.status === 429) return true;
     if (error.status >= 500 && error.status <= 599) return true;
     return false;
   }
@@ -298,7 +298,7 @@ async function executeAttempt<T>(
 export async function request<T>(
   endpoint: string,
   options: RequestInit = {},
-  retries = 6
+  retries = 2
 ): Promise<T> {
   const method = (options.method || "GET").toUpperCase();
   const isGet = method === "GET";
@@ -366,8 +366,9 @@ export async function request<T>(
           }
 
           attempt++;
+          const customDelay = (options as { retryDelayMs?: number })?.retryDelayMs;
           const retryDelayMs =
-            (options as { retryDelayMs?: number })?.retryDelayMs ?? 2000;
+            customDelay ?? Math.min(1000 * Math.pow(2, attempt - 1), 4000);
           await delay(retryDelayMs, options.signal);
         }
       }

@@ -87,23 +87,24 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
           clearAdminSession();
           window.location.href = "/admin/login";
         });
-    } else {
-      warmupApiBackend();
-      fetchStatus(isMounted);
-    }
 
-    // Poll every 3s while connecting, and 30s once connected
-    const intervalTime = storeStatus ? 30000 : 3000;
-    const interval = setInterval(() => {
-      if (pathname !== "/admin/login") {
+      // Poll every 15s while connecting, and 30s once connected
+      const intervalTime = storeStatus ? 30000 : 15000;
+      const interval = setInterval(() => {
         fetchStatus(isMounted);
-      }
-    }, intervalTime);
+      }, intervalTime);
 
-    return () => {
-      isMounted.current = false;
-      clearInterval(interval);
-    };
+      return () => {
+        isMounted.current = false;
+        clearInterval(interval);
+      };
+    } else {
+      // On /admin/login, gently warm up the backend probe without fetching unauthenticated admin data
+      warmupApiBackend();
+      return () => {
+        isMounted.current = false;
+      };
+    }
   }, [fetchStatus, storeStatus, pathname]);
 
   // Handle browser Back/Forward Cache (bfcache) restoration:

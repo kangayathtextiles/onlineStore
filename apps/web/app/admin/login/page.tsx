@@ -40,7 +40,9 @@ function AdminLoginForm() {
     } catch (err: unknown) {
       const apiErr = err as { status?: number; message?: string };
       if (apiErr?.status === 429) {
-        setError(apiErr.message || "Too many failed attempts. Please wait a few minutes.");
+        setError("The server is waking up from standby or rate-limited. Please wait 10–15 seconds and try again.");
+      } else if (apiErr?.status === 502 || apiErr?.status === 503 || apiErr?.status === 504) {
+        setError("Backend service is waking up from standby. Please wait a moment and try again.");
       } else {
         setError("Invalid Admin API Key. Please try again.");
       }

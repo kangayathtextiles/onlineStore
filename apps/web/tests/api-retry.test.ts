@@ -282,6 +282,29 @@ describe("Safe HTTP Retries and In-Flight Request Deduplication", () => {
     expect(inFlightRequests.size).toBe(0);
   });
 
+  // Edge case: 429 Too Many Requests fails immediately without retrying to prevent retry storms
+  it("never retries rate-limited (HTTP 429 Too Many Requests) errors to prevent client retry storms", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ error: { code: "RATE_LIMITED", message: "Too many requests" } }),
+        { status: 429, statusText: "Too Many Requests", headers: { "Content-Type": "application/json" } }
+      )
+    );
+
+    const promise = request("/public/store/status", { method: "GET" }, 3);
+
+    await expect(promise).rejects.toThrow(ApiError);
+    await expect(promise).rejects.toMatchObject({
+      status: 429,
+      code: "RATE_LIMITED",
+      message: "Too many requests",
+    });
+
+    // Must be called exactly ONCE - no retry loop
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(inFlightRequests.size).toBe(0);
+  });
+
   // Edge case: Network failure (fetch throws) retries for GET, but not for POST
   it("retries GET on network errors (TypeError) but never retries POST on network errors", async () => {
     // 1. POST on network failure

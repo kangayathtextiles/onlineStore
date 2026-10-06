@@ -40,6 +40,9 @@ export function SavedItemsProvider({ children }: { children: React.ReactNode }) 
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(savedItems));
       
+      // Skip server sync if there are no saved items to track
+      if (savedItems.length === 0) return;
+
       // Implement Server Sync
       const tokenKey = "kangayath_saved_session_v1";
       let sessionToken = localStorage.getItem(tokenKey);
