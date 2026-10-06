@@ -52,6 +52,25 @@ const config: Config = {
         card: "0 4px 20px -2px rgba(0, 0, 0, 0.5)",
         glow: "0 0 25px -5px rgba(101, 23, 20, 0.4)",
       },
+      keyframes: {
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        fadeInUp: {
+          "0%": { opacity: "0", transform: "translateY(6px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        scaleIn: {
+          "0%": { opacity: "0", transform: "scale(0.97)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+      },
+      animation: {
+        "fade-in": "fadeIn 0.25s ease-out forwards",
+        "fade-in-up": "fadeInUp 0.3s ease-out forwards",
+        "scale-in": "scaleIn 0.2s ease-out forwards",
+      },
     },
   },
   plugins: [],

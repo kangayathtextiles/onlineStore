@@ -62,7 +62,7 @@ export function CustomerMobileNav() {
           aria-current={isHome ? "page" : undefined}
         >
           <Home className={`w-5 h-5 ${isHome ? "stroke-[2.5]" : "stroke-[1.75]"}`} />
-          <span className={`text-[10px] tracking-tight ${isHome ? "font-bold" : "font-medium"}`}>
+          <span className={`text-[11px] tracking-tight ${isHome ? "font-bold" : "font-medium"}`}>
             Home
           </span>
         </Link>
@@ -77,7 +77,7 @@ export function CustomerMobileNav() {
           aria-current={isCatalog ? "page" : undefined}
         >
           <Shirt className={`w-5 h-5 ${isCatalog ? "stroke-[2.5]" : "stroke-[1.75]"}`} />
-          <span className={`text-[10px] tracking-tight ${isCatalog ? "font-bold" : "font-medium"}`}>
+          <span className={`text-[11px] tracking-tight ${isCatalog ? "font-bold" : "font-medium"}`}>
             Catalog
           </span>
         </Link>
@@ -92,7 +92,7 @@ export function CustomerMobileNav() {
           aria-current={isFocusSearch ? "page" : undefined}
         >
           <Search className={`w-5 h-5 ${isFocusSearch ? "stroke-[2.5]" : "stroke-[1.75]"}`} />
-          <span className={`text-[10px] tracking-tight ${isFocusSearch ? "font-bold" : "font-medium"}`}>
+          <span className={`text-[11px] tracking-tight ${isFocusSearch ? "font-bold" : "font-medium"}`}>
             Search
           </span>
         </Link>
@@ -117,12 +117,12 @@ export function CustomerMobileNav() {
               }`}
             />
             {savedCount > 0 && (
-              <span className="absolute -top-1 -right-2 bg-burgundy text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white">
+              <span className="absolute -top-1 -right-2 bg-burgundy text-white text-[10px] font-bold min-w-4 h-4 px-0.5 rounded-full flex items-center justify-center ring-2 ring-white">
                 {savedCount > 9 ? "9+" : savedCount}
               </span>
             )}
           </div>
-          <span className={`text-[10px] tracking-tight ${isSaved ? "font-bold" : "font-medium"}`}>
+          <span className={`text-[11px] tracking-tight ${isSaved ? "font-bold" : "font-medium"}`}>
             Saved
           </span>
         </Link>
@@ -145,7 +145,7 @@ export function CustomerMobileNav() {
               title={status?.is_open ? "Store is Open" : "Store is Closed"}
             />
           </div>
-          <span className={`text-[10px] tracking-tight ${isVisit ? "font-bold" : "font-medium"}`}>
+          <span className={`text-[11px] tracking-tight ${isVisit ? "font-bold" : "font-medium"}`}>
             Visit
           </span>
         </Link>

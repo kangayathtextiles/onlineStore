@@ -430,18 +430,18 @@ export default function ProductDetailPage() {
           <div className="space-y-2 border-b border-zinc-200 pb-5 sm:pb-6">
             <div className="flex items-center gap-2">
               {product.category_name && (
-                <Badge variant="brand" className="text-[10px] sm:text-xs">
+                <Badge variant="brand" className="text-xs">
                   {product.category_name}
                 </Badge>
               )}
               {product.subcategory_name && (
-                <Badge variant="neutral" className="text-[10px] sm:text-xs">
+                <Badge variant="neutral" className="text-xs">
                   {product.subcategory_name}
                 </Badge>
               )}
             </div>
 
-            <h1 className="text-2xl sm:text-4xl font-serif font-bold text-zinc-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-bold text-zinc-900 tracking-tight leading-tight">
               {product.name}
             </h1>
 
@@ -489,7 +489,7 @@ export default function ProductDetailPage() {
                       key={c.id}
                       type="button"
                       onClick={() => setSelectedColorId(c.id)}
-                      className={`flex flex-col items-center p-2 rounded-2xl border-2 transition-all flex-shrink-0 bg-white ${
+                      className={`flex flex-col items-center p-2 rounded-2xl border-2 transition-all active:scale-95 flex-shrink-0 bg-white ${
                         isSelected
                           ? "border-burgundy ring-2 ring-burgundy/20 shadow-xs"
                           : "border-zinc-200 hover:border-zinc-300"
@@ -502,7 +502,7 @@ export default function ProductDetailPage() {
                         />
                       </div>
                       <span
-                        className={`text-[11px] font-semibold truncate max-w-[70px] ${
+                        className={`text-xs font-semibold truncate max-w-[70px] ${
                           isSelected ? "text-burgundy" : "text-zinc-700"
                         }`}
                       >
@@ -532,7 +532,7 @@ export default function ProductDetailPage() {
                       key={s.id}
                       type="button"
                       onClick={() => setSelectedSizeId(s.id)}
-                      className={`min-w-[48px] h-11 px-4 rounded-xl border text-xs font-bold transition-all ${
+                      className={`min-w-[48px] h-11 px-4 rounded-xl border text-xs font-bold transition-all active:scale-95 ${
                         isSelected
                           ? "bg-burgundy border-burgundy text-white shadow-xs scale-105"
                           : "bg-white border-zinc-200 text-zinc-800 hover:bg-zinc-100 hover:text-zinc-900"
@@ -549,7 +549,7 @@ export default function ProductDetailPage() {
           {/* Live Variation Stock Status */}
           <div className="p-3.5 sm:p-4 rounded-2xl bg-zinc-50 border border-zinc-200 flex items-center justify-between">
             <div>
-              <span className="text-[11px] sm:text-xs text-zinc-500 block">Stock Availability for:</span>
+              <span className="text-xs text-zinc-500 block">Stock Availability for:</span>
               <span className="text-xs font-bold text-zinc-900">
                 {selectedSizeName} / {selectedColorName}
               </span>
@@ -621,11 +621,11 @@ export default function ProductDetailPage() {
               <span>Physical Retail Exclusive</span>
             </div>
             <p className="text-xs text-zinc-600 leading-relaxed">
-              We welcome you to visit our store in{" "}
+              Available exclusively at our showroom in{" "}
               <strong className="text-zinc-900">
                 {store?.city || store?.locality || store?.district || siteConfig.location.locality}
-              </strong>{" "}
-              to try this piece in our fitting rooms. All sales and billing are done at our retail counter.
+              </strong>
+              . Visit us to try this piece with dedicated styling assistance and fitting rooms.
             </p>
             <Link
               href="/visit"

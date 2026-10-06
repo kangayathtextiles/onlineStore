@@ -76,7 +76,7 @@ export default function SavedProductsPage() {
           <h1 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-zinc-900 mt-1">
             Saved Garments ({savedItems.length})
             {loadingAvailability && (
-              <span className="text-[10px] text-amber-700 animate-pulse font-mono ml-2 font-normal">
+              <span className="text-xs text-amber-700 animate-pulse font-mono ml-2 font-normal">
                 (Checking live stock...)
               </span>
             )}
@@ -142,7 +142,7 @@ export default function SavedProductsPage() {
             return (
               <div
                 key={item.id}
-                className="rounded-2xl border border-amber-950/10 bg-white shadow-xs overflow-hidden flex flex-col justify-between hover:border-burgundy/40 hover:shadow-[0_8px_24px_rgba(42,13,11,0.08)] transition-all p-4 space-y-4"
+                className="rounded-2xl border border-amber-950/10 bg-white shadow-xs overflow-hidden flex flex-col justify-between hover:border-burgundy/40 hover:shadow-md transition-all duration-300 p-4 space-y-4"
               >
                 <div className="flex gap-4">
                   {/* Thumbnail */}
@@ -162,7 +162,7 @@ export default function SavedProductsPage() {
 
                   {/* Info */}
                   <div className="min-w-0 flex-1 space-y-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-burgundy">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-burgundy">
                       {item.category_name || "Garment"}
                     </span>
                     <Link
@@ -175,11 +175,11 @@ export default function SavedProductsPage() {
                       <p className="text-xs text-zinc-600 truncate">{item.material}</p>
                     )}
                     {item.style_code && (
-                      <p className="text-[10px] font-mono text-zinc-500">{item.style_code}</p>
+                      <p className="text-xs font-mono text-zinc-500">{item.style_code}</p>
                     )}
 
                     <div className="pt-1">
-                      <Badge variant={isAvailable ? "success" : "danger"} className="text-[10px]">
+                      <Badge variant={isAvailable ? "success" : "danger"} className="text-xs">
                         {isAvailable ? "In Stock" : "Sold Out"}
                       </Badge>
                     </div>

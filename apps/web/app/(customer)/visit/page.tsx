@@ -96,7 +96,7 @@ export default function VisitStorePage() {
           <span className="w-1.5 h-1.5 rounded-full bg-gold" />
           Physical Retail Location
         </span>
-        <h1 className="text-3xl sm:text-5xl font-serif font-bold tracking-tight text-zinc-900">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold tracking-tight text-zinc-900 leading-tight">
           Visit Our Store in {profile?.city || profile?.locality || profile?.district || siteConfig.location.locality}
         </h1>
         <p className="text-sm text-zinc-600">
@@ -196,7 +196,7 @@ export default function VisitStorePage() {
                     href={profile?.google_maps_url || siteConfig.location.googleMapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-burgundy hover:bg-burgundy-700 text-white font-bold transition-colors shadow-xs"
+                    className="w-full flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-burgundy hover:bg-burgundy-700 text-white font-bold transition-all shadow-xs active:scale-[0.98]"
                   >
                     <MapPin className="w-4 h-4 text-rose-200" />
                     <span>Open in Google Maps Directions</span>
@@ -212,19 +212,19 @@ export default function VisitStorePage() {
             <div className="p-4 rounded-xl border border-zinc-200 bg-white text-center space-y-1 shadow-xs">
               <ShieldCheck className="w-5 h-5 text-emerald-600 mx-auto" />
               <p className="font-bold text-xs text-zinc-900">Fitting Rooms</p>
-              <p className="text-[10px] text-zinc-500">Try before purchase</p>
+              <p className="text-xs text-zinc-500">Try before purchase</p>
             </div>
 
             <div className="p-4 rounded-xl border border-zinc-200 bg-white text-center space-y-1 shadow-xs">
               <CreditCard className="w-5 h-5 text-burgundy mx-auto" />
               <p className="font-bold text-xs text-zinc-900">All Payments</p>
-              <p className="text-[10px] text-zinc-500">UPI, Cards & Cash</p>
+              <p className="text-xs text-zinc-500">UPI, Cards & Cash</p>
             </div>
 
             <div className="p-4 rounded-xl border border-zinc-200 bg-white text-center space-y-1 shadow-xs">
               <Car className="w-5 h-5 text-amber-600 mx-auto" />
               <p className="font-bold text-xs text-zinc-900">Free Parking</p>
-              <p className="text-[10px] text-zinc-500">Customer parking area</p>
+              <p className="text-xs text-zinc-500">Customer parking area</p>
             </div>
           </div>
         </div>
@@ -254,7 +254,7 @@ export default function VisitStorePage() {
                     </span>
 
                     {s.is_closed ? (
-                      <Badge variant="neutral" className="text-[10px]">
+                      <Badge variant="neutral" className="text-xs">
                         CLOSED
                       </Badge>
                     ) : (

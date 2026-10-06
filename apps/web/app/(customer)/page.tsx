@@ -101,29 +101,29 @@ export default function CustomerHomePage() {
             </Link>
           </div>
 
-          <div className="space-y-3 sm:space-y-4 max-w-3xl mx-auto">
-            <h1 className="text-3xl sm:text-6xl lg:text-7xl font-serif font-bold tracking-tight text-zinc-900 leading-[1.15]">
+          <div className="space-y-4 max-w-2xl mx-auto">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold tracking-tight text-zinc-900 leading-tight">
               Traditional Craft, <br />
               <span className="bg-gradient-to-r from-burgundy via-rose-800 to-amber-700 bg-clip-text text-transparent italic font-normal">
                 Contemporary Grace.
               </span>
             </h1>
-            <p className="text-sm sm:text-lg text-zinc-600 max-w-2xl mx-auto leading-relaxed">
-              Welcome to the official digital showroom for <strong>Kangayath Clothing &amp; Textiles</strong> (K G Garments), located on Main Anaikatti Road in Kalkandi, Palakkad, Kerala. Discover authentic Kerala handlooms, festive sarees, dhotis, wedding silks, and everyday apparel before visiting our retail showroom.
+            <p className="text-sm sm:text-base text-zinc-600 leading-relaxed max-w-xl mx-auto">
+              Explore authentic Kerala handlooms, festive silks, and family wear online. Verify size and color availability before visiting our showroom in Kalkandi, Palakkad.
             </p>
           </div>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-1 sm:pt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <Link href="/products" className="w-full sm:w-auto">
-              <Button variant="primary" size="lg" className="w-full sm:w-auto px-8 py-3.5 text-sm font-bold">
+              <Button variant="primary" size="md" className="w-full sm:w-auto h-11 px-6 text-sm font-semibold active:scale-[0.98] transition-all">
                 <ShoppingBag className="w-4 h-4" />
                 <span>Explore Garment Catalog</span>
               </Button>
             </Link>
 
             <Link href="/visit" className="w-full sm:w-auto">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto px-8 py-3.5 text-sm font-semibold">
+              <Button variant="outline" size="md" className="w-full sm:w-auto h-11 px-6 text-sm font-semibold active:scale-[0.98] transition-all">
                 <Store className="w-4 h-4" />
                 <span>Store Location & Directions</span>
               </Button>
@@ -132,7 +132,7 @@ export default function CustomerHomePage() {
 
           {/* Showroom Notice */}
           <p className="hidden sm:block text-xs text-zinc-500 max-w-md mx-auto">
-            ⚡ Check live size & color stock online. Try on and purchase in-person at our physical store.
+            Live showroom inventory • In-person fitting & purchases in store
           </p>
         </div>
       </section>
@@ -236,10 +236,11 @@ export default function CustomerHomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between mb-8">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-burgundy">
+            <span className="text-xs font-bold uppercase tracking-wider text-burgundy flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-gold" />
               In-Store Catalog
             </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 mt-1">
+            <h2 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight text-zinc-900 mt-1">
               Recent Garment Arrivals
             </h2>
           </div>
@@ -271,47 +272,48 @@ export default function CustomerHomePage() {
 
       {/* 5. Physical Store Discovery Guide ("How It Works") */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl border border-zinc-200 bg-zinc-50/70 p-8 sm:p-12 space-y-10">
-          <div className="text-center space-y-2 max-w-2xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-wider text-burgundy">
-              Showroom Discovery Guide
+        <div className="rounded-3xl border border-amber-950/10 bg-sand/50 p-6 sm:p-10 space-y-8 shadow-xs">
+          <div className="text-center space-y-2 max-w-xl mx-auto">
+            <span className="text-xs font-bold uppercase tracking-wider text-burgundy flex items-center justify-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-gold" />
+              Showroom Guide
             </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-zinc-900">
-              How KANGAYATH Digital Showroom Works
+            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-zinc-900">
+              How Our Showroom Works
             </h2>
             <p className="text-sm text-zinc-600">
-              Experience the best of both worlds: convenient online browsing with hands-on physical retail fitting.
+              Convenient digital browsing paired with hands-on in-store fitting.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-            <div className="p-6 rounded-2xl bg-white border border-zinc-200 shadow-xs space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-burgundy/10 border border-burgundy/20 text-burgundy font-extrabold flex items-center justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            <div className="p-5 sm:p-6 rounded-2xl bg-white border border-amber-950/10 shadow-xs space-y-2 hover:-translate-y-1 hover:shadow-md transition-all duration-300 ease-out">
+              <div className="w-9 h-9 rounded-xl bg-burgundy/10 border border-burgundy/20 text-burgundy font-bold text-sm flex items-center justify-center">
                 1
               </div>
-              <h3 className="font-bold text-base text-zinc-900">1. Discover Online</h3>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Browse our complete garment catalog, photos, fabrics, and descriptions from your phone or computer.
+              <h3 className="font-serif font-bold text-sm sm:text-base text-zinc-900">1. Browse Online</h3>
+              <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+                Explore curated weaves, fabrics, and styles from the comfort of home.
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl bg-white border border-zinc-200 shadow-xs space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-burgundy/10 border border-burgundy/20 text-burgundy font-extrabold flex items-center justify-center">
+            <div className="p-5 sm:p-6 rounded-2xl bg-white border border-amber-950/10 shadow-xs space-y-2 hover:-translate-y-1 hover:shadow-md transition-all duration-300 ease-out">
+              <div className="w-9 h-9 rounded-xl bg-burgundy/10 border border-burgundy/20 text-burgundy font-bold text-sm flex items-center justify-center">
                 2
               </div>
-              <h3 className="font-bold text-base text-zinc-900">2. Check Live Stock</h3>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Check real-time stock availability for your exact size and color before traveling to our store.
+              <h3 className="font-serif font-bold text-sm sm:text-base text-zinc-900">2. Verify Availability</h3>
+              <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+                Confirm real-time size and color stock availability before your visit.
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl bg-white border border-zinc-200 shadow-xs space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-burgundy/10 border border-burgundy/20 text-burgundy font-extrabold flex items-center justify-center">
+            <div className="p-5 sm:p-6 rounded-2xl bg-white border border-amber-950/10 shadow-xs space-y-2 hover:-translate-y-1 hover:shadow-md transition-all duration-300 ease-out">
+              <div className="w-9 h-9 rounded-xl bg-burgundy/10 border border-burgundy/20 text-burgundy font-bold text-sm flex items-center justify-center">
                 3
               </div>
-              <h3 className="font-bold text-base text-zinc-900">3. Visit & Purchase</h3>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Visit our physical store to try garments on in our fitting rooms and make your purchase in person.
+              <h3 className="font-serif font-bold text-sm sm:text-base text-zinc-900">3. Try in Showroom</h3>
+              <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+                Experience the fabric, try in fitting rooms, and purchase in person.
               </p>
             </div>
           </div>
@@ -320,28 +322,25 @@ export default function CustomerHomePage() {
 
       {/* 6. Physical Retail Store & Location Information */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl border border-zinc-200 bg-gradient-to-b from-white to-zinc-50/70 p-6 sm:p-10 lg:p-12 space-y-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-zinc-200/80 pb-6">
+        <div className="rounded-3xl border border-amber-950/10 bg-gradient-to-b from-white to-sand/40 p-6 sm:p-10 lg:p-12 space-y-8 shadow-xs">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-amber-950/10 pb-6">
             <div className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-burgundy">
-                Local Retail Showroom
+              <span className="text-xs font-bold uppercase tracking-wider text-burgundy flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-gold" />
+                Physical Showroom
               </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight">
-                Visit Our Clothing Store in Kalkandi, Palakkad
+              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-zinc-900 tracking-tight">
+                Visit Our Store in Kalkandi, Palakkad
               </h2>
-              <p className="text-xs sm:text-sm text-zinc-600 max-w-2xl leading-relaxed">
-                <strong>Kangayath Clothing &amp; Textiles</strong> (also known locally as{" "}
-                <strong>K G Garments</strong>) is located on Main Anaikatti Road, Kalkandi, Kerala.
-                We proudly serve families across Kalkandi, Agali, Attappadi, Mannarkkad, and
-                Palakkad district with authentic Kerala handlooms, festive sarees, dhotis, wedding
-                silks, and everyday apparel.
+              <p className="text-sm text-zinc-600 max-w-xl leading-relaxed">
+                Located on Main Anaikatti Road in Kalkandi. Explore authentic Kerala handlooms, festive silks, and family wear with dedicated styling assistance.
               </p>
             </div>
             <a
               href={siteConfig.location.googleMapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-burgundy hover:bg-burgundy-700 text-white font-bold text-xs shadow-xs transition-colors self-start md:self-auto flex-shrink-0"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-burgundy hover:bg-burgundy-700 text-white font-medium text-xs shadow-xs transition-all active:scale-[0.98] self-start md:self-auto flex-shrink-0"
             >
               <MapPin className="w-4 h-4 text-rose-200" />
               <span>Get Directions on Google Maps</span>
@@ -396,7 +395,7 @@ export default function CustomerHomePage() {
                 </div>
                 <div className="flex items-center justify-between py-1 text-zinc-500">
                   <span className="font-medium">Sunday</span>
-                  <span className="text-rose-600 font-semibold uppercase text-[11px]">Closed</span>
+                  <span className="text-rose-600 font-semibold uppercase text-xs">Closed</span>
                 </div>
               </div>
             </div>

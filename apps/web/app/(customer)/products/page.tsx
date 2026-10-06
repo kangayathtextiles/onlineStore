@@ -282,7 +282,7 @@ function ProductsContent() {
                   }`}
                 >
                   <span>{cat.name}</span>
-                  <span className="text-[10px] opacity-70">({cat.subcategories.length})</span>
+                  <span className="text-xs opacity-70">({cat.subcategories.length})</span>
                 </button>
               ))}
             </div>
