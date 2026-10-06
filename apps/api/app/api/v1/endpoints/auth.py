@@ -71,9 +71,8 @@ async def login(
     login_rate_limiter.reset(client_ip)
     token = create_admin_session_token(settings.ADMIN_SESSION_EXPIRE_SECONDS)
 
-    is_cross_site_env = settings.ENVIRONMENT in ("staging", "production")
-    samesite_setting: Literal["lax", "strict", "none"] = "none" if is_cross_site_env else "lax"
-    secure_setting = is_cross_site_env or request.url.scheme == "https"
+    secure_setting = settings.ENVIRONMENT in ("staging", "production") or request.url.scheme == "https"
+    samesite_setting: Literal["lax", "strict", "none"] = "lax"
 
     # Set authoritative HttpOnly session cookie
     response.set_cookie(
@@ -103,9 +102,8 @@ async def logout(
     """
     Terminates admin session by clearing the HttpOnly cookie.
     """
-    is_cross_site_env = settings.ENVIRONMENT in ("staging", "production")
-    samesite_setting: Literal["lax", "strict", "none"] = "none" if is_cross_site_env else "lax"
-    secure_setting = is_cross_site_env or request.url.scheme == "https"
+    secure_setting = settings.ENVIRONMENT in ("staging", "production") or request.url.scheme == "https"
+    samesite_setting: Literal["lax", "strict", "none"] = "lax"
 
     response.delete_cookie(
         key=settings.ADMIN_SESSION_COOKIE_NAME,

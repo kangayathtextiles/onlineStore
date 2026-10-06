@@ -43,21 +43,12 @@ import type {
 } from "@/types/api";
 
 export function getApiBaseUrl(): string {
-  // If running in browser, determine correct environment dynamically
+  // In the browser, route through same-origin Next.js rewrites.
+  // This scopes the HttpOnly admin session cookie directly to the web domain,
+  // enabling Next.js server-side route guards (middleware) to authenticate requests
+  // and eliminating cross-site cookie blocking (Safari ITP / Brave / Chrome).
   if (typeof window !== "undefined") {
-    const host = window.location.hostname;
-    if (host === "kangayath-web-staging.onrender.com") {
-      return "https://kangayath-api-staging.onrender.com";
-    }
-    if (host.endsWith(".onrender.com")) {
-      return "https://kangayath-api.onrender.com";
-    }
-    if (host.includes("kangayath.site")) {
-      return "https://api.kangayath.site";
-    }
-    if (host.includes("kangayath.in")) {
-      return "https://api.kangayath.in";
-    }
+    return "";
   }
   return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 }

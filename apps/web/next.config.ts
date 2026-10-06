@@ -54,10 +54,18 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Rewrites for static media uploads to API backend
+  // Rewrites for API backend and static media uploads
   async rewrites() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
     return [
+      {
+        source: "/api/v1/:path*",
+        destination: `${apiUrl}/api/v1/:path*`,
+      },
+      {
+        source: "/health",
+        destination: `${apiUrl}/health`,
+      },
       {
         source: "/media/:path*",
         destination: `${apiUrl}/media/:path*`,
