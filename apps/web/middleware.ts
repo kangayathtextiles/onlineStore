@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+const NO_CACHE_HEADERS: Record<string, string> = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+  Pragma: "no-cache",
+  Expires: "0",
+  "Surrogate-Control": "no-store",
+};
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -11,11 +18,24 @@ export function middleware(request: NextRequest) {
     if (!sessionCookie) {
       const loginUrl = new URL("/admin/login", request.url);
       loginUrl.searchParams.set("from", pathname);
-      return NextResponse.redirect(loginUrl);
+      const redirectResponse = NextResponse.redirect(loginUrl);
+      for (const [key, value] of Object.entries(NO_CACHE_HEADERS)) {
+        redirectResponse.headers.set(key, value);
+      }
+      return redirectResponse;
     }
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+
+  // Enforce zero-cache headers on all admin pages
+  if (pathname.startsWith("/admin")) {
+    for (const [key, value] of Object.entries(NO_CACHE_HEADERS)) {
+      response.headers.set(key, value);
+    }
+  }
+
+  return response;
 }
 
 export const config = {

@@ -106,6 +106,30 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     };
   }, [fetchStatus, storeStatus, pathname]);
 
+  // Handle browser Back/Forward Cache (bfcache) restoration:
+  // When navigating back/forward, browsers can restore a frozen in-memory snapshot
+  // without triggering standard component lifecycle mounts.
+  // The 'pageshow' event fires with persisted=true, allowing immediate authoritative re-verification.
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted && pathname !== "/admin/login") {
+        adminApi.auth
+          .getMe()
+          .catch(() => {
+            clearAdminSession();
+            window.location.replace("/admin/login");
+          });
+      }
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow);
+    };
+  }, [pathname]);
+
   const handleApplyOverride = async () => {
     setIsUpdatingStatus(true);
     try {

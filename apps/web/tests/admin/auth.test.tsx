@@ -56,7 +56,7 @@ describe("Admin Authentication & Session Security", () => {
       expect(response.headers.get("location")).toBeNull();
     });
 
-    it("redirects unauthenticated requests from /admin to /admin/login", () => {
+    it("redirects unauthenticated requests from /admin to /admin/login with no-store anti-cache headers", () => {
       const request = new NextRequest("http://localhost:3000/admin");
       const response = middleware(request);
 
@@ -64,9 +64,14 @@ describe("Admin Authentication & Session Security", () => {
       const redirectUrl = new URL(response.headers.get("location")!);
       expect(redirectUrl.pathname).toBe("/admin/login");
       expect(redirectUrl.searchParams.get("from")).toBe("/admin");
+
+      // Verify anti-caching headers on redirect
+      expect(response.headers.get("Cache-Control")).toContain("no-store");
+      expect(response.headers.get("Pragma")).toBe("no-cache");
+      expect(response.headers.get("Expires")).toBe("0");
     });
 
-    it("redirects unauthenticated requests from /admin/products to /admin/login with from param", () => {
+    it("redirects unauthenticated requests from /admin/products to /admin/login with from param and anti-cache headers", () => {
       const request = new NextRequest("http://localhost:3000/admin/products");
       const response = middleware(request);
 
@@ -74,9 +79,10 @@ describe("Admin Authentication & Session Security", () => {
       const redirectUrl = new URL(response.headers.get("location")!);
       expect(redirectUrl.pathname).toBe("/admin/login");
       expect(redirectUrl.searchParams.get("from")).toBe("/admin/products");
+      expect(response.headers.get("Cache-Control")).toContain("no-store");
     });
 
-    it("allows access to /admin/* when valid admin_session cookie is present", () => {
+    it("allows access to /admin/* when valid admin_session cookie is present and enforces no-store headers", () => {
       const request = new NextRequest("http://localhost:3000/admin/products", {
         headers: {
           cookie: "admin_session=valid_signed_session_token",
@@ -86,6 +92,14 @@ describe("Admin Authentication & Session Security", () => {
 
       expect(response.status).toBe(200);
       expect(response.headers.get("location")).toBeNull();
+
+      // Verify anti-caching headers to prevent Back/Forward browser cache restoration
+      expect(response.headers.get("Cache-Control")).toBe(
+        "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0"
+      );
+      expect(response.headers.get("Pragma")).toBe("no-cache");
+      expect(response.headers.get("Expires")).toBe("0");
+      expect(response.headers.get("Surrogate-Control")).toBe("no-store");
     });
   });
 });
