@@ -99,8 +99,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         clearInterval(interval);
       };
     } else {
-      // On /admin/login, gently warm up the backend probe without fetching unauthenticated admin data
-      warmupApiBackend();
+      // On /admin/login, do not send unsolicited background requests to a sleeping backend
       return () => {
         isMounted.current = false;
       };

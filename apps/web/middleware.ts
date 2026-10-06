@@ -10,11 +10,23 @@ const NO_CACHE_HEADERS: Record<string, string> = {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const sessionCookie = request.cookies.get("admin_session")?.value;
+
+  // If already authenticated and visiting /admin/login, redirect to destination server-side
+  if (pathname === "/admin/login") {
+    if (sessionCookie) {
+      const from = request.nextUrl.searchParams.get("from") || "/admin";
+      return NextResponse.redirect(new URL(from, request.url));
+    }
+    const response = NextResponse.next();
+    for (const [key, value] of Object.entries(NO_CACHE_HEADERS)) {
+      response.headers.set(key, value);
+    }
+    return response;
+  }
 
   // Protect all /admin routes except /admin/login
-  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
-    const sessionCookie = request.cookies.get("admin_session")?.value;
-
+  if (pathname.startsWith("/admin")) {
     if (!sessionCookie) {
       const loginUrl = new URL("/admin/login", request.url);
       loginUrl.searchParams.set("from", pathname);

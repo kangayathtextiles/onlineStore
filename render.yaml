@@ -9,6 +9,7 @@ services:
     runtime: docker
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: ./apps/api
+    preDeployCommand: python -m alembic upgrade head && python -m app.db.seed
     healthCheckPath: /api/v1/health
     envVars:
       - key: ENVIRONMENT
@@ -67,6 +68,7 @@ services:
     runtime: docker
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: ./apps/api
+    preDeployCommand: python -m alembic upgrade head && python -m app.db.seed
     healthCheckPath: /api/v1/health
     envVars:
       - key: ENVIRONMENT

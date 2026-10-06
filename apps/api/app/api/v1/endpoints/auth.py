@@ -32,6 +32,17 @@ class AdminMeResponse(BaseModel):
     mode: str
 
 
+def get_client_ip(request: Request) -> str:
+    """Extract authoritative client IP, prioritizing reverse proxy headers."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    real_ip = request.headers.get("x-real-ip")
+    if real_ip:
+        return real_ip.strip()
+    return request.client.host if request.client else "unknown"
+
+
 @router.post("/login", response_model=AdminLoginResponse, summary="Admin Dashboard Login")
 async def login(
     payload: AdminLoginRequest,
@@ -43,7 +54,7 @@ async def login(
     Includes in-memory IP rate limiting to mitigate brute-force attempts.
     Sets an authoritative HttpOnly session cookie. The token is never returned in the body.
     """
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = get_client_ip(request)
 
     # Enforce brute-force rate limiting
     if login_rate_limiter.is_rate_limited(client_ip):

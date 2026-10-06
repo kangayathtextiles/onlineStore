@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,21 +10,44 @@ function AdminLoginForm() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [wakeUpNotice, setWakeUpNotice] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // If already authenticated on server, redirect to destination or dashboard
-  useEffect(() => {
-    adminApi.auth
-      .getMe()
-      .then(() => {
-        const from = searchParams.get("from") || "/admin";
-        router.replace(from);
-      })
-      .catch(() => {
-        // Not authenticated
-      });
-  }, [router, searchParams]);
+  const performLogin = async (key: string, attempt = 1, maxAttempts = 3): Promise<void> => {
+    try {
+      await adminApi.auth.login(key);
+      setWakeUpNotice(null);
+      const from = searchParams.get("from") || "/admin";
+      router.replace(from);
+    } catch (err: unknown) {
+      const apiErr = err as { status?: number; message?: string };
+      const isStandby =
+        apiErr?.status === 429 ||
+        apiErr?.status === 502 ||
+        apiErr?.status === 503 ||
+        apiErr?.status === 504;
+
+      if (isStandby && attempt < maxAttempts) {
+        setWakeUpNotice(
+          `Digital showroom backend is waking up from standby (attempt ${attempt}/${maxAttempts}). Connecting automatically in 8 seconds...`
+        );
+        setError("");
+        await new Promise((resolve) => setTimeout(resolve, 8000));
+        return performLogin(key, attempt + 1, maxAttempts);
+      }
+
+      setWakeUpNotice(null);
+      setIsLoading(false);
+      if (apiErr?.status === 429) {
+        setError("The server is still waking up from standby. Please wait 10 seconds and try again.");
+      } else if (apiErr?.status === 502 || apiErr?.status === 503 || apiErr?.status === 504) {
+        setError("Backend service is waking up from standby. Please wait a moment and try again.");
+      } else {
+        setError("Invalid Admin API Key. Please try again.");
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,23 +55,9 @@ function AdminLoginForm() {
 
     setIsLoading(true);
     setError("");
+    setWakeUpNotice(null);
 
-    try {
-      await adminApi.auth.login(password);
-      const from = searchParams.get("from") || "/admin";
-      router.replace(from);
-    } catch (err: unknown) {
-      const apiErr = err as { status?: number; message?: string };
-      if (apiErr?.status === 429) {
-        setError("The server is waking up from standby or rate-limited. Please wait 10–15 seconds and try again.");
-      } else if (apiErr?.status === 502 || apiErr?.status === 503 || apiErr?.status === 504) {
-        setError("Backend service is waking up from standby. Please wait a moment and try again.");
-      } else {
-        setError("Invalid Admin API Key. Please try again.");
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    await performLogin(password);
   };
 
   return (
@@ -78,6 +87,12 @@ function AdminLoginForm() {
                 disabled={isLoading}
                 autoFocus
               />
+              {wakeUpNotice && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
+                  <span>{wakeUpNotice}</span>
+                </div>
+              )}
               {error && <p className="text-xs text-rose-500 font-medium">{error}</p>}
             </div>
 
@@ -86,7 +101,7 @@ function AdminLoginForm() {
               className="w-full h-11 bg-burgundy hover:bg-burgundy/90 text-white font-medium"
               isLoading={isLoading}
             >
-              Sign In to Admin Panel
+              {wakeUpNotice ? "Connecting to Backend..." : "Sign In to Admin Panel"}
             </Button>
           </form>
         </div>
