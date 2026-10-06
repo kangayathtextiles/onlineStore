@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import AdminDashboardPage from "@/app/admin/page";
 import { ToastProvider } from "@/components/ui/toast";
+import { SWRConfig } from "swr";
 import { adminApi } from "@/lib/api";
 
 // Mock API
@@ -140,9 +141,11 @@ describe("Admin Dashboard Page", () => {
 
   it("renders dashboard operational status and metrics", async () => {
     render(
-      <ToastProvider>
-        <AdminDashboardPage />
-      </ToastProvider>
+      <SWRConfig value={{ provider: () => new Map() }}>
+        <ToastProvider>
+          <AdminDashboardPage />
+        </ToastProvider>
+      </SWRConfig>
     );
 
     await waitFor(() => {
@@ -151,4 +154,37 @@ describe("Admin Dashboard Page", () => {
       expect(screen.getByText("Kasavu Wedding Saree")).toBeInTheDocument();
     });
   });
+
+  it("formats backend IST timestamps and operating schedule cleanly without Invalid Date", async () => {
+    vi.mocked(adminApi.store.getStatus).mockResolvedValueOnce({
+      is_open: true,
+      effective_mode: "AUTO",
+      banner_message: null,
+      today_schedule: {
+        day_of_week: "TUESDAY",
+        is_closed: false,
+        open_time: "09:30:00",
+        close_time: "20:30:00",
+      },
+      current_time_ist: "2026-10-06 12:07:00 PM IST",
+      next_transition_time_ist: "2026-10-06 20:30:00 PM IST",
+    });
+
+    render(
+      <SWRConfig value={{ provider: () => new Map() }}>
+        <ToastProvider>
+          <AdminDashboardPage />
+        </ToastProvider>
+      </SWRConfig>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/Physical Store is OPEN NOW/i)).toBeInTheDocument();
+      expect(screen.queryByText(/Invalid Date/i)).not.toBeInTheDocument();
+      expect(screen.getByText(/12:07/i)).toBeInTheDocument();
+      expect(screen.getByText(/Today: 09:30 - 20:30/i)).toBeInTheDocument();
+    });
+  });
 });
+
+

@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { adminApi } from "@/lib/api";
-import { formatISTTime, resolveImageUrl } from "@/lib/utils";
+import { formatISTTime, formatScheduleTime, resolveImageUrl } from "@/lib/utils";
 import type { AdminProduct, Category, AdminSection } from "@/types/api";
 import useSWR from "swr";
 
@@ -113,9 +113,9 @@ export default function AdminDashboardPage() {
 
       {/* Real-Time Shop Status Card */}
       <Card className="border-rose-100 bg-gradient-to-r from-rose-50/70 via-rose-50/40 to-amber-50/30">
-        <CardContent className="p-6">
+        <CardContent className="p-5 sm:p-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex items-start gap-4">
+            <div className={`flex gap-4 ${storeStatus?.banner_message ? "items-start" : "items-center"}`}>
               <div
                 className={`p-3.5 rounded-xl border flex-shrink-0 ${
                   storeStatus?.is_open
@@ -127,8 +127,8 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <div className="flex items-center gap-2.5">
-                  <h2 className="text-xl font-bold text-zinc-900">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h2 className="text-xl font-bold text-zinc-900 leading-tight">
                     Physical Store is {storeStatus?.is_open ? "OPEN NOW" : "CLOSED"}
                   </h2>
                   {storeStatus && (
@@ -142,13 +142,13 @@ export default function AdminDashboardPage() {
                   Current IST Time: <span className="text-zinc-900 font-medium">{formatISTTime(storeStatus?.current_time_ist)}</span>
                   {storeStatus?.today_schedule && !storeStatus.today_schedule.is_closed && (
                     <>
-                      {" • "}Today: {storeStatus.today_schedule.open_time} - {storeStatus.today_schedule.close_time}
+                      {" • "}Today: {formatScheduleTime(storeStatus.today_schedule.open_time)} - {formatScheduleTime(storeStatus.today_schedule.close_time)}
                     </>
                   )}
                 </p>
 
                 {storeStatus?.banner_message && (
-                  <div className="mt-3 flex items-center gap-2 text-xs text-burgundy bg-rose-100/60 border border-rose-200 px-3 py-1.5 rounded-lg max-w-xl font-medium">
+                  <div className="mt-2.5 flex items-center gap-2 text-xs text-burgundy bg-rose-100/60 border border-rose-200 px-3 py-1.5 rounded-lg max-w-xl font-medium">
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                     <span>Customer Notice: {storeStatus.banner_message}</span>
                   </div>
@@ -156,7 +156,7 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <Link href="/admin/shop">
+            <Link href="/admin/shop" className="w-full md:w-auto shrink-0">
               <Button variant="outline" size="sm" className="w-full md:w-auto">
                 <span>Manage Override</span>
                 <ArrowRight className="w-3.5 h-3.5" />

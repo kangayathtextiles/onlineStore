@@ -17,16 +17,37 @@ export function slugify(text: string): string {
 export function formatISTTime(isoString?: string | null): string {
   if (!isoString) return "N/A";
   try {
-    const date = new Date(isoString);
-    return date.toLocaleTimeString("en-IN", {
-      timeZone: "Asia/Kolkata",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
+    const raw = isoString.trim();
+    let parseable = raw;
+    if (parseable.endsWith("IST")) {
+      parseable = parseable.replace(/\s*IST$/, " +05:30");
+    }
+    const date = new Date(parseable);
+    if (!isNaN(date.getTime())) {
+      const timeStr = date.toLocaleTimeString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+      if (timeStr && timeStr.toLowerCase() !== "invalid date") {
+        return timeStr;
+      }
+    }
+    const match = raw.match(/\b\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM|am|pm)?\b/);
+    if (match) return match[0];
+    return raw;
   } catch {
     return isoString;
   }
+}
+
+export function formatScheduleTime(timeStr?: string | null): string {
+  if (!timeStr) return "";
+  const trimmed = timeStr.trim();
+  const match = trimmed.match(/^(\d{1,2}:\d{2}):\d{2}$/);
+  if (match) return match[1];
+  return trimmed;
 }
 
 export function formatDate(isoString?: string | null): string {
