@@ -47,14 +47,17 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
   const toast = useToast();
 
+  const isLoggingOutRef = React.useRef(false);
+
   const handleLogout = React.useCallback(async () => {
+    isLoggingOutRef.current = true;
     try {
       await adminApi.auth.logout();
     } catch {
       // Continue client cleanup even if network fails
     } finally {
       clearAdminSession();
-      window.location.href = "/admin/login";
+      window.location.replace("/admin/login");
     }
   }, []);
 
@@ -129,6 +132,32 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
       window.removeEventListener("pageshow", handlePageShow);
     };
   }, [pathname]);
+
+  // Prevent back-navigation out of the admin panel without logging out:
+  // When inside /admin/*, trap 'popstate' so the browser Back button cannot navigate
+  // backward into the customer storefront without an explicit logout.
+  React.useEffect(() => {
+    if (typeof window === "undefined" || pathname === "/admin/login") return;
+
+    // Push a sentinel history state to trap the back button
+    window.history.pushState({ adminBoundary: true }, "", window.location.href);
+
+    const handlePopState = () => {
+      if (isLoggingOutRef.current) return;
+
+      // Re-assert admin history state to prevent exiting
+      window.history.pushState({ adminBoundary: true }, "", window.location.href);
+      toast.info(
+        "Active Admin Session",
+        "Please use the Log Out button in the sidebar before returning to the customer store."
+      );
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [pathname, toast]);
 
   const handleApplyOverride = async () => {
     setIsUpdatingStatus(true);

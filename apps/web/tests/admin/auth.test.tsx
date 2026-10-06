@@ -101,5 +101,40 @@ describe("Admin Authentication & Session Security", () => {
       expect(response.headers.get("Expires")).toBe("0");
       expect(response.headers.get("Surrogate-Control")).toBe("no-store");
     });
+
+    it("redirects authenticated admins away from customer routes (/, /products, /visit) to /admin", () => {
+      const customerRoutes = [
+        "http://localhost:3000/",
+        "http://localhost:3000/products",
+        "http://localhost:3000/visit",
+      ];
+      for (const url of customerRoutes) {
+        const request = new NextRequest(url, {
+          headers: {
+            cookie: "admin_session=valid_signed_session_token",
+          },
+        });
+        const response = middleware(request);
+
+        expect(response.status).toBe(307);
+        const redirectUrl = new URL(response.headers.get("location")!);
+        expect(redirectUrl.pathname).toBe("/admin");
+        expect(response.headers.get("Cache-Control")).toContain("no-store");
+      }
+    });
+
+    it("redirects authenticated admins away from /admin/login to /admin", () => {
+      const request = new NextRequest("http://localhost:3000/admin/login", {
+        headers: {
+          cookie: "admin_session=valid_signed_session_token",
+        },
+      });
+      const response = middleware(request);
+
+      expect(response.status).toBe(307);
+      const redirectUrl = new URL(response.headers.get("location")!);
+      expect(redirectUrl.pathname).toBe("/admin");
+      expect(response.headers.get("Cache-Control")).toContain("no-store");
+    });
   });
 });

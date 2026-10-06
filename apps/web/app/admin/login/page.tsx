@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { adminApi } from "@/lib/api";
@@ -11,7 +11,6 @@ function AdminLoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [wakeUpNotice, setWakeUpNotice] = useState<string | null>(null);
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const performLogin = async (key: string, attempt = 1, maxAttempts = 3): Promise<void> => {
@@ -19,7 +18,7 @@ function AdminLoginForm() {
       await adminApi.auth.login(key);
       setWakeUpNotice(null);
       const from = searchParams.get("from") || "/admin";
-      router.replace(from);
+      window.location.replace(from);
     } catch (err: unknown) {
       const apiErr = err as { status?: number; message?: string };
       const isStandby =

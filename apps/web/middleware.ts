@@ -12,22 +12,20 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get("admin_session")?.value;
 
-  // If already authenticated and visiting /admin/login, redirect to destination server-side
-  if (pathname === "/admin/login") {
-    if (sessionCookie) {
-      const from = request.nextUrl.searchParams.get("from") || "/admin";
-      return NextResponse.redirect(new URL(from, request.url));
+  // 1. Authenticated Admin: Cannot browse the customer storefront or login page without logging out first
+  if (sessionCookie) {
+    if (!pathname.startsWith("/admin") || pathname === "/admin/login") {
+      const redirectResponse = NextResponse.redirect(new URL("/admin", request.url));
+      for (const [key, value] of Object.entries(NO_CACHE_HEADERS)) {
+        redirectResponse.headers.set(key, value);
+      }
+      return redirectResponse;
     }
-    const response = NextResponse.next();
-    for (const [key, value] of Object.entries(NO_CACHE_HEADERS)) {
-      response.headers.set(key, value);
-    }
-    return response;
   }
 
-  // Protect all /admin routes except /admin/login
-  if (pathname.startsWith("/admin")) {
-    if (!sessionCookie) {
+  // 2. Unauthenticated Visitor: Cannot access protected /admin routes (except /admin/login)
+  if (!sessionCookie) {
+    if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
       const loginUrl = new URL("/admin/login", request.url);
       loginUrl.searchParams.set("from", pathname);
       const redirectResponse = NextResponse.redirect(loginUrl);
@@ -52,6 +50,16 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/admin/:path*",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - api/ (API routes)
+     * - media/ (media uploads)
+     * - brand/ (brand assets)
+     * - robots.txt / sitemap.xml
+     */
+    "/((?!_next/static|_next/image|favicon.ico|api/|media/|brand/|robots.txt|sitemap.xml).*)",
   ],
 };
