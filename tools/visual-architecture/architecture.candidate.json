@@ -1,0 +1,321 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "KANGAYATH WEB — Codebase Architecture Map",
+    "subtitle": "Next.js 15 App Router · FastAPI 0.115 Modular Monolith · PostgreSQL 16 · Supabase CDN",
+    "output": "index.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/kangayathtextiles/onlineStore.git",
+      "revision": "47123d2a1c3350d1c29945dd754662a0bcc021f5",
+      "provider": "github",
+      "link_mode": "web"
+    }
+  },
+  "components": [
+    {
+      "id": "users",
+      "type": "external",
+      "label": "Shoppers & Staff",
+      "sublabel": "Mobile / Desktop Browser",
+      "pos": [40, 320],
+      "size": [130, 64],
+      "tag": "Clients",
+      "icon": "person",
+      "sources": [
+        { "path": "apps/web/app/(customer)/page.tsx", "line": 1 }
+      ]
+    },
+    {
+      "id": "whatsapp",
+      "type": "external",
+      "label": "WhatsApp Web",
+      "sublabel": "wa.me API Platform",
+      "pos": [280, 160],
+      "size": [130, 64],
+      "tag": "Inquiry CTA",
+      "icon": "external",
+      "sources": [
+        { "path": "apps/web/app/(customer)/products/[slug]/page.tsx", "line": 577 }
+      ]
+    },
+    {
+      "id": "edge",
+      "type": "cloud",
+      "label": "Edge Proxy",
+      "sublabel": "Render / Cloudflare CDN",
+      "pos": [280, 320],
+      "size": [130, 64],
+      "tag": "TLS 1.3 / HTTP/2",
+      "icon": "cloud",
+      "sources": [
+        { "path": "render.yaml", "line": 1 }
+      ]
+    },
+    {
+      "id": "web_customer",
+      "type": "frontend",
+      "label": "Customer Showroom",
+      "sublabel": "Next.js 15 SSR :3000",
+      "pos": [530, 230],
+      "size": [150, 64],
+      "tag": "Public Showroom",
+      "icon": "frontend",
+      "sources": [
+        { "path": "apps/web/app/(customer)/products/page.tsx", "line": 1 }
+      ]
+    },
+    {
+      "id": "web_admin",
+      "type": "frontend",
+      "label": "Admin Console",
+      "sublabel": "CSR Portal / ZXing Scanner",
+      "pos": [530, 370],
+      "size": [150, 64],
+      "tag": "Catalog & QR",
+      "icon": "frontend",
+      "sources": [
+        { "path": "apps/web/app/admin/products/page.tsx", "line": 1 }
+      ]
+    },
+    {
+      "id": "web_middleware",
+      "type": "security",
+      "label": "Edge Cookie Guard",
+      "sublabel": "middleware.ts",
+      "pos": [530, 510],
+      "size": [150, 64],
+      "tag": "HttpOnly Guard",
+      "icon": "security",
+      "sources": [
+        { "path": "apps/web/middleware.ts", "line": 1 }
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "FastAPI Monolith",
+      "sublabel": "ASGI Engine :8000",
+      "pos": [820, 300],
+      "size": [150, 64],
+      "tag": "Modular Monolith",
+      "icon": "backend",
+      "sources": [
+        { "path": "apps/api/app/main.py", "line": 1 }
+      ]
+    },
+    {
+      "id": "auth",
+      "type": "security",
+      "label": "Session Auth",
+      "sublabel": "HMAC-SHA256 Guard",
+      "pos": [820, 460],
+      "size": [150, 64],
+      "tag": "Constant-Time",
+      "icon": "security",
+      "sources": [
+        { "path": "apps/api/app/core/security.py", "line": 1 }
+      ]
+    },
+    {
+      "id": "services",
+      "type": "backend",
+      "label": "Domain Services",
+      "sublabel": "Product / Store / Taxonomy",
+      "pos": [1110, 230],
+      "size": [150, 64],
+      "tag": "IST & Price Engine",
+      "icon": "backend",
+      "sources": [
+        { "path": "apps/api/app/services/product_service.py", "line": 1 }
+      ]
+    },
+    {
+      "id": "storage_svc",
+      "type": "cloud",
+      "label": "Storage Service",
+      "sublabel": "S3 Client / Fallback",
+      "pos": [1110, 390],
+      "size": [150, 64],
+      "tag": "Media Pipeline",
+      "icon": "cloud",
+      "sources": [
+        { "path": "apps/api/app/services/storage_service.py", "line": 1 }
+      ]
+    },
+    {
+      "id": "repos",
+      "type": "database",
+      "label": "Async Repositories",
+      "sublabel": "SQLAlchemy 2.0 Pool",
+      "pos": [1400, 230],
+      "size": [150, 64],
+      "tag": "selectinload",
+      "icon": "database",
+      "sources": [
+        { "path": "apps/api/app/repositories/product_repository.py", "line": 1 }
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "PostgreSQL 16",
+      "sublabel": "Primary Store :5432",
+      "pos": [1400, 350],
+      "size": [150, 64],
+      "tag": "10 ACID Tables",
+      "icon": "database",
+      "sources": [
+        { "path": "apps/api/app/models/base.py", "line": 1 }
+      ]
+    },
+    {
+      "id": "cdn",
+      "type": "cloud",
+      "label": "Supabase Storage",
+      "sublabel": "CDN Edge Media Store",
+      "pos": [1400, 470],
+      "size": [150, 64],
+      "tag": "Product Media",
+      "icon": "cloud",
+      "sources": [
+        { "path": "apps/api/app/core/config.py", "line": 1 }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Application Monorepo Infrastructure",
+      "wraps": ["web_customer", "web_admin", "web_middleware", "api", "auth", "services", "storage_svc", "repos"]
+    },
+    {
+      "kind": "security-group",
+      "label": "Admin Security Boundary",
+      "wraps": ["web_middleware", "web_admin", "auth"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "users-to-edge",
+      "from": "users",
+      "to": "edge",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "edge-to-customer",
+      "from": "edge",
+      "to": "web_customer",
+      "label": "/(customer)/*"
+    },
+    {
+      "id": "edge-to-admin",
+      "from": "edge",
+      "to": "web_admin",
+      "label": "/admin/*"
+    },
+    {
+      "id": "middleware-to-admin",
+      "from": "web_middleware",
+      "to": "web_admin",
+      "label": "verify cookie",
+      "variant": "security"
+    },
+    {
+      "id": "customer-to-wa",
+      "from": "web_customer",
+      "to": "whatsapp",
+      "label": "wa.me link",
+      "variant": "dashed"
+    },
+    {
+      "id": "customer-to-api",
+      "from": "web_customer",
+      "to": "api",
+      "label": "SSR /public/*"
+    },
+    {
+      "id": "admin-to-api",
+      "from": "web_admin",
+      "to": "api",
+      "label": "CSR /admin/*"
+    },
+    {
+      "id": "api-to-auth",
+      "from": "api",
+      "to": "auth",
+      "label": "verify HMAC",
+      "variant": "security"
+    },
+    {
+      "id": "api-to-services",
+      "from": "api",
+      "to": "services",
+      "label": "dispatch service"
+    },
+    {
+      "id": "api-to-storage-svc",
+      "from": "api",
+      "to": "storage_svc",
+      "label": "upload media"
+    },
+    {
+      "id": "services-to-repos",
+      "from": "services",
+      "to": "repos",
+      "label": "selectinload"
+    },
+    {
+      "id": "repos-to-db",
+      "from": "repos",
+      "to": "db",
+      "label": "asyncpg pool"
+    },
+    {
+      "id": "storage-to-cdn",
+      "from": "storage_svc",
+      "to": "cdn",
+      "label": "S3 multipart"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Frontend App Router",
+      "items": [
+        "Next.js 15.1.7 App Router boutique customer showroom",
+        "Dynamic showcase carousels, faceted filtering & WhatsApp CTA",
+        "Camera ZXing QR tag scanner for in-store physical operations"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "FastAPI Monolith",
+      "items": [
+        "Async modular monolith with public and admin route segregation",
+        "ProductService: 3-tier price display hierarchy & live availability",
+        "StoreService: canonically anchored to Asia/Kolkata (IST UTC+05:30)"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Persistence & CDN",
+      "items": [
+        "PostgreSQL 16 relational store with eager selectinload querying",
+        "Supabase Storage S3-compatible bucket for garment photography",
+        "Zero N+1 query overhead across products, categories & attributes"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Security & Isolation",
+      "items": [
+        "Edge middleware enforces HttpOnly admin_session cookie presence",
+        "HMAC-SHA256 constant-time verification prevents timing attacks",
+        "Tools 100% isolated with zero impact on production project code"
+      ]
+    }
+  ]
+}

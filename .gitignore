@@ -90,3 +90,7 @@ scratch/
 *.log
 docker-data/
 postgres-data/
+
+# AI Agent Skills & Tooling (Local Dev Only - Not Needed in Production)
+.agents/skills/archify/
+.agents/
