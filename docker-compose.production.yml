@@ -16,8 +16,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+    # Secure database port: bind strictly to localhost (127.0.0.1) to prevent public internet access.
     ports:
-      - "${POSTGRES_EXTERNAL_PORT:-5432}:5432"
+      - "${POSTGRES_BIND_IP:-127.0.0.1}:${POSTGRES_EXTERNAL_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -90,8 +91,9 @@ services:
       SUPABASE_URL: ${SUPABASE_URL:?SUPABASE_URL is required for production storage}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:?SUPABASE_SERVICE_ROLE_KEY is required for production storage}
       SUPABASE_STORAGE_BUCKET: ${SUPABASE_STORAGE_BUCKET:-product-media}
+    # Prevent bypassing Nginx: bind strictly to localhost (127.0.0.1) for local host access only.
     ports:
-      - "${API_EXTERNAL_PORT:-8000}:8000"
+      - "${API_BIND_IP:-127.0.0.1}:${API_EXTERNAL_PORT:-8000}:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -125,8 +127,9 @@ services:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.kangayath.site}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://kangayath.site}
+    # Prevent bypassing Nginx: bind strictly to localhost (127.0.0.1) for local host access only.
     ports:
-      - "${WEB_EXTERNAL_PORT:-3000}:3000"
+      - "${WEB_BIND_IP:-127.0.0.1}:${WEB_EXTERNAL_PORT:-3000}:3000"
     depends_on:
       api:
         condition: service_healthy
@@ -152,7 +155,8 @@ services:
       - "443:443"
     volumes:
       - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      # Mount TLS certificates when available:
+      - certbot_www:/var/www/certbot:ro
+      # Mount TLS certificates (fullchain.pem & privkey.pem) when self-hosting with SSL:
       # - ./infrastructure/nginx/certs:/etc/nginx/certs:ro
     depends_on:
       api:
@@ -170,6 +174,8 @@ volumes:
   postgres_data:
     driver: local
   media_data:
+    driver: local
+  certbot_www:
     driver: local
 
 networks:

@@ -136,17 +136,27 @@ describe("Search Autocomplete & Product Suggestions Component", () => {
     });
 
     // Press ArrowDown to highlight first item
-    fireEvent.keyDown(input, { key: "ArrowDown" });
+    await act(async () => {
+      fireEvent.keyDown(input, { key: "ArrowDown" });
+    });
     const option1 = screen.getByRole("option", { name: /Kasavu Silk Shirt/i });
-    expect(option1).toHaveAttribute("aria-selected", "true");
+    await waitFor(() => {
+      expect(option1).toHaveAttribute("aria-selected", "true");
+    });
 
     // Press ArrowDown to highlight second item
-    fireEvent.keyDown(input, { key: "ArrowDown" });
+    await act(async () => {
+      fireEvent.keyDown(input, { key: "ArrowDown" });
+    });
     const option2 = screen.getByRole("option", { name: /Kasavu Cotton Dhoti/i });
-    expect(option2).toHaveAttribute("aria-selected", "true");
+    await waitFor(() => {
+      expect(option2).toHaveAttribute("aria-selected", "true");
+    });
 
     // Press Enter to select second item
-    fireEvent.keyDown(input, { key: "Enter" });
+    await act(async () => {
+      fireEvent.keyDown(input, { key: "Enter" });
+    });
     expect(mockPush).toHaveBeenCalledWith("/products/kasavu-cotton-dhoti");
   });
 

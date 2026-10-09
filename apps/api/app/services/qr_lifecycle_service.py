@@ -16,6 +16,7 @@ from app.schemas.product import (
     QRPrintItemDTO,
     QRScanResponse,
 )
+from app.services.product_presenter import calculate_availability
 
 
 class QRLifecycleService:
@@ -28,13 +29,8 @@ class QRLifecycleService:
         self.session = session
         self.repo = ProductRepository(session)
 
-    @staticmethod
-    def calculate_availability(product: Product) -> bool:
-        if product.manual_sold_out or product.is_damaged or product.is_retired:
-            return False
-        if not product.variants:
-            return True
-        return any(v.is_available for v in product.variants)
+    # Expose calculate_availability staticmethod for backwards compatibility
+    calculate_availability = staticmethod(calculate_availability)
 
     def map_to_qr_scan_response(self, product: Product) -> QRScanResponse:
         primary_img = next((img.url for img in product.images if img.is_primary), None)

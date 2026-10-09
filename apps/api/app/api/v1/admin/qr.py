@@ -14,7 +14,7 @@ from app.schemas.product import (
     QRPrintItemDTO,
     QRScanResponse,
 )
-from app.services.product_service import ProductService
+from app.services.qr_lifecycle_service import QRLifecycleService
 
 router = APIRouter(prefix="/qr", tags=["admin-qr"])
 
@@ -28,7 +28,7 @@ async def lookup_by_qr(
     """
     Look up and resolve a physical product/item by its scanned QR identity token or Style Code.
     """
-    service = ProductService(session)
+    service = QRLifecycleService(session)
     return await service.lookup_by_qr(code)
 
 
@@ -44,7 +44,7 @@ async def execute_qr_action(
     - DAMAGED: Marks garment damaged, immediately hides from customer site, and sets retention timer
     - RETURN: Marks garment back into active showroom inventory
     """
-    service = ProductService(session)
+    service = QRLifecycleService(session)
     return await service.execute_qr_action(payload)
 
 
@@ -60,7 +60,7 @@ async def get_qr_print_data(
     """
     Retrieve product items formatted for batch QR and Style Code label tag printing.
     """
-    service = ProductService(session)
+    service = QRLifecycleService(session)
     return await service.get_qr_print_data(
         category_id=category_id,
         subcategory_id=subcategory_id,
@@ -81,5 +81,5 @@ async def trigger_retention_cleanup(
     Trigger server-side two-year automatic cleanup for sold out and damaged garments,
     retiring products and releasing QR identities for controlled reuse.
     """
-    service = ProductService(session)
+    service = QRLifecycleService(session)
     return await service.cleanup_expired_products(retention_years=retention_years)

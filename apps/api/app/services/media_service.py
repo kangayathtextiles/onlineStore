@@ -12,18 +12,15 @@ from app.core.exceptions import (
     ValidationException,
 )
 from app.core.security import validate_upload_file
-from app.models.product import Product, ProductImage
+from app.models.product import ProductImage
 from app.repositories.product_repository import ProductRepository
-from app.schemas.attribute import ColorOptionDTO, SizeOptionDTO
 from app.schemas.product import (
     AdminProductResponse,
     ProductImageCreate,
-    ProductImageDTO,
     ProductImageReorderRequest,
-    ProductVariantDTO,
 )
-from app.schemas.taxonomy import SubcategorySummaryDTO
 from app.services import storage_service
+from app.services.product_presenter import calculate_availability, map_to_admin_response
 
 logger = logging.getLogger(__name__)
 
@@ -45,91 +42,8 @@ class ProductMediaService:
         self.repo = ProductRepository(session)
         self._get_admin_product_callback = get_admin_product_callback
 
-    @staticmethod
-    def calculate_availability(product: Product) -> bool:
-        if product.manual_sold_out or product.is_damaged or product.is_retired:
-            return False
-        if not product.variants:
-            return True
-        return any(v.is_available for v in product.variants)
-
-    def _map_to_admin_response(self, product: Product) -> AdminProductResponse:
-        return AdminProductResponse(
-            id=product.id,
-            category_id=product.category_id,
-            subcategory_id=product.subcategory_id,
-            name=product.name,
-            slug=product.slug,
-            description=product.description,
-            material=product.material,
-            style_code=product.style_code,
-            qr_code=product.qr_code,
-            qr_status=product.qr_status,
-            operational_status=product.operational_status,
-            is_damaged=product.is_damaged,
-            is_retired=product.is_retired,
-            sold_out_at=product.sold_out_at,
-            damaged_at=product.damaged_at,
-            retired_at=product.retired_at,
-            lifecycle_state=product.lifecycle_state,
-            manual_sold_out=product.manual_sold_out,
-            featured=product.featured,
-            price=product.price,
-            show_price=product.show_price,
-            meta_title=product.meta_title,
-            meta_description=product.meta_description,
-            created_at=product.created_at,
-            updated_at=product.updated_at,
-            is_available=self.calculate_availability(product),
-            subcategory=SubcategorySummaryDTO(
-                id=product.subcategory.id,
-                category_id=product.subcategory.category_id,
-                name=product.subcategory.name,
-                slug=product.subcategory.slug,
-                display_order=product.subcategory.display_order,
-                is_active=product.subcategory.is_active,
-            )
-            if product.subcategory
-            else None,
-            images=[
-                ProductImageDTO(
-                    id=img.id,
-                    product_id=img.product_id,
-                    url=img.url,
-                    alt_text=img.alt_text,
-                    is_primary=img.is_primary,
-                    display_order=img.display_order,
-                    created_at=img.created_at,
-                )
-                for img in product.images
-            ],
-            variants=[
-                ProductVariantDTO(
-                    id=v.id,
-                    product_id=v.product_id,
-                    size_id=v.size_id,
-                    color_id=v.color_id,
-                    sku=v.sku,
-                    is_available=v.is_available,
-                    created_at=v.created_at,
-                    updated_at=v.updated_at,
-                    size=SizeOptionDTO(
-                        id=v.size.id, name=v.size.name, display_order=v.size.display_order
-                    )
-                    if v.size
-                    else None,
-                    color=ColorOptionDTO(
-                        id=v.color.id,
-                        name=v.color.name,
-                        hex_code=v.color.hex_code,
-                        display_order=v.color.display_order,
-                    )
-                    if v.color
-                    else None,
-                )
-                for v in product.variants
-            ],
-        )
+    # Expose calculate_availability staticmethod for backwards compatibility
+    calculate_availability = staticmethod(calculate_availability)
 
     async def _resolve_admin_response(self, product_id: uuid.UUID) -> AdminProductResponse:
         if self._get_admin_product_callback:
@@ -138,7 +52,7 @@ class ProductMediaService:
         product = await self.repo.get_by_id(product_id)
         if not product:
             raise EntityNotFoundException("Product", product_id)
-        return self._map_to_admin_response(product)
+        return map_to_admin_response(product)
 
     async def add_image(
         self, product_id: uuid.UUID, data: ProductImageCreate
