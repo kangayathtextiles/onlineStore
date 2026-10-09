@@ -9,30 +9,11 @@ import {
   ExternalLink,
   ShieldCheck,
 } from "lucide-react";
-import { publicApi } from "@/lib/api";
 import { siteConfig } from "@/lib/site-config";
-import type { StoreProfile } from "@/types/api";
+import { useStoreProfile } from "@/lib/store-context";
 
 export function CustomerFooter() {
-  const [store, setStore] = React.useState<StoreProfile | null>(null);
-
-  React.useEffect(() => {
-    let isMounted = true;
-    async function fetchProfile() {
-      try {
-        const data = await publicApi.store.getProfile();
-        if (isMounted) {
-          setStore(data);
-        }
-      } catch {
-        // Ignored
-      }
-    }
-    fetchProfile();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { profile: store } = useStoreProfile();
 
   const whatsappCleanNumber = store?.whatsapp_number
     ? store.whatsapp_number.replace(/[^0-9]/g, "")

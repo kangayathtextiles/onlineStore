@@ -16,6 +16,7 @@ import { Select } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/customer/product-card";
+import { SearchAutocomplete } from "@/components/customer/search-autocomplete";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { publicApi } from "@/lib/api";
 import type {
@@ -51,11 +52,13 @@ function ProductsContent() {
 
   const searchInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Auto-focus search input if navigated with ?focus=search (e.g. from bottom mobile nav)
+  // Auto-focus search input if navigated with ?focus=search (e.g. from bottom mobile nav or header search)
   React.useEffect(() => {
     if (searchParams.get("focus") === "search") {
       searchInputRef.current?.focus();
-      searchInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (typeof searchInputRef.current?.scrollIntoView === "function") {
+        searchInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
     }
   }, [searchParams]);
 
@@ -66,6 +69,50 @@ function ProductsContent() {
     }, 300);
     return () => clearTimeout(handler);
   }, [search]);
+
+  // Synchronize state changes to URL query string so state is preserved during navigation
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams();
+    if (categorySlug) params.set("category", categorySlug);
+    if (subcategorySlug) params.set("subcategory", subcategorySlug);
+    if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
+    if (selectedSizeId) params.set("size_id", selectedSizeId);
+    if (selectedColorId) params.set("color_id", selectedColorId);
+    if (availableOnly) params.set("available_only", "true");
+    if (page > 1) params.set("page", String(page));
+
+    const newQuery = params.toString();
+    const newRelativeUrl = newQuery ? `/products?${newQuery}` : "/products";
+    const currentParams = new URLSearchParams(window.location.search);
+    currentParams.delete("focus");
+    const currentQuery = currentParams.toString();
+
+    // Only update history if query parameters actually changed (ignoring ?focus)
+    if (currentQuery !== newQuery) {
+      window.history.replaceState(null, "", newRelativeUrl);
+    }
+  }, [categorySlug, subcategorySlug, debouncedSearch, selectedSizeId, selectedColorId, availableOnly, page]);
+
+  // Handle browser back/forward buttons (popstate)
+  React.useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setCategorySlug(params.get("category") || "");
+      setSubcategorySlug(params.get("subcategory") || "");
+      const s = params.get("search") || "";
+      setSearch(s);
+      setDebouncedSearch(s);
+      setSelectedSizeId(params.get("size_id") || "");
+      setSelectedColorId(params.get("color_id") || "");
+      setAvailableOnly(params.get("available_only") === "true");
+      setPage(parseInt(params.get("page") || "1", 10));
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   // Data state
   const [products, setProducts] = React.useState<PublicProductSummary[]>([]);
@@ -161,11 +208,14 @@ function ProductsContent() {
     setCategorySlug("");
     setSubcategorySlug("");
     setSearch("");
+    setDebouncedSearch("");
     setSelectedSizeId("");
     setSelectedColorId("");
     setAvailableOnly(false);
     setPage(1);
-    router.push("/products");
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", "/products");
+    }
   };
 
   const activeFiltersCount = [
@@ -184,32 +234,32 @@ function ProductsContent() {
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-burgundy flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-gold" />
-            Digital Showroom Catalog
+            Digital Showroom
           </span>
           <h1 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-zinc-900 mt-1">
-            All Garments
+            Search & Browse Garments
           </h1>
           <p className="hidden sm:block text-xs sm:text-sm text-zinc-600 mt-1">
-            Browse our store collections. Check size and color availability before visiting our shop.
+            Search titles, fabrics, or browse collections before visiting our showroom in Kalkandi.
           </p>
         </div>
 
-        {/* Search Input & Mobile Filter Toggle */}
+        {/* Search Autocomplete Combobox & Mobile Filter Toggle */}
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-72">
-            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder="Search title, fabric, code..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="w-full h-10 pl-9 pr-4 rounded-xl border border-zinc-200 bg-white/90 text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-burgundy focus:border-transparent transition-all shadow-xs"
-            />
-          </div>
+          <SearchAutocomplete
+            value={search}
+            onChange={(val) => {
+              setSearch(val);
+              setPage(1);
+            }}
+            onSubmit={(val) => {
+              setSearch(val);
+              setDebouncedSearch(val);
+              setPage(1);
+            }}
+            inputRef={searchInputRef}
+            className="flex-1 sm:w-80 md:w-96"
+          />
 
           <Button
             variant="outline"
@@ -223,6 +273,40 @@ function ProductsContent() {
           </Button>
         </div>
       </div>
+
+      {/* Quick Department Chips for Instant Mobile & Desktop Navigation */}
+      {categories.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none -mt-2">
+          <button
+            type="button"
+            onClick={() => handleCategorySelect("")}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shadow-2xs ${
+              categorySlug === ""
+                ? "bg-burgundy text-white shadow-xs"
+                : "bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-100"
+            }`}
+          >
+            All Garments
+          </button>
+          {categories.map((cat) => {
+            const isSelected = categorySlug === cat.slug;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => handleCategorySelect(cat.slug)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shadow-2xs ${
+                  isSelected
+                    ? "bg-burgundy text-white shadow-xs"
+                    : "bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-100"
+                }`}
+              >
+                {cat.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
         {/* Left Column: Filter Sidebar (Desktop) */}

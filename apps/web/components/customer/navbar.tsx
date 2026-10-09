@@ -14,34 +14,13 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useSavedItems } from "@/lib/saved-items-context";
-import { publicApi } from "@/lib/api";
-import type { StoreStatusResponse } from "@/types/api";
+import { useStoreStatus } from "@/lib/store-context";
 
 export function CustomerNavbar() {
   const pathname = usePathname();
   const { savedCount } = useSavedItems();
-  const [status, setStatus] = React.useState<StoreStatusResponse | null>(null);
+  const { status, isLoading } = useStoreStatus();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-
-  React.useEffect(() => {
-    let isMounted = true;
-    async function fetchStatus() {
-      try {
-        const data = await publicApi.store.getStatus();
-        if (isMounted) {
-          setStatus(data);
-        }
-      } catch {
-        // Ignored
-      }
-    }
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 60000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, []);
 
   const navLinks = [
     { label: "Home", href: "/" },
@@ -98,21 +77,31 @@ export function CustomerNavbar() {
             {/* Live Physical Store Status Pill */}
             <Link href="/visit" className="hidden sm:flex items-center" title="Click to view shop location & hours">
               <Badge
-                variant={status?.is_open ? "success" : "danger"}
+                variant={!status && isLoading ? "outline" : status?.is_open ? "success" : "danger"}
                 className="py-1 px-3 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs border border-amber-950/10 hover:opacity-90 transition-all"
               >
                 <span
                   className={`w-2 h-2 rounded-full ${
-                    status?.is_open ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
+                    !status && isLoading
+                      ? "bg-amber-400/80 animate-pulse"
+                      : status?.is_open
+                      ? "bg-emerald-500 animate-pulse"
+                      : "bg-rose-500"
                   }`}
                 />
-                <span>{status?.is_open ? "STORE OPEN" : "STORE CLOSED"}</span>
+                <span>
+                  {!status && isLoading
+                    ? "STORE HOURS"
+                    : status?.is_open
+                    ? "STORE OPEN"
+                    : "STORE CLOSED"}
+                </span>
               </Badge>
             </Link>
 
             {/* Search Icon */}
             <Link
-              href="/products"
+              href="/products?focus=search"
               className="p-2 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
               title="Search Catalog"
             >
@@ -154,8 +143,15 @@ export function CustomerNavbar() {
               <Clock className="w-4 h-4 text-zinc-500" />
               <span className="text-xs text-zinc-700 font-medium">Physical Store:</span>
             </div>
-            <Badge variant={status?.is_open ? "success" : "danger"} className="text-xs">
-              {status?.is_open ? "OPEN NOW" : "CLOSED NOW"}
+            <Badge
+              variant={!status && isLoading ? "outline" : status?.is_open ? "success" : "danger"}
+              className="text-xs"
+            >
+              {!status && isLoading
+                ? "STORE HOURS"
+                : status?.is_open
+                ? "OPEN NOW"
+                : "CLOSED NOW"}
             </Badge>
           </div>
 

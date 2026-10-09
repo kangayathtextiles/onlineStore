@@ -28,13 +28,11 @@ import type {
   PublicCategoryTree,
   PublicProductSummary,
   PublicSection,
-  StoreProfile,
-  StoreStatusResponse,
 } from "@/types/api";
+import { useStore } from "@/lib/store-context";
 
 export default function CustomerHomePage() {
-  const [status, setStatus] = React.useState<StoreStatusResponse | null>(null);
-  const [store, setStore] = React.useState<StoreProfile | null>(null);
+  const { status, profile: store, isStatusLoading } = useStore();
   const [categories, setCategories] = React.useState<PublicCategoryTree[]>([]);
   const [sections, setSections] = React.useState<PublicSection[]>([]);
   const [featuredProducts, setFeaturedProducts] = React.useState<PublicProductSummary[]>([]);
@@ -45,17 +43,13 @@ export default function CustomerHomePage() {
     async function loadHomeData() {
       try {
         setLoading(true);
-        const [statusData, storeData, catsData, sectionsData, prodsData] = await Promise.all([
-          publicApi.store.getStatus().catch(() => null),
-          publicApi.store.getProfile().catch(() => null),
+        const [catsData, sectionsData, prodsData] = await Promise.all([
           publicApi.categories.list().catch(() => []),
           publicApi.sections.list().catch(() => []),
           publicApi.products.list({ page: 1, page_size: 8 }).catch(() => ({ items: [] })),
         ]);
 
         if (isMounted) {
-          setStatus(statusData);
-          setStore(storeData);
           setCategories(Array.isArray(catsData) ? catsData : []);
           setSections(Array.isArray(sectionsData) ? sectionsData : []);
           setFeaturedProducts(prodsData?.items || []);
@@ -87,11 +81,17 @@ export default function CustomerHomePage() {
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white/95 border border-amber-950/10 text-zinc-700 shadow-xs backdrop-blur-md">
             <span
               className={`w-2.5 h-2.5 rounded-full ${
-                status?.is_open ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
+                !status && isStatusLoading
+                  ? "bg-amber-400/80 animate-pulse"
+                  : status?.is_open
+                  ? "bg-emerald-500 animate-pulse"
+                  : "bg-rose-500"
               }`}
             />
             <span className="truncate max-w-[200px] sm:max-w-none">
-              {status?.is_open
+              {!status && isStatusLoading
+                ? `Physical Store in ${storeCity || siteConfig.location.locality}`
+                : status?.is_open
                 ? `Physical Store is OPEN NOW in ${storeCity || siteConfig.location.locality}`
                 : `Physical Store in ${storeCity || siteConfig.location.locality} is CLOSED`}
             </span>

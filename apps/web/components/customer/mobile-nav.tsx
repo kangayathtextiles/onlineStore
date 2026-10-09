@@ -2,38 +2,15 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { Home, Shirt, Search, Heart, Store } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Home, Search, Heart, Store } from "lucide-react";
 import { useSavedItems } from "@/lib/saved-items-context";
-import { publicApi } from "@/lib/api";
-import type { StoreStatusResponse } from "@/types/api";
+import { useStoreStatus } from "@/lib/store-context";
 
 export function CustomerMobileNav() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { savedCount } = useSavedItems();
-  const [status, setStatus] = React.useState<StoreStatusResponse | null>(null);
-
-  // Fetch store open status for the Visit item indicator
-  React.useEffect(() => {
-    let isMounted = true;
-    async function fetchStatus() {
-      try {
-        const data = await publicApi.store.getStatus();
-        if (isMounted) {
-          setStatus(data);
-        }
-      } catch {
-        // Ignored
-      }
-    }
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 60000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, []);
+  const { status, isLoading } = useStoreStatus();
 
   // Do not show the bottom nav on admin routes or product detail pages (which have a dedicated sticky inquiry bar)
   const isProductDetailPage = pathname.startsWith("/products/") && pathname !== "/products";
@@ -41,8 +18,7 @@ export function CustomerMobileNav() {
     return null;
   }
 
-  const isFocusSearch = pathname === "/products" && searchParams?.get("focus") === "search";
-  const isCatalog = pathname.startsWith("/products") && !isFocusSearch;
+  const isCatalog = pathname.startsWith("/products");
   const isHome = pathname === "/";
   const isSaved = pathname === "/saved";
   const isVisit = pathname === "/visit";
@@ -52,7 +28,7 @@ export function CustomerMobileNav() {
       aria-label="Mobile Navigation"
       className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-amber-950/10 shadow-[0_-4px_20px_rgba(42,13,11,0.06)] pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pt-1"
     >
-      <div className="grid grid-cols-5 h-14 items-center">
+      <div className="grid grid-cols-4 h-14 items-center">
         {/* 1. Home */}
         <Link
           href="/"
@@ -68,37 +44,22 @@ export function CustomerMobileNav() {
           </span>
         </Link>
 
-        {/* 2. Catalog */}
+        {/* 2. Search & Browse */}
         <Link
           href="/products"
           className={`flex flex-col items-center justify-center gap-1 h-full transition-colors active:scale-95 ${
             isCatalog ? "text-burgundy" : "text-zinc-600 hover:text-zinc-900"
           }`}
-          aria-label="Garment Catalog"
+          aria-label="Search & Browse Garments"
           aria-current={isCatalog ? "page" : undefined}
         >
-          <Shirt className={`w-5 h-5 ${isCatalog ? "stroke-[2.5]" : "stroke-[1.75]"}`} />
+          <Search className={`w-5 h-5 ${isCatalog ? "stroke-[2.5]" : "stroke-[1.75]"}`} />
           <span className={`text-[11px] tracking-tight ${isCatalog ? "font-bold" : "font-medium"}`}>
-            Catalog
-          </span>
-        </Link>
-
-        {/* 3. Search */}
-        <Link
-          href="/products?focus=search"
-          className={`flex flex-col items-center justify-center gap-1 h-full transition-colors active:scale-95 ${
-            isFocusSearch ? "text-burgundy" : "text-zinc-600 hover:text-zinc-900"
-          }`}
-          aria-label="Search Garments"
-          aria-current={isFocusSearch ? "page" : undefined}
-        >
-          <Search className={`w-5 h-5 ${isFocusSearch ? "stroke-[2.5]" : "stroke-[1.75]"}`} />
-          <span className={`text-[11px] tracking-tight ${isFocusSearch ? "font-bold" : "font-medium"}`}>
             Search
           </span>
         </Link>
 
-        {/* 4. Saved Wishlist */}
+        {/* 3. Saved Wishlist */}
         <Link
           href="/saved"
           className={`relative flex flex-col items-center justify-center gap-1 h-full transition-colors active:scale-95 ${
@@ -141,9 +102,19 @@ export function CustomerMobileNav() {
             <Store className={`w-5 h-5 ${isVisit ? "stroke-[2.5]" : "stroke-[1.75]"}`} />
             <span
               className={`absolute -top-0.5 -right-1 w-2 h-2 rounded-full ring-1 ring-white ${
-                status?.is_open ? "bg-emerald-500 animate-pulse" : "bg-rose-400"
+                !status && isLoading
+                  ? "bg-amber-400/80 animate-pulse"
+                  : status?.is_open
+                  ? "bg-emerald-500 animate-pulse"
+                  : "bg-rose-400"
               }`}
-              title={status?.is_open ? "Store is Open" : "Store is Closed"}
+              title={
+                !status && isLoading
+                  ? "Checking Store Hours"
+                  : status?.is_open
+                  ? "Store is Open"
+                  : "Store is Closed"
+              }
             />
           </div>
           <span className={`text-[11px] tracking-tight ${isVisit ? "font-bold" : "font-medium"}`}>

@@ -14,10 +14,10 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { publicApi } from "@/lib/api";
 import { formatISTTime } from "@/lib/utils";
 import { siteConfig } from "@/lib/site-config";
-import type { DayOfWeek, StoreProfile, StoreStatusResponse } from "@/types/api";
+import type { DayOfWeek } from "@/types/api";
+import { useStore } from "@/lib/store-context";
 
 const DAYS_ORDER: DayOfWeek[] = [
   "MONDAY",
@@ -30,36 +30,7 @@ const DAYS_ORDER: DayOfWeek[] = [
 ];
 
 export default function VisitStorePage() {
-  const [profile, setProfile] = React.useState<StoreProfile | null>(null);
-  const [status, setStatus] = React.useState<StoreStatusResponse | null>(null);
-  const [loading, setLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    let isMounted = true;
-    async function loadStoreInfo() {
-      try {
-        setLoading(true);
-        const [profData, statusData] = await Promise.all([
-          publicApi.store.getProfile().catch(() => null),
-          publicApi.store.getStatus().catch(() => null),
-        ]);
-        if (isMounted) {
-          setProfile(profData);
-          setStatus(statusData);
-        }
-      } catch {
-        // Ignored
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    }
-    loadStoreInfo();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { status, profile, isStatusLoading, isProfileLoading } = useStore();
 
   const whatsappNumber = profile?.whatsapp_number
     ? profile.whatsapp_number.replace(/[^0-9]/g, "")
@@ -79,7 +50,7 @@ export default function VisitStorePage() {
         { day_of_week: "SUNDAY", is_closed: true, open_time: "00:00", close_time: "00:00" },
       ];
 
-  if (loading) {
+  if (!profile && isProfileLoading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-24 text-center">
         <div className="w-10 h-10 rounded-full border-2 border-wine border-t-transparent animate-spin mx-auto mb-4" />
@@ -111,8 +82,15 @@ export default function VisitStorePage() {
           <div className="space-y-1">
             <div className="flex items-center gap-2.5">
               <h2 className="text-lg font-serif font-bold text-zinc-900">Physical Store Status</h2>
-              <Badge variant={status?.is_open ? "success" : "danger"} className="text-xs shadow-xs border border-amber-950/10">
-                {status?.is_open ? "OPEN NOW" : "CURRENTLY CLOSED"}
+              <Badge
+                variant={!status && isStatusLoading ? "outline" : status?.is_open ? "success" : "danger"}
+                className="text-xs shadow-xs border border-amber-950/10"
+              >
+                {!status && isStatusLoading
+                  ? "CHECKING STATUS"
+                  : status?.is_open
+                  ? "OPEN NOW"
+                  : "CURRENTLY CLOSED"}
               </Badge>
             </div>
             <p className="text-xs text-zinc-600">
