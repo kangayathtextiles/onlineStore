@@ -1,21 +1,17 @@
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.core.exceptions import (
     DuplicateResourceException,
     EntityNotFoundException,
-    ImageLimitExceededException,
     InvariantViolationException,
-    ValidationException,
 )
-from app.core.security import validate_upload_file
 from app.models.enums import LifecycleEventType, LifecycleState
 from app.models.lifecycle_log import ProductLifecycleLog
-from app.models.product import Product, ProductImage
+from app.models.product import Product
 from app.models.variant import ProductVariant
 from app.repositories.attribute_repository import AttributeRepository
 from app.repositories.product_repository import ProductRepository
@@ -44,7 +40,6 @@ from app.schemas.product import (
     VariantMatrixGenerateRequest,
 )
 from app.schemas.taxonomy import SubcategorySummaryDTO
-from app.services import storage_service
 from app.services.media_service import ProductMediaService
 from app.services.qr_lifecycle_service import QRLifecycleService
 from app.services.qr_service import generate_qr_code, generate_style_code

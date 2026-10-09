@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
