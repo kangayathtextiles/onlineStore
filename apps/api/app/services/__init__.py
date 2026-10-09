@@ -1,5 +1,4 @@
-"""Services package aggregating domain logic and business rules."""
-
+from app.services.attribute_service import AttributeService
 from app.services.custom_section_service import CustomSectionService
 from app.services.product_service import ProductService
 from app.services.saved_item_service import SavedItemService
@@ -8,6 +7,7 @@ from app.services.taxonomy_service import TaxonomyService, slugify
 
 __all__ = [
     "slugify",
+    "AttributeService",
     "StoreService",
     "TaxonomyService",
     "ProductService",

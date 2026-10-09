@@ -55,6 +55,7 @@ services:
       DB_MAX_OVERFLOW: 10
       MEDIA_ROOT: /app/media
       SITE_URL: http://localhost:3000
+      SEED_DEV_DATA: ${SEED_DEV_DATA:-false}
     ports:
       - "8000:8000"
     depends_on:

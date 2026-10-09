@@ -1,11 +1,15 @@
+import argparse
 import asyncio
 import logging
+import os
+import sys
 from datetime import time
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.db.session import async_session_maker
 from app.models.attribute import ColorOption, SizeOption
 from app.models.custom_section import CustomSection
@@ -51,7 +55,10 @@ MASTER_COLORS: list[dict[str, Any]] = [
 
 
 async def seed_master_data(session: AsyncSession) -> None:
-    """Seed master reference data (sizes, colors)."""
+    """Seed production-safe master reference data (sizes, colors, store status singleton).
+
+    Explicit and idempotent: preserves all existing database rows.
+    """
     # 1. Sizes
     for size_data in MASTER_SIZES:
         res = await session.execute(select(SizeOption).where(SizeOption.name == size_data["name"]))
@@ -75,8 +82,31 @@ async def seed_master_data(session: AsyncSession) -> None:
     logger.info("Master reference data seeded successfully.")
 
 
-async def seed_development_data(session: AsyncSession) -> None:
-    """Seed initial store profile, schedules, and sample categories for development."""
+async def seed_development_data(session: AsyncSession, *, opt_in: bool = False) -> bool:
+    """Seed initial store profile, schedules, and sample categories for development and testing.
+
+    Environment-safe: strictly forbidden in production and staging environments.
+    Requires explicit opt-in via opt_in=True, SEED_DEV_DATA=true, or test execution.
+    """
+    if settings.is_production or settings.ENVIRONMENT in ("production", "staging"):
+        logger.warning(
+            "Development demo data seeding is strictly prohibited in %s environment. Skipping.",
+            settings.ENVIRONMENT,
+        )
+        return False
+
+    is_opted_in = (
+        opt_in
+        or os.getenv("SEED_DEV_DATA", "").lower() in ("true", "1", "yes")
+        or "PYTEST_CURRENT_TEST" in os.environ
+    )
+    if not is_opted_in:
+        logger.info(
+            "Development demo data seeding skipped. Explicit opt-in required "
+            "(supply --dev CLI flag, set SEED_DEV_DATA=true, or pass opt_in=True)."
+        )
+        return False
+
     # 1. Store Profile
     store_res = await session.execute(select(StoreProfile))
     store = store_res.scalar_one_or_none()
@@ -194,6 +224,7 @@ async def seed_development_data(session: AsyncSession) -> None:
 
     await session.commit()
     logger.info("Development demo data seeded successfully.")
+    return True
 
 
 async def backfill_media_assets(session: AsyncSession) -> None:
@@ -202,9 +233,7 @@ async def backfill_media_assets(session: AsyncSession) -> None:
     are persisted into PostgreSQL StoredMedia table for zero-loss recovery.
     """
     import mimetypes
-    import os
 
-    from app.core.config import settings
     from app.models.stored_media import StoredMedia
 
     media_root = settings.RESOLVED_MEDIA_ROOT
@@ -250,12 +279,32 @@ async def backfill_media_assets(session: AsyncSession) -> None:
         logger.info("Backfilled %d media assets into PostgreSQL StoredMedia.", count)
 
 
-async def run_all_seeds() -> None:
-    """Run all seed operations within a standalone session."""
+async def run_master_seeds() -> None:
+    """Run production-safe master reference data seeding (idempotent, no dev fixtures)."""
     async with async_session_maker() as session:
         await seed_master_data(session)
-        await seed_development_data(session)
+
+
+async def run_all_seeds(*, include_dev: bool = False) -> None:
+    """Run seed operations. Defaults to production-safe master data only unless opted in."""
+    async with async_session_maker() as session:
+        await seed_master_data(session)
+        if include_dev or os.getenv("SEED_DEV_DATA", "").lower() in ("true", "1", "yes"):
+            await seed_development_data(session, opt_in=True)
+
+
+def parse_args(args: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Kangayath Database Seeder")
+    parser.add_argument(
+        "--dev",
+        "--development",
+        action="store_true",
+        dest="include_dev",
+        help="Seed development and demo fixtures (only permitted in development/test environments)",
+    )
+    return parser.parse_args(args)
 
 
 if __name__ == "__main__":
-    asyncio.run(run_all_seeds())
+    parsed = parse_args(sys.argv[1:])
+    asyncio.run(run_all_seeds(include_dev=parsed.include_dev))
