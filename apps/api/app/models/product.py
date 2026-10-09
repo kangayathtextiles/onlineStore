@@ -43,6 +43,7 @@ class Product(Base, UUIDMixin, TimestampMixin):
         Index("idx_products_search_name", "name"),
         Index("idx_products_operational_status", "operational_status"),
         Index("idx_products_qr_code", "qr_code"),
+        Index("idx_products_public_browse", "lifecycle_state", "featured", "created_at"),
     )
 
     category_id: Mapped[uuid.UUID] = mapped_column(

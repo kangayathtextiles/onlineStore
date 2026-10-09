@@ -45,6 +45,8 @@ from app.schemas.product import (
 )
 from app.schemas.taxonomy import SubcategorySummaryDTO
 from app.services import storage_service
+from app.services.media_service import ProductMediaService
+from app.services.qr_lifecycle_service import QRLifecycleService
 from app.services.qr_service import generate_qr_code, generate_style_code
 from app.services.taxonomy_service import slugify
 
@@ -56,6 +58,8 @@ class ProductService:
         self.taxonomy_repo = TaxonomyRepository(session)
         self.attr_repo = AttributeRepository(session)
         self.store_repo = StoreRepository(session)
+        self.qr_service = QRLifecycleService(session)
+        self.media_service = ProductMediaService(session, self.get_admin_product_by_id)
 
     async def get_global_visibility_settings(self) -> tuple[bool, bool]:
         """Fetch store profile once and return (show_prices, show_style_codes)."""
@@ -285,59 +289,7 @@ class ProductService:
         )
 
     def map_to_qr_scan_response(self, product: Product) -> QRScanResponse:
-        primary_img = next((img.url for img in product.images if img.is_primary), None)
-        if not primary_img and product.images:
-            primary_img = product.images[0].url
-
-        return QRScanResponse(
-            product_id=product.id,
-            name=product.name,
-            slug=product.slug,
-            style_code=product.style_code,
-            qr_code=product.qr_code or "",
-            qr_status=product.qr_status,
-            operational_status=product.operational_status,
-            is_damaged=product.is_damaged,
-            is_retired=product.is_retired,
-            manual_sold_out=product.manual_sold_out,
-            is_available=self.calculate_availability(product),
-            price=product.price,
-            show_price=product.show_price,
-            category_id=product.category_id,
-            category_name=product.category.name if product.category else None,
-            subcategory_id=product.subcategory_id,
-            subcategory_name=product.subcategory.name if product.subcategory else None,
-            primary_image_url=primary_img,
-            sold_out_at=product.sold_out_at,
-            damaged_at=product.damaged_at,
-            retired_at=product.retired_at,
-            variants=[
-                ProductVariantDTO(
-                    id=v.id,
-                    product_id=v.product_id,
-                    size_id=v.size_id,
-                    color_id=v.color_id,
-                    sku=v.sku,
-                    is_available=v.is_available,
-                    created_at=v.created_at,
-                    updated_at=v.updated_at,
-                    size=SizeOptionDTO(
-                        id=v.size.id, name=v.size.name, display_order=v.size.display_order
-                    )
-                    if v.size
-                    else None,
-                    color=ColorOptionDTO(
-                        id=v.color.id,
-                        name=v.color.name,
-                        hex_code=v.color.hex_code,
-                        display_order=v.color.display_order,
-                    )
-                    if v.color
-                    else None,
-                )
-                for v in product.variants
-            ],
-        )
+        return self.qr_service.map_to_qr_scan_response(product)
 
     # --- Public APIs ---
     async def list_public_products(
@@ -614,81 +566,10 @@ class ProductService:
 
     # --- QR Scanner & Lifecycle Operations ---
     async def lookup_by_qr(self, qr_code: str) -> QRScanResponse:
-        clean_code = qr_code.strip().upper()
-        product = await self.repo.get_by_qr_code(clean_code)
-        if not product:
-            # Fallback: also try looking up by style code if typed into scanner
-            product = await self.repo.get_by_style_code(clean_code)
-        if not product:
-            raise EntityNotFoundException("QR Code / Physical Item", qr_code)
-        return self.map_to_qr_scan_response(product)
+        return await self.qr_service.lookup_by_qr(qr_code)
 
     async def execute_qr_action(self, data: QRActionRequest) -> QRScanResponse:
-        clean_code = data.qr_code.strip().upper()
-        product = await self.repo.get_by_qr_code(clean_code)
-        if not product:
-            product = await self.repo.get_by_style_code(clean_code)
-        if not product:
-            raise EntityNotFoundException("QR Code / Physical Item", data.qr_code)
-
-        old_status = product.operational_status
-        action = data.action.upper()
-
-        if action == "SOLD_OUT":
-            product.operational_status = "SOLD_OUT"
-            product.manual_sold_out = True
-            product.sold_out_at = datetime.now(UTC)
-            self.session.add(
-                ProductLifecycleLog(
-                    product_id=product.id,
-                    event_type=LifecycleEventType.SOLD_OUT,
-                    from_status=old_status,
-                    to_status="SOLD_OUT",
-                    qr_code=product.qr_code,
-                    style_code=product.style_code,
-                    notes=data.notes or "Marked SOLD OUT via QR Scanner.",
-                )
-            )
-        elif action == "DAMAGED":
-            product.operational_status = "DAMAGED"
-            product.is_damaged = True
-            product.damaged_at = datetime.now(UTC)
-            self.session.add(
-                ProductLifecycleLog(
-                    product_id=product.id,
-                    event_type=LifecycleEventType.DAMAGED,
-                    from_status=old_status,
-                    to_status="DAMAGED",
-                    qr_code=product.qr_code,
-                    style_code=product.style_code,
-                    notes=data.notes or "Marked DAMAGED via QR Scanner.",
-                )
-            )
-        elif action == "RETURN":
-            product.operational_status = "AVAILABLE"
-            product.manual_sold_out = False
-            product.is_damaged = False
-            product.sold_out_at = None
-            product.damaged_at = None
-            self.session.add(
-                ProductLifecycleLog(
-                    product_id=product.id,
-                    event_type=LifecycleEventType.RETURNED,
-                    from_status=old_status,
-                    to_status="AVAILABLE",
-                    qr_code=product.qr_code,
-                    style_code=product.style_code,
-                    notes=data.notes or "Product RETURN processed via QR Scanner.",
-                )
-            )
-        else:
-            raise ValidationException(
-                f"Unsupported action: {data.action}. Allowed: SOLD_OUT, DAMAGED, RETURN."
-            )
-
-        await self.session.commit()
-        await self.session.refresh(product)
-        return self.map_to_qr_scan_response(product)
+        return await self.qr_service.execute_qr_action(data)
 
     # --- QR Print Data ---
     async def get_qr_print_data(
@@ -698,68 +579,16 @@ class ProductService:
         operational_status: str | None = None,
         search: str | None = None,
     ) -> list[QRPrintItemDTO]:
-        items, _ = await self.repo.list_admin_products(
+        return await self.qr_service.get_qr_print_data(
             category_id=category_id,
             subcategory_id=subcategory_id,
             operational_status=operational_status,
             search=search,
-            page=1,
-            page_size=1000,
         )
-        print_items: list[QRPrintItemDTO] = []
-        for p in items:
-            primary_img = next((img.url for img in p.images if img.is_primary), None)
-            if not primary_img and p.images:
-                primary_img = p.images[0].url
-            print_items.append(
-                QRPrintItemDTO(
-                    product_id=p.id,
-                    name=p.name,
-                    slug=p.slug,
-                    style_code=p.style_code or "N/A",
-                    qr_code=p.qr_code or "N/A",
-                    category_name=p.category.name if p.category else None,
-                    subcategory_name=p.subcategory.name if p.subcategory else None,
-                    price=p.price,
-                    operational_status=p.operational_status,
-                    primary_image_url=primary_img,
-                )
-            )
-        return print_items
 
     # --- Two-Year Retention Automated Cleanup ---
     async def cleanup_expired_products(self, retention_years: int = 2) -> QRCleanupResponse:
-        cutoff = datetime.now(UTC) - timedelta(days=retention_years * 365)
-        expired_products = await self.repo.find_expired_retention_products(cutoff)
-
-        retired_count = 0
-        for p in expired_products:
-            old_status = p.operational_status
-            p.is_retired = True
-            p.operational_status = "RETIRED"
-            p.lifecycle_state = LifecycleState.ARCHIVED
-            p.retired_at = datetime.now(UTC)
-            p.qr_status = "RELEASED"
-            self.session.add(
-                ProductLifecycleLog(
-                    product_id=p.id,
-                    event_type=LifecycleEventType.RETIRED,
-                    from_status=old_status,
-                    to_status="RETIRED",
-                    qr_code=p.qr_code,
-                    style_code=p.style_code,
-                    notes=f"Auto-retention cleanup: inactive for >= {retention_years} years.",
-                )
-            )
-            retired_count += 1
-
-        await self.session.commit()
-        return QRCleanupResponse(
-            retired_count=retired_count,
-            released_qr_count=retired_count,
-            cutoff_date=cutoff,
-            message=f"Cleaned up {retired_count} expired physical items. QR codes released for reuse.",
-        )
+        return await self.qr_service.cleanup_expired_products(retention_years)
 
     async def delete_product(self, product_id: uuid.UUID) -> None:
         product = await self.repo.get_by_id(product_id)
@@ -772,30 +601,7 @@ class ProductService:
     async def add_image(
         self, product_id: uuid.UUID, data: ProductImageCreate
     ) -> AdminProductResponse:
-        product = await self.repo.get_by_id(product_id)
-        if not product:
-            raise EntityNotFoundException("Product", product_id)
-
-        count = await self.repo.count_product_images(product_id)
-        if count >= 6:
-            raise ImageLimitExceededException(current_count=count, limit=6)
-
-        # If marked primary or first image, unset primary on others
-        is_primary = data.is_primary or (count == 0)
-        if is_primary:
-            for img in product.images:
-                img.is_primary = False
-
-        new_image = ProductImage(
-            product_id=product_id,
-            url=data.url,
-            alt_text=data.alt_text or product.name,
-            is_primary=is_primary,
-            display_order=data.display_order or count,
-        )
-        await self.repo.create_image(new_image)
-        await self.session.commit()
-        return await self.get_admin_product_by_id(product_id)
+        return await self.media_service.add_image(product_id, data)
 
     async def upload_image(
         self,
@@ -804,95 +610,22 @@ class ProductService:
         is_primary: bool = False,
         alt_text: str | None = None,
     ) -> AdminProductResponse:
-        product = await self.repo.get_by_id(product_id)
-        if not product:
-            raise EntityNotFoundException("Product", product_id)
-
-        count = await self.repo.count_product_images(product_id)
-        if count >= 6:
-            raise ImageLimitExceededException(current_count=count, limit=6)
-
-        is_valid, err_msg, content, mime_type = await validate_upload_file(file)
-        if not is_valid:
-            raise ValidationException(err_msg)
-
-        ext = (file.filename or "image.jpg").rsplit(".", 1)[-1].lower()
-        unique_filename = f"{uuid.uuid4().hex}.{ext}"
-        object_path = f"products/{unique_filename}"
-
-        image_url = await storage_service.upload_file(object_path, content, mime_type)
-
-        image_data = ProductImageCreate(
-            url=image_url,
-            alt_text=alt_text or product.name,
+        return await self.media_service.upload_image(
+            product_id=product_id,
+            file=file,
             is_primary=is_primary,
-            display_order=count,
+            alt_text=alt_text,
         )
-        return await self.add_image(product_id, image_data)
 
     async def delete_image(
         self, product_id: uuid.UUID, image_id: uuid.UUID
     ) -> AdminProductResponse:
-        product = await self.repo.get_by_id(product_id)
-        if not product:
-            raise EntityNotFoundException("Product", product_id)
-
-        img = await self.repo.get_image_by_id(image_id)
-        if not img or img.product_id != product_id:
-            raise EntityNotFoundException("ProductImage", image_id)
-
-        was_primary = img.is_primary
-        deleted_url = img.url
-        await self.repo.delete_image(img)
-
-        # If deleted primary, promote first remaining image to primary
-        if was_primary and product.images:
-            remaining = [i for i in product.images if i.id != image_id]
-            if remaining:
-                remaining[0].is_primary = True
-
-        await self.session.commit()
-
-        # Delete from Supabase Storage (best-effort; logs warning on failure)
-        if "/storage/v1/object/public/" in deleted_url:
-            # Extract object path from the full Supabase public URL
-            try:
-                bucket = settings.SUPABASE_STORAGE_BUCKET
-                marker = f"/object/public/{bucket}/"
-                idx = deleted_url.find(marker)
-                if idx != -1:
-                    object_path = deleted_url[idx + len(marker) :]
-                    await storage_service.delete_file(object_path)
-            except Exception as del_err:
-                import logging
-
-                logging.getLogger(__name__).warning("Storage delete warning: %s", del_err)
-
-        return await self.get_admin_product_by_id(product_id)
+        return await self.media_service.delete_image(product_id, image_id)
 
     async def reorder_images(
         self, product_id: uuid.UUID, req: ProductImageReorderRequest
     ) -> AdminProductResponse:
-        product = await self.repo.get_by_id(product_id)
-        if not product:
-            raise EntityNotFoundException("Product", product_id)
-
-        img_map = {img.id: img for img in product.images}
-        has_primary = False
-
-        for item in req.images:
-            if item.image_id in img_map:
-                img = img_map[item.image_id]
-                img.display_order = item.display_order
-                img.is_primary = item.is_primary
-                if item.is_primary:
-                    has_primary = True
-
-        if not has_primary and product.images:
-            product.images[0].is_primary = True
-
-        await self.session.commit()
-        return await self.get_admin_product_by_id(product_id)
+        return await self.media_service.reorder_images(product_id, req)
 
     # --- Variant Management ---
     async def generate_variant_matrix(
