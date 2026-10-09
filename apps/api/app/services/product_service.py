@@ -14,7 +14,6 @@ from app.models.lifecycle_log import ProductLifecycleLog
 from app.models.product import Product
 from app.repositories.attribute_repository import AttributeRepository
 from app.repositories.product_repository import ProductRepository
-from app.repositories.store_repository import StoreRepository
 from app.repositories.taxonomy_repository import TaxonomyRepository
 from app.schemas.common import PaginatedResponse
 from app.schemas.product import (
@@ -36,6 +35,7 @@ from app.schemas.product import (
     VariantMatrixGenerateRequest,
 )
 from app.services.media_service import ProductMediaService
+from app.services.product_catalog_service import ProductCatalogService
 from app.services.product_presenter import (
     calculate_availability,
     map_to_admin_response,
@@ -50,15 +50,20 @@ from app.services.taxonomy_service import slugify
 
 
 class ProductService:
+    """
+    Core domain service managing product creation, updates, and lifecycle transitions.
+    Delegates catalog queries, variants, media, and QR identities to specialized services.
+    """
+
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
         self.repo = ProductRepository(session)
         self.taxonomy_repo = TaxonomyRepository(session)
         self.attr_repo = AttributeRepository(session)
-        self.store_repo = StoreRepository(session)
+        self.catalog_service = ProductCatalogService(session)
+        self.variant_service = ProductVariantService(session)
         self.qr_service = QRLifecycleService(session)
         self.media_service = ProductMediaService(session, self.get_admin_product_by_id)
-        self.variant_service = ProductVariantService(session)
 
     # --- Backwards-compatible Helper Bindings & Static Methods ---
     calculate_availability = staticmethod(calculate_availability)
@@ -95,24 +100,16 @@ class ProductService:
     def map_to_qr_scan_response(self, product: Product) -> QRScanResponse:
         return self.qr_service.map_to_qr_scan_response(product)
 
-    # --- Store & Visibility Policy ---
+    # --- Catalog Queries (Delegated to ProductCatalogService) ---
     async def get_global_visibility_settings(self) -> tuple[bool, bool]:
-        """Fetch store profile once and return (show_prices, show_style_codes)."""
-        store = await self.store_repo.get_singleton_profile()
-        return (
-            store.show_prices if store else True,
-            store.show_style_codes if store else True,
-        )
+        return await self.catalog_service.get_global_visibility_settings()
 
     async def get_global_show_prices(self) -> bool:
-        store = await self.store_repo.get_singleton_profile()
-        return store.show_prices if store else True
+        return await self.catalog_service.get_global_show_prices()
 
     async def get_global_show_style_codes(self) -> bool:
-        store = await self.store_repo.get_singleton_profile()
-        return store.show_style_codes if store else True
+        return await self.catalog_service.get_global_show_style_codes()
 
-    # --- Public Catalog Queries ---
     async def list_public_products(
         self,
         category_slug: str | None = None,
@@ -124,8 +121,7 @@ class ProductService:
         page: int = 1,
         page_size: int = 20,
     ) -> PaginatedResponse[PublicProductSummaryResponse]:
-        global_show_prices, global_show_style_codes = await self.get_global_visibility_settings()
-        items, total = await self.repo.list_public_products(
+        return await self.catalog_service.list_public_products(
             category_slug=category_slug,
             subcategory_slug=subcategory_slug,
             size_id=size_id,
@@ -135,28 +131,10 @@ class ProductService:
             page=page,
             page_size=page_size,
         )
-        mapped = [
-            map_to_public_summary(
-                p,
-                global_show_prices=global_show_prices,
-                global_show_style_codes=global_show_style_codes,
-            )
-            for p in items
-        ]
-        return PaginatedResponse.create(mapped, total, page, page_size)
 
     async def get_public_product_by_slug(self, slug: str) -> PublicProductDetailResponse:
-        global_show_prices, global_show_style_codes = await self.get_global_visibility_settings()
-        product = await self.repo.get_published_by_slug(slug)
-        if not product:
-            raise EntityNotFoundException("Product", slug)
-        return map_to_public_detail(
-            product,
-            global_show_prices=global_show_prices,
-            global_show_style_codes=global_show_style_codes,
-        )
+        return await self.catalog_service.get_public_product_by_slug(slug)
 
-    # --- Admin Catalog Queries ---
     async def list_admin_products(
         self,
         lifecycle_state: LifecycleState | None = None,
@@ -168,7 +146,7 @@ class ProductService:
         page: int = 1,
         page_size: int = 20,
     ) -> PaginatedResponse[AdminProductResponse]:
-        items, total = await self.repo.list_admin_products(
+        return await self.catalog_service.list_admin_products(
             lifecycle_state=lifecycle_state,
             category_id=category_id,
             subcategory_id=subcategory_id,
@@ -178,17 +156,11 @@ class ProductService:
             page=page,
             page_size=page_size,
         )
-        mapped = [map_to_admin_response(p) for p in items]
-        return PaginatedResponse.create(mapped, total, page, page_size)
 
     async def get_admin_product_by_id(self, product_id: uuid.UUID) -> AdminProductResponse:
-        self.session.expire_all()
-        product = await self.repo.get_by_id(product_id)
-        if not product:
-            raise EntityNotFoundException("Product", product_id)
-        return map_to_admin_response(product)
+        return await self.catalog_service.get_admin_product_by_id(product_id)
 
-    # --- Product CRUD & Lifecycle Management ---
+    # --- Product Command Operations (Creation, Mutations & Deletion) ---
     async def create_product(self, data: ProductCreateRequest) -> AdminProductResponse:
         # Validate taxonomy foreign keys
         cat = await self.taxonomy_repo.get_by_id(data.category_id)
@@ -289,7 +261,6 @@ class ProductService:
             product.description = data.description
         if data.material is not None:
             product.material = data.material
-        # Style Code is stable and immutable after creation
         if data.lifecycle_state is not None:
             product.lifecycle_state = data.lifecycle_state
         if data.manual_sold_out is not None:
@@ -393,7 +364,7 @@ class ProductService:
         await self.repo.delete(product)
         await self.session.commit()
 
-    # --- QR Scanner & Lifecycle Delegation ---
+    # --- Delegations (QR, Media, Variants) ---
     async def lookup_by_qr(self, qr_code: str) -> QRScanResponse:
         return await self.qr_service.lookup_by_qr(qr_code)
 
@@ -417,7 +388,6 @@ class ProductService:
     async def cleanup_expired_products(self, retention_years: int = 2) -> QRCleanupResponse:
         return await self.qr_service.cleanup_expired_products(retention_years)
 
-    # --- Media Management Delegation ---
     async def add_image(
         self, product_id: uuid.UUID, data: ProductImageCreate
     ) -> AdminProductResponse:
@@ -447,7 +417,6 @@ class ProductService:
     ) -> AdminProductResponse:
         return await self.media_service.reorder_images(product_id, req)
 
-    # --- Variant Management Delegation ---
     async def generate_variant_matrix(
         self, product_id: uuid.UUID, req: VariantMatrixGenerateRequest
     ) -> AdminProductResponse:

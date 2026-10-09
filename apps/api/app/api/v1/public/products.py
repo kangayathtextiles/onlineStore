@@ -9,7 +9,7 @@ from app.schemas.product import (
     PublicProductDetailResponse,
     PublicProductSummaryResponse,
 )
-from app.services.product_service import ProductService
+from app.services.product_catalog_service import ProductCatalogService
 
 router = APIRouter(prefix="/products", tags=["Public Products"])
 
@@ -32,7 +32,7 @@ async def list_public_products(
     page_size: int = Query(default=20, ge=1, le=100, description="Items per page"),
     session: AsyncSession = Depends(get_async_session),
 ) -> PaginatedResponse[PublicProductSummaryResponse]:
-    service = ProductService(session)
+    service = ProductCatalogService(session)
     return await service.list_public_products(
         category_slug=category,
         subcategory_slug=subcategory,
@@ -54,5 +54,5 @@ async def get_public_product_detail(
     slug: str,
     session: AsyncSession = Depends(get_async_session),
 ) -> PublicProductDetailResponse:
-    service = ProductService(session)
+    service = ProductCatalogService(session)
     return await service.get_public_product_by_slug(slug)
